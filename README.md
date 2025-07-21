@@ -1,4 +1,6 @@
-# RAG Knowledge Agent - Setup & Usage Guide
+# 🧠 RAG Knowledge Agent - My First AI Agent!
+
+A sophisticated AI agent that maintains persistent knowledge across coding sessions using vector search and intelligent code indexing.
 
 ## Quick Start (5 minutes)
 
