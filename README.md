@@ -1,13 +1,21 @@
-# 🧠 RAG Knowledge Agent - My First AI Agent!
+# 🧠 Multi-Project RAG Knowledge Agent v2.0
 
-A sophisticated AI agent that maintains persistent knowledge across coding sessions using vector search and intelligent code indexing.
+An enhanced AI agent that maintains persistent knowledge across multiple projects and coding sessions using vector search, intelligent code indexing, and comprehensive project management.
 
-## 🌟 What is this?
+## 🌟 What's New in v2.0?
 
-The RAG Knowledge Agent is an intelligent assistant that:
+The Multi-Project RAG Knowledge Agent now supports:
+- **Multi-Project Management**: Track multiple projects simultaneously with independent configurations
+- **Project Lifecycle**: Create, pause, resume, archive, and focus on different projects
+- **Decision Tracking**: Record and retrieve architectural decisions with reasoning
+- **Objective Management**: Set development goals and track completion
+- **Context Export**: Generate rich context for AI assistants (Claude Code, GitHub Copilot)
+- **Git Integration**: Track development activity through commits and changes
+- **Project Isolation**: Each project maintains its own knowledge base
+
+### Core Features (from v1.0)
 - **Remembers Everything**: Indexes your code and documentation automatically
 - **Answers Questions**: Search your entire codebase semantically
-- **Tracks Decisions**: Record architectural choices and find them later
 - **Stays Current**: Watches files for changes and updates its knowledge
 - **Protects Secrets**: Automatically redacts API keys and sensitive data
 
@@ -44,18 +52,18 @@ export GOOGLE_GENAI_USE_VERTEXAI=True
 export GOOGLE_APPLICATION_CREDENTIALS=/path/to/your-service-account.json
 ```
 
-### 3. Configure the Agent
+### 3. Start the Agent
 
-Edit the `CONFIG` section in `rag_agent.py` to point to your project directories:
-```python
-"watch_dirs": [
-    "/path/to/your/project/agents",
-    "/path/to/your/project/backend", 
-    "/path/to/your/project/tools"
-]
+No manual configuration needed! With v2.0, you can dynamically add projects:
+```bash
+# Start the agent
+./rag_cli.sh start
+
+# Create your first project
+./rag_cli.sh projects create "My Project" /path/to/project
+
+# The agent will automatically watch the project directories
 ```
-
-**Note**: The agent is currently configured to watch the LostMindAI YouTube Analyzer project.
 
 ### 4. Make Scripts Executable
 
