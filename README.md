@@ -1,10 +1,14 @@
-# 🧠 Multi-Project RAG Knowledge Agent v2.0
+# 🧠 ContextKeeper: RAG-Powered Development Context Awareness System
+### *by LostMindAI*
 
-An enhanced AI agent that maintains persistent knowledge across multiple projects and coding sessions using vector search, intelligent code indexing, and comprehensive project management.
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/lostmind008/contextkeeper/releases)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+**ContextKeeper** is an enhanced AI agent that maintains persistent knowledge across multiple projects and coding sessions using vector search, intelligent code indexing, and comprehensive project management.
 
 ## 🌟 What's New in v2.0?
 
-The Multi-Project RAG Knowledge Agent now supports:
+ContextKeeper v2.0 now supports:
 - **Multi-Project Management**: Track multiple projects simultaneously with independent configurations
 - **Project Lifecycle**: Create, pause, resume, archive, and focus on different projects
 - **Decision Tracking**: Record and retrieve architectural decisions with reasoning
@@ -25,9 +29,10 @@ Built with ChromaDB for vector storage and Google's Gemini for embeddings.
 
 ### 1. Install Dependencies
 
-First, make sure you're in the rag-agent directory:
+First, clone the repository:
 ```bash
-cd ~/rag-agent
+git clone https://github.com/lostmind008/contextkeeper.git
+cd contextkeeper
 ```
 
 Create a virtual environment (recommended):
@@ -177,5 +182,19 @@ When context is near limit, query http://localhost:5555/query for project contex
 ## Next Steps
 
 1. Update the `watch_dirs` in `rag_agent.py` to point to your actual project directories
-2. Add the rag-agent directory to your PATH for easy access
+2. Add the contextkeeper directory to your PATH for easy access
 3. Consider setting up as a system service for automatic startup
+
+---
+
+## 🏢 About LostMindAI
+
+**ContextKeeper** is developed and maintained by [LostMindAI](https://github.com/lostmind008), focused on building intelligent development tools that enhance programmer productivity through AI-powered context awareness.
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+Built with love by the LostMindAI team. Special thanks to the open-source community for the amazing tools that make this project possible: ChromaDB, Google Gemini, and Flask.
