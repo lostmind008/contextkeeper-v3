@@ -2,7 +2,7 @@
 ### *by LostMindAI*
 
 [![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/lostmind008/contextkeeper/releases)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 
 **ContextKeeper** is an enhanced AI agent that maintains persistent knowledge across multiple projects and coding sessions using vector search, intelligent code indexing, and comprehensive project management.
 
@@ -193,7 +193,9 @@ When context is near limit, query http://localhost:5555/query for project contex
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+Copyright 2025 LostMindAI. Apache 2.0 License provides patent protection and requires preservation of copyright and license notices.
 
 ## 🙏 Acknowledgments
 

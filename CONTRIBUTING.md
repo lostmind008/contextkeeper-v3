@@ -1,6 +1,8 @@
-# Contributing to RAG Knowledge Agent
+# Contributing to ContextKeeper
 
-First off, thank you for considering contributing to RAG Knowledge Agent! It's people like you that make this tool better for everyone.
+First off, thank you for considering contributing to ContextKeeper! It's people like you that make this development context awareness system better for everyone.
+
+**ContextKeeper** is developed by [LostMindAI](https://github.com/lostmind008) as an open-source project, and we welcome contributions from the community.
 
 ## How Can I Contribute?
 
