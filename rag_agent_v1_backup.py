@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
-Multi-Project RAG Knowledge Agent v2.0
-Maintains persistent knowledge across multiple projects and coding sessions
-Enhanced with project management, decision tracking, and context export
-Author: RAG Agent Project
+RAG Knowledge Agent for Project Memory
+Maintains persistent knowledge across coding sessions
+Author: YouTube Analyzer Project
 Date: July 2025
 """
 
@@ -29,9 +28,6 @@ from watchdog.events import FileSystemEventHandler
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-# Import ProjectManager for multi-project support
-from project_manager import ProjectManager, ProjectStatus
-
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -46,14 +42,12 @@ logger = logging.getLogger(__name__)
 # Configuration
 CONFIG = {
     "db_path": "./rag_knowledge_db",
-    "projects_config_dir": os.path.expanduser("~/.rag_projects"),
-    "default_file_extensions": [".py", ".js", ".jsx", ".ts", ".tsx", ".md", ".json", ".yaml"],
-    # Legacy support - these dirs will be imported as a project on first run
-    "legacy_watch_dirs": [
+    "watch_dirs": [
         "/Users/sumitm1/Documents/myproject/Ongoing Projects/LostMindAI - Youtube Analyser Tool/agents",
         "/Users/sumitm1/Documents/myproject/Ongoing Projects/LostMindAI - Youtube Analyser Tool/backend",
         "/Users/sumitm1/Documents/myproject/Ongoing Projects/LostMindAI - Youtube Analyser Tool/tools"
     ],
+    "file_extensions": [".py", ".js", ".jsx", ".ts", ".tsx", ".md", ".json", ".yaml"],
     "chunk_size": 1000,
     "chunk_overlap": 200,
     "max_results": 10,
@@ -177,16 +171,12 @@ class TextChunker:
         return chunks
 
 class ProjectKnowledgeAgent:
-    """Enhanced RAG agent with multi-project support"""
+    """Main RAG agent for project knowledge management"""
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.security_filter = SecurityFilter(config['sensitive_patterns'])
         self.chunker = TextChunker(config['chunk_size'], config['chunk_overlap'])
-        
-        # Initialize ProjectManager
-        self.project_manager = ProjectManager(config.get('projects_config_dir'))
-        self._setup_legacy_project()
         
         # Initialize Google GenAI
         try:
@@ -207,73 +197,38 @@ class ProjectKnowledgeAgent:
             )
         )
         
-        # Collections will be created per project
-        self.collections = {}
-        self._init_project_collections()
+        # Create or get collection
+        try:
+            self.collection = self.db.get_collection("project_knowledge")
+            logger.info("Using existing ChromaDB collection")
+        except:
+            self.collection = self.db.create_collection(
+                name="project_knowledge",
+                metadata={"hnsw:space": "cosine"}
+            )
+            logger.info("Created new ChromaDB collection")
         
-        # Track processed files per project
-        self.processed_files = {}
-        self._load_all_processed_files()
+        # Track processed files
+        self.processed_files = self._load_processed_files()
     
-    def _setup_legacy_project(self):
-        """Import legacy watch directories as a project if no projects exist"""
-        if not self.project_manager.projects and self.config.get('legacy_watch_dirs'):
-            # Check if legacy dirs exist
-            legacy_dirs = [d for d in self.config['legacy_watch_dirs'] if os.path.exists(d)]
-            if legacy_dirs:
-                logger.info("Importing legacy YouTube Analyzer project...")
-                project = self.project_manager.create_project(
-                    name="YouTube Analyzer (Legacy Import)",
-                    root_path=os.path.dirname(legacy_dirs[0]),
-                    watch_dirs=legacy_dirs,
-                    description="Automatically imported from v1.0 configuration"
-                )
-                logger.info(f"Created legacy project: {project.name}")
+    def _load_processed_files(self) -> Dict[str, str]:
+        """Load hash of previously processed files"""
+        hash_file = Path(self.config['db_path']) / "processed_files.json"
+        if hash_file.exists():
+            with open(hash_file, 'r') as f:
+                return json.load(f)
+        return {}
     
-    def _init_project_collections(self):
-        """Initialize ChromaDB collections for all active projects"""
-        for project in self.project_manager.get_active_projects():
-            collection_name = f"project_{project.project_id}"
-            try:
-                self.collections[project.project_id] = self.db.get_collection(collection_name)
-                logger.info(f"Using existing collection for project: {project.name}")
-            except:
-                self.collections[project.project_id] = self.db.create_collection(
-                    name=collection_name,
-                    metadata={"hnsw:space": "cosine", "project_name": project.name}
-                )
-                logger.info(f"Created new collection for project: {project.name}")
-    
-    def _load_all_processed_files(self):
-        """Load processed files for all projects"""
-        for project in self.project_manager.projects.values():
-            hash_file = Path(self.config['db_path']) / f"processed_files_{project.project_id}.json"
-            if hash_file.exists():
-                with open(hash_file, 'r') as f:
-                    self.processed_files[project.project_id] = json.load(f)
-            else:
-                self.processed_files[project.project_id] = {}
-    
-    def _save_processed_files(self, project_id: str):
-        """Save hash of processed files for a project"""
-        if project_id in self.processed_files:
-            hash_file = Path(self.config['db_path']) / f"processed_files_{project_id}.json"
-            with open(hash_file, 'w') as f:
-                json.dump(self.processed_files[project_id], f, indent=2)
+    def _save_processed_files(self):
+        """Save hash of processed files"""
+        hash_file = Path(self.config['db_path']) / "processed_files.json"
+        with open(hash_file, 'w') as f:
+            json.dump(self.processed_files, f, indent=2)
     
     def _get_file_hash(self, file_path: str) -> str:
         """Calculate file hash for change detection"""
         with open(file_path, 'rb') as f:
             return hashlib.md5(f.read()).hexdigest()
-    
-    def _find_project_for_file(self, file_path: str) -> Optional[str]:
-        """Find which project a file belongs to based on watch directories"""
-        abs_path = os.path.abspath(file_path)
-        for project in self.project_manager.get_active_projects():
-            for watch_dir in project.watch_dirs:
-                if abs_path.startswith(os.path.abspath(watch_dir)):
-                    return project.project_id
-        return None
     
     async def embed_text(self, text: str) -> List[float]:
         """Generate embeddings using Google's text-embedding-004"""
@@ -288,26 +243,13 @@ class ProjectKnowledgeAgent:
             logger.error(f"Embedding error: {e}")
             raise
     
-    async def ingest_file(self, file_path: str, project_id: str = None) -> int:
-        """Process and embed a single file for a specific project"""
+    async def ingest_file(self, file_path: str) -> int:
+        """Process and embed a single file"""
         try:
-            # Determine which project this file belongs to
-            if project_id is None:
-                project_id = self._find_project_for_file(file_path)
-                if not project_id:
-                    logger.warning(f"No project found for file: {file_path}")
-                    return 0
-            
-            # Initialize project structures if needed
-            if project_id not in self.processed_files:
-                self.processed_files[project_id] = {}
-            if project_id not in self.collections:
-                self._init_project_collections()
-            
             # Check if file needs processing
             current_hash = self._get_file_hash(file_path)
-            if (file_path in self.processed_files[project_id] and 
-                self.processed_files[project_id][file_path] == current_hash):
+            if (file_path in self.processed_files and 
+                self.processed_files[file_path] == current_hash):
                 logger.debug(f"Skipping unchanged file: {file_path}")
                 return 0
             
@@ -328,24 +270,23 @@ class ProjectKnowledgeAgent:
                 # Generate unique ID
                 chunk_id = f"{file_path}_{chunk['metadata'].get('chunk_index', chunk['metadata'].get('start_line', 0))}"
                 
-                # Store in project-specific collection
-                self.collections[project_id].upsert(
+                # Store in ChromaDB
+                self.collection.upsert(
                     ids=[chunk_id],
                     embeddings=[embedding],
                     documents=[chunk['content']],
                     metadatas=[{
                         **chunk['metadata'],
-                        'project_id': project_id,
                         'ingested_at': datetime.now().isoformat()
                     }]
                 )
                 chunk_count += 1
             
             # Update processed files
-            self.processed_files[project_id][file_path] = current_hash
-            self._save_processed_files(project_id)
+            self.processed_files[file_path] = current_hash
+            self._save_processed_files()
             
-            logger.info(f"Ingested {chunk_count} chunks from {file_path} into project {project_id}")
+            logger.info(f"Ingested {chunk_count} chunks from {file_path}")
             return chunk_count
             
         except Exception as e:
@@ -368,51 +309,28 @@ class ProjectKnowledgeAgent:
         
         return total_chunks
     
-    async def query(self, question: str, k: int = None, project_id: str = None) -> Dict[str, Any]:
-        """Query the knowledge base with optional project filtering"""
+    async def query(self, question: str, k: int = None) -> Dict[str, Any]:
+        """Query the knowledge base"""
         if k is None:
             k = self.config['max_results']
-        
-        # Use focused project if no project specified
-        if project_id is None:
-            focused_project = self.project_manager.get_focused_project()
-            if focused_project:
-                project_id = focused_project.project_id
         
         try:
             # Embed the question
             query_embedding = await self.embed_text(question)
             
-            # Search in appropriate collection(s)
-            all_results = {'ids': [[]], 'distances': [[]], 'metadatas': [[]], 'documents': [[]]}
-            
-            if project_id and project_id in self.collections:
-                # Search specific project
-                results = self.collections[project_id].query(
-                    query_embeddings=[query_embedding],
-                    n_results=k
-                )
-                all_results = results
-            else:
-                # Search all active projects
-                for proj_id, collection in self.collections.items():
-                    if self.project_manager.projects[proj_id].status == ProjectStatus.ACTIVE:
-                        results = collection.query(
-                            query_embeddings=[query_embedding],
-                            n_results=k
-                        )
-                        # Merge results
-                        for key in ['ids', 'distances', 'metadatas', 'documents']:
-                            if results[key] and results[key][0]:
-                                all_results[key][0].extend(results[key][0])
+            # Search in ChromaDB
+            results = self.collection.query(
+                query_embeddings=[query_embedding],
+                n_results=k
+            )
             
             # Format results
             formatted_results = []
-            for i in range(len(all_results['ids'][0])):
+            for i in range(len(results['ids'][0])):
                 formatted_results.append({
-                    'content': all_results['documents'][0][i],
-                    'metadata': all_results['metadatas'][0][i],
-                    'distance': all_results['distances'][0][i] if 'distances' in all_results else None
+                    'content': results['documents'][0][i],
+                    'metadata': results['metadatas'][0][i],
+                    'distance': results['distances'][0][i] if 'distances' in results else None
                 })
             
             return {
@@ -429,59 +347,36 @@ class ProjectKnowledgeAgent:
                 'results': []
             }
     
-    def add_decision(self, decision: str, reasoning: str = "", project_id: str = None,
-                    tags: List[str] = None):
-        """Add a project decision to the knowledge base and project config"""
-        # Use focused project if not specified
-        if project_id is None:
-            focused_project = self.project_manager.get_focused_project()
-            if focused_project:
-                project_id = focused_project.project_id
-            else:
-                logger.warning("No project specified and no focused project")
-                return None
+    def add_decision(self, decision: str, context: str, importance: str = "normal"):
+        """Add a project decision to the knowledge base"""
+        content = f"PROJECT DECISION [{importance.upper()}]:\n{decision}\n\nCONTEXT:\n{context}"
         
-        # Add to project manager
-        decision_obj = self.project_manager.add_decision(
-            project_id, decision, reasoning, tags
+        # Synchronous wrapper for async embed
+        loop = asyncio.new_event_loop()
+        embedding = loop.run_until_complete(self.embed_text(content))
+        loop.close()
+        
+        decision_id = f"decision_{datetime.now().timestamp()}"
+        
+        self.collection.add(
+            ids=[decision_id],
+            embeddings=[embedding],
+            documents=[content],
+            metadatas=[{
+                'type': 'decision',
+                'importance': importance,
+                'timestamp': datetime.now().isoformat()
+            }]
         )
         
-        if decision_obj and project_id in self.collections:
-            # Create content for embedding
-            content = f"PROJECT DECISION: {decision}"
-            if reasoning:
-                content += f"\nREASONING: {reasoning}"
-            if tags:
-                content += f"\nTAGS: {', '.join(tags)}"
-            content += f"\nDATE: {decision_obj.timestamp}"
-            
-            # Embed and store
-            import asyncio
-            loop = asyncio.new_event_loop()
-            embedding = loop.run_until_complete(self.embed_text(content))
-            loop.close()
-            
-            self.collections[project_id].add(
-                ids=[decision_obj.id],
-                embeddings=[embedding],
-                documents=[content],
-                metadatas=[{
-                    'type': 'decision',
-                    'project_id': project_id,
-                    'tags': tags or [],
-                    'date': decision_obj.timestamp
-                }]
-            )
-            
-            logger.info(f"Added decision to project {project_id}: {decision[:50]}...")
-        
-        return decision_obj
+        logger.info(f"Added decision: {decision[:50]}...")
 
 class CodebaseWatcher(FileSystemEventHandler):
     """Watches for file changes and updates knowledge base"""
     
-    def __init__(self, agent: ProjectKnowledgeAgent):
+    def __init__(self, agent: ProjectKnowledgeAgent, config: Dict[str, Any]):
         self.agent = agent
+        self.config = config
         self.update_queue = asyncio.Queue()
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
@@ -543,100 +438,14 @@ class RAGServer:
         def add_decision():
             data = request.json
             decision = data.get('decision', '')
-            reasoning = data.get('reasoning', data.get('context', ''))  # Support old 'context' param
-            project_id = data.get('project_id')
-            tags = data.get('tags', [])
+            context = data.get('context', '')
+            importance = data.get('importance', 'normal')
             
             if not decision:
                 return jsonify({'error': 'Decision required'}), 400
             
-            decision_obj = self.agent.add_decision(decision, reasoning, project_id, tags)
-            if decision_obj:
-                return jsonify({
-                    'status': 'Decision added',
-                    'decision_id': decision_obj.id,
-                    'project_id': project_id or self.agent.project_manager.focused_project_id
-                })
-            else:
-                return jsonify({'error': 'Failed to add decision'}), 400
-        
-        # Project management endpoints
-        @self.app.route('/projects', methods=['GET'])
-        def list_projects():
-            return jsonify(self.agent.project_manager.get_project_summary())
-        
-        @self.app.route('/projects', methods=['POST'])
-        def create_project():
-            data = request.json
-            name = data.get('name', '')
-            root_path = data.get('root_path', '')
-            watch_dirs = data.get('watch_dirs')
-            description = data.get('description', '')
-            
-            if not name or not root_path:
-                return jsonify({'error': 'Name and root_path required'}), 400
-            
-            project = self.agent.project_manager.create_project(
-                name, root_path, watch_dirs, description
-            )
-            return jsonify({
-                'status': 'Project created',
-                'project_id': project.project_id,
-                'name': project.name
-            })
-        
-        @self.app.route('/projects/<project_id>/focus', methods=['POST'])
-        def focus_project(project_id):
-            if self.agent.project_manager.set_focus(project_id):
-                return jsonify({'status': 'Project focused', 'project_id': project_id})
-            return jsonify({'error': 'Project not found'}), 404
-        
-        @self.app.route('/projects/<project_id>/status', methods=['PUT'])
-        def update_project_status(project_id):
-            data = request.json
-            status = data.get('status', '')
-            
-            if status not in ['active', 'paused', 'archived']:
-                return jsonify({'error': 'Invalid status'}), 400
-            
-            if self.agent.project_manager.update_status(project_id, ProjectStatus(status)):
-                return jsonify({'status': 'Project status updated', 'new_status': status})
-            return jsonify({'error': 'Project not found'}), 404
-        
-        @self.app.route('/projects/<project_id>/objectives', methods=['POST'])
-        def add_objective(project_id):
-            data = request.json
-            title = data.get('title', '')
-            description = data.get('description', '')
-            priority = data.get('priority', 'medium')
-            
-            if not title:
-                return jsonify({'error': 'Title required'}), 400
-            
-            objective = self.agent.project_manager.add_objective(
-                project_id, title, description, priority
-            )
-            if objective:
-                return jsonify({
-                    'status': 'Objective added',
-                    'objective_id': objective.id,
-                    'title': objective.title
-                })
-            return jsonify({'error': 'Project not found'}), 404
-        
-        @self.app.route('/projects/<project_id>/objectives/<objective_id>/complete', 
-                       methods=['POST'])
-        def complete_objective(project_id, objective_id):
-            if self.agent.project_manager.complete_objective(project_id, objective_id):
-                return jsonify({'status': 'Objective completed'})
-            return jsonify({'error': 'Project or objective not found'}), 404
-        
-        @self.app.route('/projects/<project_id>/context', methods=['GET'])
-        def export_context(project_id):
-            context = self.agent.project_manager.export_context(project_id)
-            if context:
-                return jsonify(context)
-            return jsonify({'error': 'Project not found'}), 404
+            self.agent.add_decision(decision, context, importance)
+            return jsonify({'status': 'Decision added'})
     
     def run(self):
         logger.info(f"Starting RAG server on port {self.port}")
