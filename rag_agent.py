@@ -51,6 +51,34 @@ from sacred_layer_implementation import SacredLayerManager
 from git_activity_tracker import GitActivityTracker
 from enhanced_drift_sacred import SacredDriftDetector
 
+# ChromaDB embedding function for Google GenAI
+class GoogleGenAIEmbeddingFunction:
+    """Custom embedding function for ChromaDB using Google's text-embedding-004"""
+    
+    def __init__(self, api_key: str, model: str = "text-embedding-004"):
+        self.client = genai.Client(api_key=api_key)
+        self.model = model
+    
+    def __call__(self, input: List[str]) -> List[List[float]]:
+        """Embed a list of texts and return embeddings"""
+        embeddings = []
+        for text in input:
+            try:
+                response = self.client.models.embed_content(
+                    model=self.model,
+                    contents=text
+                )
+                embeddings.append(response.embeddings[0].values)
+            except Exception as e:
+                logger.error(f"Embedding error for text: {e}")
+                # Return zero vector of correct dimension on error
+                embeddings.append([0.0] * 768)
+        return embeddings
+    
+    def name(self) -> str:
+        """Return the name of the embedding function"""
+        return f"google_genai_{self.model}"
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -69,9 +97,7 @@ CONFIG = {
     "default_file_extensions": [".py", ".js", ".jsx", ".ts", ".tsx", ".md", ".json", ".yaml"],
     # Legacy support - these dirs will be imported as a project on first run
     "legacy_watch_dirs": [
-        "/Users/sumitm1/Documents/myproject/Ongoing Projects/LostMindAI - Youtube Analyser Tool/agents",
-        "/Users/sumitm1/Documents/myproject/Ongoing Projects/LostMindAI - Youtube Analyser Tool/backend",
-        "/Users/sumitm1/Documents/myproject/Ongoing Projects/LostMindAI - Youtube Analyser Tool/tools"
+        # Removed hardcoded legacy directories - create projects manually instead
     ],
     "chunk_size": 1000,
     "chunk_overlap": 200,
@@ -348,6 +374,11 @@ class ProjectKnowledgeAgent:
             self.embedder = genai.Client(
                 http_options=HttpOptions(api_version="v1")
             )
+            # Create embedding function for ChromaDB
+            self.embedding_function = GoogleGenAIEmbeddingFunction(
+                api_key=os.getenv('GEMINI_API_KEY'),
+                model=config['embedding_model']
+            )
             logger.info("Google GenAI client initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize GenAI client: {e}")
@@ -396,11 +427,15 @@ class ProjectKnowledgeAgent:
         for project in self.project_manager.get_active_projects():
             collection_name = f"project_{project.project_id}"
             try:
-                self.collections[project.project_id] = self.db.get_collection(collection_name)
+                self.collections[project.project_id] = self.db.get_collection(
+                    name=collection_name,
+                    embedding_function=self.embedding_function
+                )
                 logger.info(f"Using existing collection for project: {project.name}")
             except:
                 self.collections[project.project_id] = self.db.create_collection(
                     name=collection_name,
+                    embedding_function=self.embedding_function,
                     metadata={"hnsw:space": "cosine", "project_name": project.name}
                 )
                 logger.info(f"Created new collection for project: {project.name}")
@@ -507,18 +542,15 @@ class ProjectKnowledgeAgent:
             # Chunk the content
             chunks = self.chunker.chunk_code(cleaned_content, file_path)
             
-            # Embed and store each chunk
+            # Store each chunk (ChromaDB will handle embeddings via embedding_function)
             chunk_count = 0
             for chunk in chunks:
-                embedding = await self.embed_text(chunk['content'])
-                
                 # Generate unique ID
                 chunk_id = f"{file_path}_{chunk['metadata'].get('chunk_index', chunk['metadata'].get('start_line', 0))}"
                 
                 # Store in project-specific collection
                 self.collections[project_id].upsert(
                     ids=[chunk_id],
-                    embeddings=[embedding],
                     documents=[chunk['content']],
                     metadatas=[{
                         **chunk['metadata'],
@@ -572,16 +604,13 @@ class ProjectKnowledgeAgent:
                 project_id = focused_project.project_id
         
         try:
-            # Embed the question
-            query_embedding = await self.embed_text(question)
-            
-            # Search in appropriate collection(s)
+            # Search in appropriate collection(s) (ChromaDB will handle embeddings)
             all_results = {'ids': [[]], 'distances': [[]], 'metadatas': [[]], 'documents': [[]]}
             
             if project_id and project_id in self.collections:
                 # Search specific project
                 results = self.collections[project_id].query(
-                    query_embeddings=[query_embedding],
+                    query_texts=[question],
                     n_results=k
                 )
                 all_results = results
@@ -590,7 +619,7 @@ class ProjectKnowledgeAgent:
                 for proj_id, collection in self.collections.items():
                     if self.project_manager.projects[proj_id].status == ProjectStatus.ACTIVE:
                         results = collection.query(
-                            query_embeddings=[query_embedding],
+                            query_texts=[question],
                             n_results=k
                         )
                         # Merge results
@@ -709,15 +738,9 @@ Answer:"""
                 content += f"\nTAGS: {', '.join(tags)}"
             content += f"\nDATE: {decision_obj.timestamp}"
             
-            # Embed and store
-            import asyncio
-            loop = asyncio.new_event_loop()
-            embedding = loop.run_until_complete(self.embed_text(content))
-            loop.close()
-            
+            # Store decision (ChromaDB will handle embeddings)
             self.collections[project_id].add(
                 ids=[decision_obj.id],
-                embeddings=[embedding],
                 documents=[content],
                 metadatas=[{
                     'type': 'decision',
