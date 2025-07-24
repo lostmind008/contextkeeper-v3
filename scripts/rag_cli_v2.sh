@@ -336,7 +336,30 @@ case "$1" in
             cd "$RAG_DIR" && "$PYTHON_CMD" rag_agent.py query
         else
             # Quick query
-            cd "$RAG_DIR" && "$PYTHON_CMD" rag_agent.py query --question "$*"
+            # Use LLM-enhanced query for natural language responses
+            QUESTION="$*"
+            curl -s -X POST http://localhost:5556/query_llm \
+                -H "Content-Type: application/json" \
+                -d "{\"question\": \"$QUESTION\", \"k\": 5}" | \
+                python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    if 'answer' in data:
+        print('🤖 Answer:')
+        print(data['answer'])
+        if data.get('sources'):
+            print('\\n📚 Sources:')
+            for source in data['sources']:
+                print(f'  - {source}')
+    else:
+        print('❌ Error: Could not get response from LLM')
+        print(json.dumps(data, indent=2))
+except Exception as e:
+    print(f'❌ Error parsing response: {e}')
+    sys.stdin.seek(0)
+    print(sys.stdin.read())
+"
         fi
         ;;
     
