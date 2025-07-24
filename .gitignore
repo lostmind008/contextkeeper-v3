@@ -16,8 +16,8 @@ processed_files.json
 nohup.out
 test_env.py
 
-# Development artifacts  
-docs/internal/
+# Development artifacts (retain docs/internal/ for future AI tasks)
+# docs/internal/ - Keep important planning documents and future task lists
 examples/test_*.py
 scripts/test_*.sh
 
