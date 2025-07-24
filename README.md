@@ -1,14 +1,17 @@
 # 🧠 ContextKeeper: RAG-Powered Development Context Awareness System
 ### *by LostMindAI*
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/lostmind008/contextkeeper/releases)
+[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/lostmind008/contextkeeper/releases)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 
 **ContextKeeper** is an enhanced AI agent that maintains persistent knowledge across multiple projects and coding sessions using vector search, intelligent code indexing, and comprehensive project management.
 
-## 🌟 What's New in v2.0?
+## 🌟 What's New in v3.0?
 
-ContextKeeper v2.0 now supports:
+ContextKeeper v3.0 introduces the Sacred Layer and supports:
+- **Sacred Layer**: Immutable architectural plans with 2-layer verification
+- **Drift Detection**: Real-time monitoring of code alignment with sacred plans  
+- **MCP Integration**: 8 sacred-aware tools for Claude Code integration
 - **Multi-Project Management**: Track multiple projects simultaneously with independent configurations
 - **Project Lifecycle**: Create, pause, resume, archive, and focus on different projects
 - **Decision Tracking**: Record and retrieve architectural decisions with reasoning
@@ -59,7 +62,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=/path/to/your-service-account.json
 
 ### 3. Start the Agent
 
-No manual configuration needed! With v2.0, you can dynamically add projects:
+No manual configuration needed! With v3.0, you can dynamically add projects:
 ```bash
 # Start the agent
 ./rag_cli.sh start
@@ -70,22 +73,6 @@ No manual configuration needed! With v2.0, you can dynamically add projects:
 # The agent will automatically watch the project directories
 ```
 
-### 4. Make Scripts Executable
-
-```bash
-chmod +x rag_cli.sh
-```
-
-### 5. Start the Agent
-
-```bash
-python rag_agent.py start
-```
-
-Or use the CLI wrapper:
-```bash
-./rag_cli.sh start
-```
 
 ## Usage Examples
 
@@ -104,11 +91,6 @@ Or use the CLI wrapper:
 ./rag_cli.sh morning
 ```
 
-### YouTube Analyzer specific queries:
-```bash
-./rag_cli.sh youtube gemini  # Show Gemini integration
-./rag_cli.sh youtube agents  # List all agents
-```
 
 ## 🚀 Features
 
@@ -116,7 +98,7 @@ Or use the CLI wrapper:
 - 🛡️ **Security**: Automatically redacts API keys and sensitive data
 - 🧠 **Smart Chunking**: Preserves code structure for better search results
 - 📡 **API Access**: Query via HTTP API at http://localhost:5555
-- 🎯 **Project-Specific**: Tailored for your YouTube Analyzer development
+- 🎯 **Project-Agnostic**: Works with any development project
 - ⚡ **Fast Search**: Vector similarity search finds relevant code instantly
 - 📝 **Multiple Formats**: Supports .py, .js, .jsx, .ts, .tsx, .md, .json, .yaml
 
@@ -203,7 +185,7 @@ ContextKeeper now includes a powerful MCP (Model Context Protocol) server that i
    ```bash
    cd contextkeeper
    source venv/bin/activate
-   python rag_agent.py server --port 5556
+   python rag_agent.py start
    ```
 
 ### Available MCP Tools

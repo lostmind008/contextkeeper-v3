@@ -4,7 +4,7 @@
 
 1. **First Time Setup**:
    ```bash
-   cd ~/rag-agent
+   cd contextkeeper
    ./setup.sh
    ```
 
@@ -36,20 +36,20 @@
 ./rag_cli.sh logs
 ```
 
-## 🎯 YouTube Analyzer Specific
+## 🎯 Sacred Layer Commands (v3.0)
 
 ```bash
-# Show Gemini setup
-./rag_cli.sh youtube gemini
+# Create sacred plan
+./rag_cli.sh sacred create <project_id> "Plan Title" plan.md
 
-# List agents
-./rag_cli.sh youtube agents
+# Approve sacred plan (requires 2-layer verification)
+./rag_cli.sh sacred approve <plan_id>
 
-# Show API configuration
-./rag_cli.sh youtube api
+# Check drift from sacred plans
+./rag_cli.sh sacred drift <project_id>
 
-# Check past errors
-./rag_cli.sh youtube errors
+# Query sacred plans
+./rag_cli.sh sacred query <project_id> "search query"
 ```
 
 ## 🔧 API Access
@@ -84,7 +84,9 @@ curl -X POST http://localhost:5555/decision \
 
 - `rag_agent.py` - Main agent code
 - `rag_cli.sh` - Command line wrapper
-- `youtube_analyzer_integration.py` - Helper functions for your project
+- `sacred_layer_implementation.py` - Sacred Layer core functionality
+- `git_activity_tracker.py` - Git integration for activity tracking
+- `enhanced_drift_sacred.py` - Drift detection system
 - `requirements.txt` - Python dependencies
 - `setup.sh` - Quick setup script
 - `.env.template` - Environment variable template

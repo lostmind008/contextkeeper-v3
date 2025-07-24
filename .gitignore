@@ -35,3 +35,5 @@ Thumbs.db
 *.bak
 *.cache
 *.log
+node_modules/
+*/node_modules/

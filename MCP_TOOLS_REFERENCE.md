@@ -983,7 +983,7 @@ async function createAndApproveSacredPlan(projectId, title, content) {
    # Terminal 1: Start RAG Agent
    cd contextkeeper
    source venv/bin/activate
-   python rag_agent.py server --port 5556
+   python rag_agent.py start
    
    # Terminal 2: Test MCP
    claude mcp list
