@@ -104,3 +104,62 @@ curl -X POST http://localhost:5556/query_llm \
   -H "Content-Type: application/json" \
   -d '{"question": "What is the sacred layer?", "k": 5}'
 ```
+
+## MCP Server Integration (Phase 3)
+
+### MCP Tools Available
+The ContextKeeper MCP server provides 8 sacred-aware tools for Claude Code integration:
+
+1. **get_sacred_context** - Retrieve sacred architectural plans
+2. **check_sacred_drift** - Real-time violation detection
+3. **query_with_llm** - Natural language responses from knowledge base
+4. **export_development_context** - Complete project context
+5. **get_development_context** - Comprehensive project status
+6. **intelligent_search** - Semantic search across plans and code
+7. **create_sacred_plan** - Sacred plan creation workflow
+8. **health_check** - System status verification
+
+### MCP Server Configuration
+**Location**: `mcp-server/enhanced_mcp_server.js`  
+**Protocol**: STDIO for Claude Code compatibility  
+**Port**: Connected to Sacred Layer on port 5556  
+
+### Claude Code Integration Command
+```bash
+claude mcp add contextkeeper-sacred "node /Users/sumitm1/Documents/myproject/Ongoing Projects/ContextKeeper Pro/ContextKeeper v3 Upgrade/contextkeeper/mcp-server/enhanced_mcp_server.js"
+```
+
+### MCP Tool Usage Examples
+
+#### Get Sacred Context
+```json
+{
+  "tool": "get_sacred_context",
+  "arguments": {
+    "project_id": "proj_123",
+    "query": "authentication architecture"
+  }
+}
+```
+
+#### Check Sacred Drift
+```json
+{
+  "tool": "check_sacred_drift", 
+  "arguments": {
+    "project_id": "proj_123"
+  }
+}
+```
+
+#### Create Sacred Plan
+```json
+{
+  "tool": "create_sacred_plan",
+  "arguments": {
+    "project_id": "proj_123",
+    "title": "Database Schema",
+    "content": "# Database Architecture\n\nApproved schema design..."
+  }
+}
+```
