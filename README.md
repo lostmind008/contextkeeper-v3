@@ -104,7 +104,7 @@ python rag_agent.py start
 ./scripts/rag_cli.sh objectives add "Implement user auth" "High priority"
 ```
 
-### Sacred Plan Management (🔄 Coming in Phase 2)
+### Sacred Plan Management (✅ Currently Working)
 ```bash
 # Create architectural plan
 ./scripts/rag_cli.sh sacred create proj_123 "Database Architecture" plan.md
@@ -114,6 +114,9 @@ python rag_agent.py start
 
 # Check alignment
 ./scripts/rag_cli.sh sacred drift proj_123
+
+# Check Sacred Layer health
+curl http://localhost:5556/sacred/health
 ```
 
 ### Claude Code Integration
