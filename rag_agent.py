@@ -103,7 +103,23 @@ CONFIG = {
         ".mypy_cache",
         ".sass-cache",
         "bower_components",
-        "jspm_packages"
+        "jspm_packages",
+        # IDE and editor directories
+        ".vscode",
+        ".idea",
+        ".vs",
+        ".atom",
+        ".sublime-text",
+        # Additional build/cache directories
+        "target",
+        "bin",
+        "obj",
+        ".gradle",
+        ".mvn",
+        # OS and system directories
+        ".Trash",
+        "System Volume Information",
+        "$RECYCLE.BIN"
     ],
     # File patterns to ignore during ingestion
     "ignore_files": [
@@ -123,7 +139,34 @@ CONFIG = {
         "package-lock.json",
         "yarn.lock",
         "*.bundle.js",
-        "*.chunk.js"
+        "*.chunk.js",
+        # Binary and media files
+        "*.exe", "*.dll", "*.bin", "*.dat",
+        "*.jpg", "*.jpeg", "*.png", "*.gif", "*.bmp", "*.svg", "*.ico",
+        "*.mp3", "*.mp4", "*.avi", "*.mov", "*.wav", "*.pdf",
+        # Archive files
+        "*.zip", "*.tar", "*.gz", "*.rar", "*.7z",
+        # Non-relevant programming languages for this project
+        "*.java", "*.class", "*.jar",
+        "*.c", "*.cpp", "*.h", "*.hpp", "*.o",
+        "*.cs", "*.vb", "*.fs",
+        "*.php", "*.rb", "*.go", "*.rs", "*.kt", "*.swift",
+        "*.scala", "*.clj", "*.r", "*.m", "*.pl", "*.lua",
+        # Database and other binary formats
+        "*.db", "*.sqlite", "*.mdb",
+        "*.lock", "*.pid",
+        # IDE and editor files
+        "*.swp", "*.swo", "*~", "*.bak", "*.orig",
+        ".gitignore", ".gitattributes", ".gitmodules",
+        "*.iml", "*.sln", "*.vcxproj", "*.csproj",
+        # Configuration files that might contain sensitive data
+        "*.env", "*.env.*", ".env.*",
+        # Test and coverage files
+        "*.coverage", ".coverage.*", "coverage.xml",
+        # Package manager files
+        "composer.lock", "Pipfile.lock", "poetry.lock",
+        # Documentation builds
+        "*.pdf", "*.docx", "*.xlsx", "*.pptx"
     ],
     "sensitive_patterns": [
         r'api[_-]?key\s*[:=]\s*["\']([^"\']+)["\']',
@@ -715,7 +758,7 @@ class CodebaseWatcher(FileSystemEventHandler):
 class RAGServer:
     """Flask API server for RAG agent"""
     
-    def __init__(self, agent: ProjectKnowledgeAgent, port: int = 5555):
+    def __init__(self, agent: ProjectKnowledgeAgent, port: int = 5556):
         self.agent = agent
         self.app = Flask(__name__)
         CORS(self.app)

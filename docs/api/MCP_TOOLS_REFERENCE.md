@@ -950,7 +950,7 @@ async function createAndApproveSacredPlan(projectId, title, content) {
   console.log('Next: Use verification code to approve the plan');
   
   // Step 2: Approval happens outside MCP (requires manual 2-layer verification)
-  // User must use CLI: ./rag_cli.sh sacred approve {plan_id} --verification-code {code}
+  // User must use CLI: ./scripts/rag_cli.sh sacred approve {plan_id} --verification-code {code}
   
   return creation;
 }

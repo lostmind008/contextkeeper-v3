@@ -1,80 +1,91 @@
-# Migration Guide: RAG Agent v1.0 to v2.0
+# Migration Guide: ContextKeeper v2.0 to v3.0 Sacred Layer
 
 ## Overview
 
-RAG Agent v2.0 introduces multi-project support while maintaining full backward compatibility. Your existing setup will continue to work, and your YouTube Analyzer project will be automatically imported.
+ContextKeeper v3.0 introduces the Sacred Layer - immutable architectural plan storage with 2-layer verification. This upgrade maintains full backward compatibility with v2.0 multi-project functionality while adding sacred plan protection for AI collaboration.
 
-## What's New in v2.0
+## What's New in v3.0
 
 ### Major Features
-- **Multi-Project Support**: Track multiple projects simultaneously
-- **Project Lifecycle Management**: Pause, resume, and archive projects
-- **Decision Tracking**: Record architectural decisions with reasoning
-- **Objective Management**: Set and track development goals
-- **Context Export**: Generate rich context for AI assistants
-- **Project Isolation**: Each project has its own vector storage
+- **Sacred Layer**: Immutable architectural plan storage with 2-layer verification
+- **Drift Detection**: Real-time monitoring of development alignment with sacred plans
+- **MCP Integration**: 8 sacred-aware tools for Claude Code integration
+- **Git Activity Tracking**: Replace file watching with reliable git-based monitoring
+- **LLM Enhancement**: Natural language responses for technical queries
+- **Enhanced Security**: Environment key verification for plan approval
 
 ### Backward Compatibility
-- Your existing YouTube Analyzer configuration will be automatically imported as a project
-- All v1.0 commands continue to work
-- The API remains compatible with existing integrations
+- All v2.0 multi-project functionality preserved
+- Existing project configurations continue to work
+- The API maintains compatibility with existing integrations
+- Legacy CLI commands remain functional
 
 ## Quick Start
 
-### 1. First Run
-When you first run v2.0, it will:
+### 1. Environment Setup
+Set up the Sacred Layer environment key:
 ```bash
-# Start the agent (it will auto-import your YouTube Analyzer project)
-./rag_cli.sh start
+# Set the sacred approval key
+export SACRED_APPROVAL_KEY="your-secret-key"
 
-# Check your projects
-./rag_cli.sh projects list
+# Start the Sacred Layer (port 5556)
+python rag_agent.py start
 ```
 
-### 2. Create Additional Projects
+### 2. Create Sacred Plans
 ```bash
-# Create a new project
-./rag_cli.sh projects create "My New Project" /path/to/project
+# Create a sacred plan
+./scripts/rag_cli.sh sacred create proj_123 "Database Architecture" db_plan.md
 
-# Focus on the new project
-./rag_cli.sh projects focus proj_<id>
+# Approve with 2-layer verification
+./scripts/rag_cli.sh sacred approve plan_abc123
 ```
 
-### 3. Use Enhanced Features
+### 3. Monitor Drift Detection
 ```bash
-# Add a decision to the current project
-./rag_cli.sh decisions add "Using Redis for caching" "Better performance than in-memory"
+# Check alignment with sacred plans
+./scripts/rag_cli.sh sacred drift proj_123
 
-# Add an objective
-./rag_cli.sh objectives add "Implement user authentication"
+# Query sacred context
+./scripts/rag_cli.sh sacred query proj_123 "authentication approach"
+```
 
-# Get project context for AI assistants
-./rag_cli.sh context export
+### 4. Claude Code Integration
+Configure MCP server in Claude Code settings:
+```json
+{
+  "contextkeeper-sacred": {
+    "type": "stdio",
+    "command": "node",
+    "args": ["[path]/mcp-server/enhanced_mcp_server.js"],
+    "env": {"RAG_AGENT_URL": "http://localhost:5556"}
+  }
+}
 ```
 
 ## Command Changes
 
 ### Legacy Commands (Still Work)
 ```bash
-./rag_cli.sh ask "What authentication system did I use?"
-./rag_cli.sh add "Using CrewAI for multi-agent system"
-./rag_cli.sh morning
+./scripts/rag_cli.sh ask "What authentication system did I use?"
+./scripts/rag_cli.sh add "Using CrewAI for multi-agent system"
+./scripts/rag_cli.sh morning
 ```
 
 ### New v2.0 Commands
 ```bash
 # Project management
-./rag_cli.sh projects create|list|focus|pause|resume|archive
+./scripts/rag_cli.sh projects create|list|focus|pause|resume|archive
 
 # Decision tracking
-./rag_cli.sh decisions add "decision" "reasoning" "tags"
+./scripts/rag_cli.sh decisions add "decision" "reasoning" "tags"
 
 # Objective tracking
-./rag_cli.sh objectives add|complete|list
+./scripts/rag_cli.sh objectives add|complete|list
 
 # Context export
-./rag_cli.sh context export
-./rag_cli.sh briefing
+./scripts/rag_cli.sh context export
+./scripts/rag_cli.sh briefing
 ```
 
 ## API Changes
@@ -83,7 +94,7 @@ When you first run v2.0, it will:
 Now supports optional project filtering:
 ```bash
 # Query specific project
-curl -X POST http://localhost:5555/query \
+curl -X POST http://localhost:5556/query \
   -H "Content-Type: application/json" \
   -d '{"question": "Show auth code", "project_id": "proj_abc123"}'
 ```
@@ -113,7 +124,7 @@ POST /projects/<id>/objectives/<oid>/complete
 If you want to fully migrate old data to the new structure:
 ```bash
 # Re-ingest your project files
-./rag_cli.sh projects focus proj_<youtube_id>
+./scripts/rag_cli.sh projects focus proj_<youtube_id>
 python rag_agent.py ingest --path "/path/to/youtube-analyzer"
 ```
 
@@ -152,7 +163,7 @@ source ~/rag-agent/venv/bin/activate
 ls ~/.rag_projects/
 
 # Restart agent
-./rag_cli.sh restart
+./scripts/rag_cli.sh restart
 ```
 
 ### Import Issues
@@ -160,7 +171,7 @@ If your YouTube Analyzer project wasn't imported:
 1. Check that the directories exist
 2. Manually create the project:
 ```bash
-./rag_cli.sh projects create "YouTube Analyzer" "/path/to/project"
+./scripts/rag_cli.sh projects create "YouTube Analyzer" "/path/to/project"
 ```
 
 ## Best Practices

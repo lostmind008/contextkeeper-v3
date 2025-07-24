@@ -1,6 +1,6 @@
 # API Reference
 
-**Base URL**: `http://localhost:5555`
+**Base URL**: `http://localhost:5556`
 
 ## v2.0 Endpoints (Current)
 
@@ -45,7 +45,7 @@ POST   /projects/<id>/git/sync      # Sync from Git
 
 ### Create Sacred Plan
 ```bash
-curl -X POST http://localhost:5555/sacred/plans \
+curl -X POST http://localhost:5556/sacred/plans \
   -H "Content-Type: application/json" \
   -d '{
     "project_id": "proj_123",
@@ -56,7 +56,7 @@ curl -X POST http://localhost:5555/sacred/plans \
 
 ### Approve Sacred Plan (2-Layer Verification)
 ```bash
-curl -X POST http://localhost:5555/sacred/plans/plan_abc123/approve \
+curl -X POST http://localhost:5556/sacred/plans/plan_abc123/approve \
   -H "Content-Type: application/json" \
   -d '{
     "approver": "sumitm1",
@@ -67,7 +67,7 @@ curl -X POST http://localhost:5555/sacred/plans/plan_abc123/approve \
 
 ### Check Drift Status
 ```bash
-curl "http://localhost:5555/sacred/drift/proj_123?hours=24"
+curl "http://localhost:5556/sacred/drift/proj_123?hours=24"
 ```
 
 ### Query with LLM Enhancement

@@ -21,47 +21,47 @@
 
 ```bash
 # Query knowledge base
-./rag_cli.sh ask "What payment system are we using?"
+./scripts/rag_cli.sh ask "What payment system are we using?"
 
 # Add a decision
-./rag_cli.sh add "Using Stripe for payments"
+./scripts/rag_cli.sh add "Using Stripe for payments"
 
 # Morning briefing
-./rag_cli.sh morning
+./scripts/rag_cli.sh morning
 
 # Check status
-./rag_cli.sh status
+./scripts/rag_cli.sh status
 
 # View logs
-./rag_cli.sh logs
+./scripts/rag_cli.sh logs
 ```
 
 ## 🎯 Sacred Layer Commands (v3.0)
 
 ```bash
 # Create sacred plan
-./rag_cli.sh sacred create <project_id> "Plan Title" plan.md
+./scripts/rag_cli.sh sacred create <project_id> "Plan Title" plan.md
 
 # Approve sacred plan (requires 2-layer verification)
-./rag_cli.sh sacred approve <plan_id>
+./scripts/rag_cli.sh sacred approve <plan_id>
 
 # Check drift from sacred plans
-./rag_cli.sh sacred drift <project_id>
+./scripts/rag_cli.sh sacred drift <project_id>
 
 # Query sacred plans
-./rag_cli.sh sacred query <project_id> "search query"
+./scripts/rag_cli.sh sacred query <project_id> "search query"
 ```
 
 ## 🔧 API Access
 
 ```bash
 # Query via API
-curl -X POST http://localhost:5555/query \
+curl -X POST http://localhost:5556/query \
   -H "Content-Type: application/json" \
   -d '{"question": "Show Gemini integration code"}'
 
 # Add decision via API
-curl -X POST http://localhost:5555/decision \
+curl -X POST http://localhost:5556/decision \
   -H "Content-Type: application/json" \
   -d '{"decision": "Using Gemini 2.5", "context": "Better multimodal support"}'
 ```

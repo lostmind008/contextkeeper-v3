@@ -16,7 +16,7 @@ source venv/bin/activate
 python rag_agent.py start
 
 # 3. Test current functionality
-./rag_cli.sh projects list
+./scripts/rag_cli.sh projects list
 
 # 4. Run v3 upgrade (when ready)
 ./upgrade_to_v3_sacred.sh
@@ -95,24 +95,24 @@ v3 Approved Plan for AI Agent/
 ### Sacred Plan Workflow (v3.0 target)
 ```bash
 # 1. Create plan
-./rag_cli.sh sacred create proj_123 "Auth Architecture" auth_plan.md
+./scripts/rag_cli.sh sacred create proj_123 "Auth Architecture" auth_plan.md
 
 # 2. Approve with 2-layer verification  
-./rag_cli.sh sacred approve plan_abc123
+./scripts/rag_cli.sh sacred approve plan_abc123
 
 # 3. Check alignment
-./rag_cli.sh sacred drift proj_123
+./scripts/rag_cli.sh sacred drift proj_123
 ```
 
 ### LLM-Enhanced Query Testing (Phase 2.5)
 ```bash
 # Test natural language responses
-curl -X POST http://localhost:5555/query_llm \
+curl -X POST http://localhost:5556/query_llm \
   -H "Content-Type: application/json" \
   -d '{"question": "What is the sacred layer?", "k": 5}'
 
 # Compare with raw query  
-curl -X POST http://localhost:5555/query \
+curl -X POST http://localhost:5556/query \
   -H "Content-Type: application/json" \
   -d '{"question": "What is the sacred layer?", "k": 5}'
 ```

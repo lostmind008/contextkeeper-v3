@@ -73,8 +73,8 @@ mkdir -p rag_knowledge_db/sacred_chromadb
 python rag_agent.py start
 
 # Test basic functionality
-./rag_cli.sh projects list
-./rag_cli.sh ask "test query"
+./scripts/rag_cli.sh projects list
+./scripts/rag_cli.sh ask "test query"
 ```
 
 ### Test v3.0 Upgrade (When Ready)
@@ -83,7 +83,7 @@ python rag_agent.py start
 ./upgrade_to_v3_sacred.sh
 
 # Test sacred layer
-./rag_cli.sh sacred create test_project "Test Plan" 
+./scripts/rag_cli.sh sacred create test_project "Test Plan" 
 ```
 
 ## Troubleshooting
@@ -122,7 +122,7 @@ ls tests/sacred/
 # Check agent logs
 tail -f rag_agent.log
 
-# Verify API health (v2.0 on 5555, v3.0 Sacred Layer on 5556)
+# Verify API health (v2.0 on 5556, v3.0 Sacred Layer on 5556)
 curl http://localhost:5556/health
 
 # Test embeddings

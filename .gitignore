@@ -8,13 +8,18 @@ venv/
 env/
 ENV/
 
-# RAG Agent specific
+# ContextKeeper specific
 rag_knowledge_db/
 processed_files.json
-rag_agent.log
-rag_agent.out
+*.log
+*.out
 nohup.out
 test_env.py
+
+# Development artifacts  
+docs/internal/
+examples/test_*.py
+scripts/test_*.sh
 
 # Environment variables
 .env

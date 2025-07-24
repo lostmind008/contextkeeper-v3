@@ -3,7 +3,8 @@
 # Make executable: chmod +x rag_cli_v2.sh
 
 # Configuration
-RAG_DIR="$HOME/rag-agent"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+RAG_DIR="$(dirname "$SCRIPT_DIR")"
 PYTHON_CMD="$RAG_DIR/venv/bin/python3"
 
 # Colors for output
@@ -23,12 +24,12 @@ CONTEXT_ICON="🧠"
 
 # Ensure RAG agent is running
 check_agent() {
-    if ! curl -s http://localhost:5555/health > /dev/null 2>&1; then
+    if ! curl -s http://localhost:5556/health > /dev/null 2>&1; then
         echo -e "${RED}❌ RAG Agent not running!${NC}"
         echo -e "${BLUE}Starting agent...${NC}"
         cd "$RAG_DIR" && nohup $PYTHON_CMD rag_agent.py start > rag_agent.out 2>&1 &
         sleep 5
-        if curl -s http://localhost:5555/health > /dev/null 2>&1; then
+        if curl -s http://localhost:5556/health > /dev/null 2>&1; then
             echo -e "${GREEN}✅ Agent started successfully${NC}"
         else
             echo -e "${RED}Failed to start agent. Check logs at $RAG_DIR/rag_agent.out${NC}"
@@ -43,7 +44,7 @@ handle_projects() {
     case "$1" in
         list|ls|"")
             echo -e "${BLUE}${PROJECT_ICON} Projects:${NC}"
-            curl -s http://localhost:5555/projects | python3 -m json.tool
+            curl -s http://localhost:5556/projects | python3 -m json.tool
             ;;
         create)
             shift
@@ -55,7 +56,7 @@ handle_projects() {
             ROOT_PATH="$2"
             DESCRIPTION="${3:-}"
             
-            RESPONSE=$(curl -s -X POST http://localhost:5555/projects \
+            RESPONSE=$(curl -s -X POST http://localhost:5556/projects \
                 -H "Content-Type: application/json" \
                 -d "{\"name\": \"$PROJECT_NAME\", \"root_path\": \"$ROOT_PATH\", \"description\": \"$DESCRIPTION\"}")
             
@@ -69,7 +70,7 @@ handle_projects() {
                 echo "Usage: rag projects focus <project_id>"
                 exit 1
             fi
-            curl -s -X POST "http://localhost:5555/projects/$PROJECT_ID/focus"
+            curl -s -X POST "http://localhost:5556/projects/$PROJECT_ID/focus"
             echo -e "${GREEN}✅ Focused on project: $PROJECT_ID${NC}"
             ;;
         pause)
@@ -79,7 +80,7 @@ handle_projects() {
                 echo "Usage: rag projects pause <project_id>"
                 exit 1
             fi
-            curl -s -X PUT "http://localhost:5555/projects/$PROJECT_ID/status" \
+            curl -s -X PUT "http://localhost:5556/projects/$PROJECT_ID/status" \
                 -H "Content-Type: application/json" \
                 -d '{"status": "paused"}'
             echo -e "${YELLOW}⏸️  Paused project: $PROJECT_ID${NC}"
@@ -91,7 +92,7 @@ handle_projects() {
                 echo "Usage: rag projects resume <project_id>"
                 exit 1
             fi
-            curl -s -X PUT "http://localhost:5555/projects/$PROJECT_ID/status" \
+            curl -s -X PUT "http://localhost:5556/projects/$PROJECT_ID/status" \
                 -H "Content-Type: application/json" \
                 -d '{"status": "active"}'
             echo -e "${GREEN}▶️  Resumed project: $PROJECT_ID${NC}"
@@ -107,7 +108,7 @@ handle_projects() {
             read -n 1 -r
             echo
             if [[ $REPLY =~ ^[Yy]$ ]]; then
-                curl -s -X PUT "http://localhost:5555/projects/$PROJECT_ID/status" \
+                curl -s -X PUT "http://localhost:5556/projects/$PROJECT_ID/status" \
                     -H "Content-Type: application/json" \
                     -d '{"status": "archived"}'
                 echo -e "${PURPLE}📦 Archived project: $PROJECT_ID${NC}"
@@ -150,7 +151,7 @@ handle_decisions() {
                 TAGS="[]"
             fi
             
-            RESPONSE=$(curl -s -X POST http://localhost:5555/decision \
+            RESPONSE=$(curl -s -X POST http://localhost:5556/decision \
                 -H "Content-Type: application/json" \
                 -d "{\"decision\": \"$DECISION\", \"reasoning\": \"$REASONING\", \"tags\": $TAGS}")
             
@@ -173,7 +174,7 @@ handle_objectives() {
         add)
             shift; shift
             if [ -z "$PROJECT_ID" ]; then
-                PROJECTS=$(curl -s http://localhost:5555/projects)
+                PROJECTS=$(curl -s http://localhost:5556/projects)
                 FOCUSED_ID=$(echo "$PROJECTS" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('focused_project', ''))")
                 if [ -z "$FOCUSED_ID" ]; then
                     echo -e "${RED}No focused project. Please specify project ID or focus a project first.${NC}"
@@ -192,7 +193,7 @@ handle_objectives() {
                 PRIORITY="${3:-medium}"
             fi
             
-            RESPONSE=$(curl -s -X POST "http://localhost:5555/projects/$PROJECT_ID/objectives" \
+            RESPONSE=$(curl -s -X POST "http://localhost:5556/projects/$PROJECT_ID/objectives" \
                 -H "Content-Type: application/json" \
                 -d "{\"title\": \"$TITLE\", \"description\": \"$DESCRIPTION\", \"priority\": \"$PRIORITY\"}")
             
@@ -207,19 +208,19 @@ handle_objectives() {
                 exit 1
             fi
             
-            curl -s -X POST "http://localhost:5555/projects/$PROJECT_ID/objectives/$OBJECTIVE_ID/complete"
+            curl -s -X POST "http://localhost:5556/projects/$PROJECT_ID/objectives/$OBJECTIVE_ID/complete"
             echo -e "${GREEN}✅ Completed objective${NC}"
             ;;
         list)
             shift
             if [ -z "$PROJECT_ID" ]; then
-                PROJECTS=$(curl -s http://localhost:5555/projects)
+                PROJECTS=$(curl -s http://localhost:5556/projects)
                 FOCUSED_ID=$(echo "$PROJECTS" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('focused_project', ''))")
                 PROJECT_ID=$FOCUSED_ID
             fi
             
             if [ -n "$PROJECT_ID" ]; then
-                CONTEXT=$(curl -s "http://localhost:5555/projects/$PROJECT_ID/context")
+                CONTEXT=$(curl -s "http://localhost:5556/projects/$PROJECT_ID/context")
                 echo -e "${CYAN}${OBJECTIVE_ICON} Objectives for project $PROJECT_ID:${NC}"
                 echo "$CONTEXT" | python3 -c "
 import sys, json
@@ -250,13 +251,13 @@ handle_context() {
             shift
             PROJECT_ID="$1"
             if [ -z "$PROJECT_ID" ]; then
-                PROJECTS=$(curl -s http://localhost:5555/projects)
+                PROJECTS=$(curl -s http://localhost:5556/projects)
                 FOCUSED_ID=$(echo "$PROJECTS" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('focused_project', ''))")
                 PROJECT_ID=$FOCUSED_ID
             fi
             
             if [ -n "$PROJECT_ID" ]; then
-                CONTEXT=$(curl -s "http://localhost:5555/projects/$PROJECT_ID/context")
+                CONTEXT=$(curl -s "http://localhost:5556/projects/$PROJECT_ID/context")
                 echo -e "${CYAN}${CONTEXT_ICON} Project Context:${NC}"
                 echo "$CONTEXT" | python3 -m json.tool
             else
@@ -277,20 +278,20 @@ handle_briefing() {
     echo -e "${CYAN}=================${NC}"
     
     # Get project summary
-    PROJECTS=$(curl -s http://localhost:5555/projects)
+    PROJECTS=$(curl -s http://localhost:5556/projects)
     echo "$PROJECTS" | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
-print(f\"Total Projects: {data['total_projects']}")
-print(f\"Active: {data['active_projects']} | Paused: {data['paused_projects']} | Archived: {data['archived_projects']}")
+print(f\"Total Projects: {data['total_projects']}\")
+print(f\"Active: {data['active_projects']} | Paused: {data['paused_projects']} | Archived: {data['archived_projects']}\")
 print()
 print('Active Projects:')
 for proj in data['projects']:
     if proj['status'] == 'active':
         focused = '🎯 ' if proj['id'] == data.get('focused_project') else '   '
         print(f\"{focused}{proj['name']} ({proj['id']})\")
-        print(f\"    Pending objectives: {proj['objectives_pending']}")
-        print(f\"    Total decisions: {proj['total_decisions']}")
+        print(f\"    Pending objectives: {proj['objectives_pending']}\")
+        print(f\"    Total decisions: {proj['total_decisions']}\")
         print(f\"    Last active: {proj['last_active']}\")
 "
 }
@@ -358,7 +359,7 @@ case "$1" in
         echo -e "${BLUE}Stopping RAG Agent...${NC}"
         pkill -f "rag_agent.py start"
         sleep 2
-        if curl -s http://localhost:5555/health > /dev/null 2>&1; then
+        if curl -s http://localhost:5556/health > /dev/null 2>&1; then
             echo -e "${RED}❌ Failed to stop agent${NC}"
         else
             echo -e "${GREEN}✅ Agent stopped${NC}"
@@ -372,9 +373,9 @@ case "$1" in
         ;;
     
     status)
-        if curl -s http://localhost:5555/health > /dev/null 2>&1; then
+        if curl -s http://localhost:5556/health > /dev/null 2>&1; then
             echo -e "${GREEN}✅ Agent is running${NC}"
-            HEALTH=$(curl -s http://localhost:5555/health)
+            HEALTH=$(curl -s http://localhost:5556/health)
             echo "Health: $HEALTH"
         else
             echo -e "${RED}❌ Agent is not running${NC}"

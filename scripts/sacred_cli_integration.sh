@@ -78,7 +78,7 @@ create_sacred_plan() {
     echo "File: $file_path"
     
     # Make API call to create sacred plan
-    response=$(curl -s -X POST http://localhost:5555/sacred/plans \
+    response=$(curl -s -X POST http://localhost:5556/sacred/plans \
         -H "Content-Type: application/json" \
         -d "{
             \"project_id\": \"$project_id\",
@@ -127,7 +127,7 @@ approve_sacred_plan() {
     echo "Approving sacred plan..."
     
     # Make API call to approve
-    response=$(curl -s -X POST "http://localhost:5555/sacred/plans/$plan_id/approve" \
+    response=$(curl -s -X POST "http://localhost:5556/sacred/plans/$plan_id/approve" \
         -H "Content-Type: application/json" \
         -d "{
             \"approver\": \"$approver\",
@@ -160,7 +160,7 @@ check_sacred_drift() {
     echo "Analyzing sacred drift for project: $project_id"
     
     # Make API call
-    response=$(curl -s "http://localhost:5555/sacred/drift/$project_id")
+    response=$(curl -s "http://localhost:5556/sacred/drift/$project_id")
     
     # Parse response
     status=$(echo "$response" | jq -r '.status')
@@ -218,7 +218,7 @@ list_sacred_plans() {
     echo ""
     
     # Make API call
-    response=$(curl -s "http://localhost:5555/sacred/plans?project_id=$project_id")
+    response=$(curl -s "http://localhost:5556/sacred/plans?project_id=$project_id")
     
     # Display plans
     echo "$response" | jq -r '.plans[] | "\(.status_icon) [\(.plan_id)] \(.title) - \(.status) (created: \(.created_at))"'
@@ -237,7 +237,7 @@ query_sacred_plans() {
     echo "Querying sacred plans..."
     
     # Make API call
-    response=$(curl -s -X POST http://localhost:5555/sacred/query \
+    response=$(curl -s -X POST http://localhost:5556/sacred/query \
         -H "Content-Type: application/json" \
         -d "{
             \"project_id\": \"$project_id\",
@@ -253,7 +253,7 @@ verify_sacred_integrity() {
     echo "Verifying sacred database integrity..."
     
     # Make API call
-    response=$(curl -s http://localhost:5555/sacred/verify)
+    response=$(curl -s http://localhost:5556/sacred/verify)
     
     # Display results
     status=$(echo "$response" | jq -r '.status')
@@ -280,7 +280,7 @@ export_sacred_plans() {
     echo "Exporting sacred plans for project: $project_id"
     
     # Make API call
-    curl -s "http://localhost:5555/sacred/export?project_id=$project_id&format=$format"
+    curl -s "http://localhost:5556/sacred/export?project_id=$project_id&format=$format"
 }
 
 # Helper function to display sacred status icons
