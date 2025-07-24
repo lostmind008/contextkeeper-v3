@@ -1,5 +1,5 @@
 #!/bin/bash
-# rag_cli.sh - Wrapper for Multi-Project RAG Knowledge Agent v2.0
+# rag_cli.sh - Wrapper for ContextKeeper v3.0 Sacred Layer
 # This script now delegates to the enhanced v2 CLI
 # Make executable: chmod +x rag_cli.sh
 

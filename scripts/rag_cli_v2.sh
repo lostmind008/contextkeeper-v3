@@ -1,5 +1,5 @@
 #!/bin/bash
-# rag_cli_v2.sh - Enhanced CLI for Multi-Project RAG Knowledge Agent v2.0
+# rag_cli_v2.sh - Enhanced CLI for ContextKeeper v3.0 Sacred Layer
 # Make executable: chmod +x rag_cli_v2.sh
 
 # Configuration
@@ -387,7 +387,7 @@ case "$1" in
         ;;
     
     help|*)
-        echo "RAG Knowledge Agent v2.0 - Multi-Project Support"
+        echo "ContextKeeper v3.0 Sacred Layer - Multi-Project Support"
         echo "==============================================="
         echo ""
         echo "Project Management:"
