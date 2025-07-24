@@ -124,9 +124,19 @@ The ContextKeeper MCP server provides 8 sacred-aware tools for Claude Code integ
 **Protocol**: STDIO for Claude Code compatibility  
 **Port**: Connected to Sacred Layer on port 5556  
 
-### Claude Code Integration Command
-```bash
-claude mcp add contextkeeper-sacred "node /Users/sumitm1/Documents/myproject/Ongoing Projects/ContextKeeper Pro/ContextKeeper v3 Upgrade/contextkeeper/mcp-server/enhanced_mcp_server.js"
+### Claude Code Integration Configuration
+Add this to your Claude Code MCP configuration:
+```json
+"contextkeeper-sacred": {
+  "type": "stdio",
+  "command": "node",
+  "args": [
+    "/Users/sumitm1/Documents/myproject/Ongoing Projects/ContextKeeper Pro/ContextKeeper v3 Upgrade/contextkeeper/mcp-server/enhanced_mcp_server.js"
+  ],
+  "env": {
+    "RAG_AGENT_URL": "http://localhost:5556"
+  }
+}
 ```
 
 ### MCP Tool Usage Examples

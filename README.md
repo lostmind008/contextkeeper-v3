@@ -179,6 +179,54 @@ Add to your Claude Custom Instructions:
 When context is near limit, query http://localhost:5555/query for project context.
 ```
 
+## 🔌 MCP Integration (v3.0)
+
+ContextKeeper now includes a powerful MCP (Model Context Protocol) server that integrates directly with Claude Code, providing real-time development context and sacred plan protection.
+
+### Quick Setup
+
+1. **Add to Claude Code MCP Configuration**:
+   ```json
+   "contextkeeper-sacred": {
+     "type": "stdio",
+     "command": "node",
+     "args": [
+       "/Users/sumitm1/Documents/myproject/Ongoing Projects/ContextKeeper Pro/ContextKeeper v3 Upgrade/contextkeeper/mcp-server/enhanced_mcp_server.js"
+     ],
+     "env": {
+       "RAG_AGENT_URL": "http://localhost:5556"
+     }
+   }
+   ```
+
+2. **Start ContextKeeper with Sacred Layer**:
+   ```bash
+   cd contextkeeper
+   source venv/bin/activate
+   python rag_agent.py server --port 5556
+   ```
+
+### Available MCP Tools
+
+The ContextKeeper MCP server provides 8 sacred-aware tools:
+
+- **🔍 get_sacred_context** - Retrieve sacred architectural plans
+- **⚠️ check_sacred_drift** - Real-time violation detection  
+- **💬 query_with_llm** - Natural language responses from knowledge base
+- **📋 export_development_context** - Complete project context
+- **📊 get_development_context** - Comprehensive project status
+- **🔎 intelligent_search** - Semantic search across plans and code
+- **📝 create_sacred_plan** - Sacred plan creation workflow
+- **❤️ health_check** - System status verification
+
+### Benefits
+
+- **AI Safety**: Sacred plans prevent AI agent derailment
+- **Context Preservation**: Rich development context via MCP
+- **Real-time Monitoring**: Drift detection operational
+- **Natural Language**: Conversational explanations of technical decisions
+- **Violation Prevention**: Sacred plan compliance enforced
+
 ## Next Steps
 
 1. Update the `watch_dirs` in `rag_agent.py` to point to your actual project directories
