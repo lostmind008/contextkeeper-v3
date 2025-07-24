@@ -270,6 +270,46 @@ class SacredLayerManager:
             logger.error(f"Failed to approve plan {plan_id}: {e}")
             return False
     
+    def list_plans(self, project_id: Optional[str] = None, 
+                  status: Optional[str] = None) -> List[SacredPlan]:
+        """List all plans with optional filtering"""
+        plans = []
+        
+        if project_id:
+            # Get plans for specific project
+            collection = self._get_plan_collection(project_id)
+            try:
+                results = collection.get()
+                
+                for i, doc_id in enumerate(results['ids']):
+                    metadata = results['metadatas'][i]
+                    content = results['documents'][i]
+                    
+                    # Filter by status if specified
+                    if status and metadata.get('status') != status:
+                        continue
+                    
+                    # Create SacredPlan object from stored data
+                    plan = SacredPlan(
+                        plan_id=doc_id,
+                        project_id=project_id,
+                        title=metadata.get('title', 'Untitled'),
+                        content=content,
+                        status=PlanStatus(metadata.get('status', 'draft')),
+                        created_at=datetime.fromisoformat(metadata.get('created_at', datetime.now().isoformat())),
+                        approved_at=datetime.fromisoformat(metadata['approved_at']) if metadata.get('approved_at') else None,
+                        content_hash=metadata.get('content_hash', ''),
+                        verification_code=metadata.get('verification_code', '')
+                    )
+                    plans.append(plan)
+                    
+            except Exception as e:
+                logger.error(f"Error listing plans for project {project_id}: {e}")
+        
+        # Sort by creation time, newest first
+        plans.sort(key=lambda p: p.created_at, reverse=True)
+        return plans
+
     def chunk_large_plan(self, content: str, chunk_size: int = 1000) -> List[str]:
         """
         Chunk large plan content for efficient storage and retrieval.

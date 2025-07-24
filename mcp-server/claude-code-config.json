@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "contextkeeper-sacred": {
+      "command": "node",
+      "args": ["/Users/sumitm1/Documents/myproject/Ongoing Projects/ContextKeeper Pro/ContextKeeper v3 Upgrade/contextkeeper/mcp-server/enhanced_mcp_server.js"],
+      "env": {
+        "RAG_AGENT_URL": "http://localhost:5556"
+      }
+    }
+  }
+}

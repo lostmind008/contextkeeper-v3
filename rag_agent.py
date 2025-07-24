@@ -789,6 +789,39 @@ class RAGServer:
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
         
+        @self.app.route('/sacred/plans', methods=['GET'])
+        def list_sacred_plans():
+            """List sacred plans for a project"""
+            if not self.agent.sacred_layer:
+                return jsonify({'error': 'Sacred layer not initialized'}), 503
+            
+            project_id = request.args.get('project_id')
+            status = request.args.get('status', 'approved')
+            
+            try:
+                # Get plans from sacred layer
+                plans = self.agent.sacred_layer.list_plans(
+                    project_id=project_id,
+                    status=status if status != 'all' else None
+                )
+                
+                return jsonify({
+                    'plans': [
+                        {
+                            'plan_id': plan.plan_id,
+                            'title': plan.title,
+                            'content': plan.content,
+                            'status': plan.status,
+                            'created_at': plan.created_at.isoformat(),
+                            'approved_at': plan.approved_at.isoformat() if plan.approved_at else None,
+                            'project_id': project_id
+                        }
+                        for plan in plans
+                    ]
+                })
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
+
         @self.app.route('/sacred/plans/<plan_id>/approve', methods=['POST'])
         def approve_sacred_plan(plan_id):
             """Approve a sacred plan with 2-layer verification"""
