@@ -20,11 +20,18 @@ cd contextkeeper
 cp .env.template .env
 # Edit .env with your Google Cloud credentials and SACRED_APPROVAL_KEY
 
-# Start Sacred Layer
+# Start ContextKeeper (runs on port 5556)
+source venv/bin/activate
 python rag_agent.py start
 
 # Create your first project
 ./scripts/rag_cli.sh projects create "My Project" /path/to/project
+
+# Ask questions with LLM-enhanced responses
+./scripts/rag_cli.sh ask "What is this project about?"
+
+# Get daily briefing
+./scripts/rag_cli.sh briefing
 ```
 
 ## ✨ Key Features
@@ -36,6 +43,8 @@ python rag_agent.py start
 
 ### 🎯 Intelligent Context Management
 - **Multi-Project Support**: Isolated contexts for different projects
+- **Smart File Filtering**: Automatically excludes node_modules, venv, build files, binaries, and non-relevant languages
+- **LLM-Enhanced Queries**: Natural language responses instead of raw code chunks
 - **Git Integration**: Track development activity through git commits
 - **Drift Detection**: Real-time monitoring of alignment with sacred plans
 
@@ -73,7 +82,29 @@ python rag_agent.py start
 
 ## 🔧 Core Workflows
 
-### Sacred Plan Management
+### Project Management (✅ Currently Working)
+```bash
+# List all projects
+./scripts/rag_cli.sh projects list
+
+# Create a new project with automatic file filtering
+./scripts/rag_cli.sh projects create "My Project" /path/to/project
+
+# Focus on a specific project
+./scripts/rag_cli.sh projects focus proj_123
+
+# Ask questions with LLM-enhanced natural language responses
+./scripts/rag_cli.sh ask "What authentication system are we using?"
+
+# Get daily briefing with project statistics
+./scripts/rag_cli.sh briefing
+
+# Track decisions and objectives
+./scripts/rag_cli.sh decisions add "Using Redis for caching" "Performance reasons"
+./scripts/rag_cli.sh objectives add "Implement user auth" "High priority"
+```
+
+### Sacred Plan Management (🔄 Coming in Phase 2)
 ```bash
 # Create architectural plan
 ./scripts/rag_cli.sh sacred create proj_123 "Database Architecture" plan.md

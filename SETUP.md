@@ -7,12 +7,24 @@
 
 ## Installation
 
-### 1. Environment Setup
+### 1. Automated Setup (Recommended)
 ```bash
 # Clone repository
 git clone [repository-url]
 cd contextkeeper
 
+# Run automated setup script
+./setup.sh
+
+# This will:
+# - Create virtual environment
+# - Install all dependencies
+# - Set up directory structure
+# - Create configuration templates
+```
+
+### 1b. Manual Setup (Alternative)
+```bash
 # Create virtual environment
 python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -67,14 +79,26 @@ mkdir -p rag_knowledge_db/sacred_chromadb
 
 ## Verification
 
-### Test v2.0 Functionality
+### Test Current Functionality (v3.0 Base)
 ```bash
-# Start agent
+# Activate environment
+source venv/bin/activate
+
+# Start agent (runs on port 5556)
 python rag_agent.py start
 
 # Test basic functionality
 ./scripts/rag_cli.sh projects list
-./scripts/rag_cli.sh ask "test query"
+./scripts/rag_cli.sh projects create "Test Project" /path/to/project
+
+# Test LLM-enhanced queries (returns natural language responses)
+./scripts/rag_cli.sh ask "What is this project about?"
+
+# Get daily briefing
+./scripts/rag_cli.sh briefing
+
+# Check agent health
+curl http://localhost:5556/health
 ```
 
 ### Test v3.0 Upgrade (When Ready)
