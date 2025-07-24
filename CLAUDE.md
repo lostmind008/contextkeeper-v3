@@ -1,152 +1,160 @@
-# CLAUDE.md
+# CLAUDE.md - AI Assistant Context
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## 🎯 CURRENT DEVELOPMENT STATE
+**Project**: ContextKeeper v3.0 Sacred Layer Upgrade  
+**Branch**: ContextKeeper-v3.0-upgrade  
+**Status**: Phase 1 - Ready to execute upgrade  
+**Priority**: Implement Sacred Layer with 2-layer verification  
+**Last Updated**: 2025-07-24
 
-## Project Overview
-
-This is an enhanced Multi-Project RAG (Retrieval-Augmented Generation) Knowledge Agent that maintains persistent knowledge across multiple concurrent projects and coding sessions. It dynamically watches project directories, tracks decisions and objectives, indexes code files, and provides a searchable knowledge base with automatic security filtering, intelligent code chunking, and rich context export for AI assistants.
-
-### Version 2.0 Features
-- **Multi-project support**: Track multiple projects simultaneously with independent configurations
-- **Project lifecycle management**: Create, pause, resume, archive, and focus on projects
-- **Decision tracking**: Record and retrieve architectural decisions with reasoning
-- **Objective tracking**: Set and monitor development goals with completion status
-- **Context export**: Generate rich context for AI assistants (Claude Code, GitHub Copilot, etc.)
-- **Git integration**: Track development activity through git commits and changes
-- **Project isolation**: Each project maintains its own knowledge base and configuration
-
-## Key Commands
-
-### Project Management Commands (v2.0)
+## 🚀 QUICK START (Get Running in 2 Minutes)
 ```bash
-# Project lifecycle
-./rag_cli.sh projects create "Project Name" /path/to/project
-./rag_cli.sh projects list                     # List all projects
-./rag_cli.sh projects focus proj_id            # Set active project
-./rag_cli.sh projects pause proj_id            # Pause project tracking
-./rag_cli.sh projects resume proj_id           # Resume project tracking
-./rag_cli.sh projects archive proj_id          # Archive completed project
+# 1. Activate environment
+source venv/bin/activate
 
-# Decision & objective tracking
-./rag_cli.sh decisions add "Using Redis for caching" "Better performance than in-memory"
-./rag_cli.sh objectives add "Implement user authentication"
-./rag_cli.sh objectives list                   # Show current objectives
-./rag_cli.sh objectives complete 1             # Mark objective as complete
+# 2. Start the agent (v2.0 working)
+python rag_agent.py start
 
-# Context & briefing
-./rag_cli.sh context export                    # Export context for AI agents
-./rag_cli.sh briefing                          # Get comprehensive project status
-./rag_cli.sh activity                          # Show recent project activity
+# 3. Test current functionality
+./rag_cli.sh projects list
+
+# 4. Run v3 upgrade (when ready)
+./upgrade_to_v3_sacred.sh
 ```
 
-### Core Commands
-```bash
-# Initial setup
-./setup.sh                              # One-time setup script
+## 🔥 CURRENT FOCUS - Sacred Layer Implementation
+**What I'm working on RIGHT NOW:**
 
-# Run the agent
-python rag_agent.py start               # Start the RAG agent server
-./rag_cli.sh start                      # Alternative using CLI wrapper
+1. **IMMEDIATE**: Complete Phase 2 sacred layer implementation ⚠️ IN PROGRESS
+2. **NEW**: Phase 2.5 - LLM-Enhanced Query Responses (APPROVED) ⭐
+3. **NEXT**: Phase 3 - MCP server for Claude Code integration
+4. **FINALLY**: Test sacred plan creation and approval workflow
 
-# Query knowledge base (project-aware)
-./rag_cli.sh ask "What authentication system did I use?"
-python rag_agent.py query --project proj_id --question "Show integration code"
+**Key files to work with:**
+- `rag_agent.py` ⚠️ Needs Phase 2.5 LLM enhancement integration
+- `sacred_layer_implementation.py` ✅ Core methods implemented
+- `git_activity_tracker.py` ✅ Methods implemented
+- `enhanced_drift_sacred.py` ✅ Methods implemented
 
-# Legacy commands (for backward compatibility)
-./rag_cli.sh status                    # Check if agent is running
-./rag_cli.sh logs                      # View agent logs
+## 🛠️ DEVELOPMENT PATTERNS
+
+### Code Style (Follow User's Preferences)
+```python
+# Use Australian English spelling
+colour = "blue"  # not color
+behaviour = "expected"  # not behavior
+
+# Conversational comments (user's signature style)
+# alright, so the idea here is to...
+# basically, we need to do this because...
+# fair warning - this might seem unconventional, but...
 ```
 
-### Testing & Development
+### Architecture Patterns to Follow
+- **Sacred Layer**: Immutable storage, 2-layer verification, isolated ChromaDB
+- **Project Isolation**: Each project gets own ChromaDB collection
+- **Git Integration**: Track commits, not file changes
+- **Fail-Safe Design**: Sacred plans act as guardrails for AI agents
+
+### Testing Approach
 ```bash
-# Test API endpoints
+# Always test after changes
+pytest tests/sacred -v          # Sacred layer
+pytest tests/git -v             # Git integration  
+pytest tests/drift -v           # Drift detection
+python test_multiproject.py     # End-to-end
+```
+
+## 📁 FILE NAVIGATION MAP
+
+**Core Sacred Files** (what you'll work with most):
+```
+rag_agent.py                 # Main orchestrator - ADD sacred integration here
+sacred_layer_implementation.py  # Sacred core - USE as-is
+git_activity_tracker.py     # Git tracking - USE as-is
+enhanced_drift_sacred.py    # Drift detection - USE as-is
+sacred_cli_integration.sh   # CLI commands - SOURCE this
+```
+
+**Reference Implementations** (approved patterns):
+```
+v3 Approved Plan for AI Agent/
+├── sacred_layer_implementation.py    # Reference if needed
+├── enhanced_mcp_server.js           # MCP server for later
+├── analytics_dashboard.html         # Dashboard for later
+└── revised_implementation_roadmap.md # Complete vision
+```
+
+## ⚡ COMMON WORKFLOWS
+
+### Sacred Plan Workflow (v3.0 target)
+```bash
+# 1. Create plan
+./rag_cli.sh sacred create proj_123 "Auth Architecture" auth_plan.md
+
+# 2. Approve with 2-layer verification  
+./rag_cli.sh sacred approve plan_abc123
+
+# 3. Check alignment
+./rag_cli.sh sacred drift proj_123
+```
+
+### LLM-Enhanced Query Testing (Phase 2.5)
+```bash
+# Test natural language responses
+curl -X POST http://localhost:5555/query_llm \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is the sacred layer?", "k": 5}'
+
+# Compare with raw query  
 curl -X POST http://localhost:5555/query \
   -H "Content-Type: application/json" \
-  -d '{"question": "Show recent changes"}'
-
-# Check health
-curl http://localhost:5555/health
+  -d '{"question": "What is the sacred layer?", "k": 5}'
 ```
 
-## Architecture & Core Components
+## 🚨 CURRENT BLOCKERS & GOTCHAS
 
-### 1. **rag_agent.py** - Enhanced Multi-Project Application
-- **ProjectManager**: Manages multiple project sessions with independent configurations
-- **ChromaDB Integration**: Separate collections per project for isolation
-- **Google GenAI SDK**: Embeddings via text-embedding-004 model
-- **Dynamic File Watching**: Monitors project-specific directories using watchdog
-- **Security Filter**: Automatically redacts API keys and sensitive data
-- **Text Chunker**: Intelligent chunking preserving code structure
-- **Decision & Objective Tracking**: Persistent storage of project decisions and goals
-- **Context Export**: Rich context generation for AI assistants
-- **Flask API**: RESTful endpoints on port 5555 with project-aware routing
+1. **Sacred Integration**: Need to import sacred components into `rag_agent.py`
+2. **Environment Key**: Set `SACRED_APPROVAL_KEY` in `.env` before testing
+3. **ChromaDB Isolation**: Sacred plans MUST use separate collections
+4. **Backward Compatibility**: v2.0 functionality must keep working
 
-### 2. **project_manager.py** - Project Lifecycle Management
-- Project creation with configurable watch directories
-- State management (active, paused, archived, focused)
-- Decision and objective tracking per project
-- Git integration for activity tracking
-- Configuration persistence to disk
+## 🧭 CONTEXT HIERARCHY
 
-### 3. **rag_cli.sh** - Enhanced CLI Wrapper
-- Full project management commands
-- Decision and objective tracking interface
-- Context export for AI agents
-- Project-aware queries and operations
-- Backward compatibility with v1.0 commands
+When you need more info, check in this order:
+1. `AI_AGENT_TODO_EXPANDED.md` - Micro-tasks (current work)
+2. `v3 Approved Plan for AI Agent/AI Agent TODO List.md` - Step-by-step guide
+3. `QUICK_REFERENCE.md` - All CLI commands
+4. `PROJECT_SUMMARY.md` - v2.0 implementation summary
 
-### 4. **Configuration Structure**
-- **Global Configuration**: `.env` file for Google Cloud credentials
-- **Project Configuration**: `~/.rag_projects/` directory for project configs
-- **Project Metadata**: JSON files storing project state, decisions, objectives
-- **Dynamic Watch Directories**: Per-project configurable paths
-- **Supported file types**: .py, .js, .jsx, .ts, .tsx, .md, .json, .yaml
+## 🎯 SUCCESS CRITERIA
 
-## Key Architecture Patterns
+**Phase 1 Complete When:**
+- [ ] Sacred layer activated via upgrade script
+- [ ] `rag_agent.py` imports sacred components
+- [ ] Sacred plan creation works
+- [ ] 2-layer approval process works
+- [ ] Drift detection compares against sacred plans
 
-### Embedding & Storage Flow
-1. File changes detected by watchdog → 
-2. Content passes through SecurityFilter → 
-3. TextChunker creates semantic chunks → 
-4. Google GenAI creates embeddings → 
-5. ChromaDB stores vectors with metadata
+**Ready for MCP Integration When:**
+- [ ] All sacred endpoints responding
+- [ ] Tests passing
+- [ ] Claude Code can create/approve sacred plans
 
-### Query Processing
-1. User question → 
-2. Embedded via same model → 
-3. ChromaDB similarity search → 
-4. Top k results returned with metadata
+## ⚙️ ENVIRONMENT CHECK
 
-### Security Considerations
-- Automatic redaction of API keys, passwords, secrets, tokens
-- Patterns defined in CONFIG['sensitive_patterns']
-- Applied before any embedding or storage
+Required for sacred layer:
+```bash
+# Check these exist
+echo $SACRED_APPROVAL_KEY        # Should be set
+ls sacred_layer_implementation.py # Should exist
+ls tests/sacred/                 # Should exist
+./upgrade_to_v3_sacred.sh --check # Should pass
+```
 
-## Environment Setup Requirements
-
-1. **Google Cloud Configuration** (required):
-   - Valid Google Cloud project with Vertex AI enabled
-   - Service account JSON with appropriate permissions
-   - Environment variables set in `.env` file
-
-2. **Python Dependencies** (installed via requirements.txt):
-   - google-genai: Google's unified GenAI SDK
-   - chromadb: Vector database
-   - tiktoken: Token counting for chunking
-   - watchdog: File system monitoring
-   - flask & flask-cors: API server
-
-## Important Context
-
-- The agent maintains knowledge across sessions by indexing watched directories
-- All queries preserve code structure and context through intelligent chunking
-- Designed specifically for the YouTube Analyzer project but adaptable
-- Runs as a persistent background service on port 5555
-- Logs to `rag_agent.log` for debugging
-
-## Common Troubleshooting
-
-- **Agent not starting**: Check Google Cloud credentials in `.env`
-- **No results**: Ensure watch directories exist and contain supported file types
-- **Import errors**: Activate virtual environment: `source venv/bin/activate`
-- **Permission errors**: Make scripts executable: `chmod +x rag_cli.sh setup.sh`
+---
+**For detailed setup, API docs, or architecture deep-dive, see:**
+- `SETUP.md` - Environment setup
+- `API_REFERENCE.md` - All endpoints  
+- `ARCHITECTURE.md` - System design
+- `QUICK_REFERENCE.md` - All commands
