@@ -122,8 +122,8 @@ ls tests/sacred/
 # Check agent logs
 tail -f rag_agent.log
 
-# Verify API health
-curl http://localhost:5555/health
+# Verify API health (v2.0 on 5555, v3.0 Sacred Layer on 5556)
+curl http://localhost:5556/health
 
 # Test embeddings
 python -c "from rag_agent import ProjectKnowledgeAgent; agent = ProjectKnowledgeAgent(); print('OK')"
