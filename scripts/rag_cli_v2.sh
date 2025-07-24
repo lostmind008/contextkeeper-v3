@@ -27,7 +27,7 @@ check_agent() {
     if ! curl -s http://localhost:5556/health > /dev/null 2>&1; then
         echo -e "${RED}❌ RAG Agent not running!${NC}"
         echo -e "${BLUE}Starting agent...${NC}"
-        cd "$RAG_DIR" && nohup $PYTHON_CMD rag_agent.py start > rag_agent.out 2>&1 &
+        cd "$RAG_DIR" && nohup "$PYTHON_CMD" rag_agent.py start > rag_agent.out 2>&1 &
         sleep 5
         if curl -s http://localhost:5556/health > /dev/null 2>&1; then
             echo -e "${GREEN}✅ Agent started successfully${NC}"
@@ -333,10 +333,10 @@ case "$1" in
         shift
         if [ $# -eq 0 ]; then
             # Interactive mode
-            cd "$RAG_DIR" && $PYTHON_CMD rag_agent.py query
+            cd "$RAG_DIR" && "$PYTHON_CMD" rag_agent.py query
         else
             # Quick query
-            cd "$RAG_DIR" && $PYTHON_CMD rag_agent.py query --question "$*"
+            cd "$RAG_DIR" && "$PYTHON_CMD" rag_agent.py query --question "$*"
         fi
         ;;
     
@@ -352,7 +352,7 @@ case "$1" in
     
     # Agent control
     start)
-        cd "$RAG_DIR" && $PYTHON_CMD rag_agent.py start
+        cd "$RAG_DIR" && "$PYTHON_CMD" rag_agent.py start
         ;;
     
     stop)
