@@ -78,6 +78,53 @@ CONFIG = {
     "max_results": 10,
     "embedding_model": "text-embedding-004",
     "api_port": 5556,
+    # Directory patterns to ignore during ingestion
+    "ignore_directories": [
+        "node_modules",
+        ".git", 
+        "__pycache__",
+        ".pytest_cache",
+        "venv",
+        ".venv",
+        "env",
+        ".env",
+        "build",
+        "dist",
+        ".next",
+        ".nuxt",
+        "coverage",
+        ".coverage",
+        ".nyc_output",
+        "logs",
+        "tmp",
+        "temp",
+        ".cache",
+        ".tox",
+        ".mypy_cache",
+        ".sass-cache",
+        "bower_components",
+        "jspm_packages"
+    ],
+    # File patterns to ignore during ingestion
+    "ignore_files": [
+        "*.log",
+        "*.tmp",
+        "*.temp",
+        "*.pyc",
+        "*.pyo",
+        "*.pyd",
+        "*.so",
+        "*.egg",
+        "*.egg-info",
+        ".DS_Store",
+        "Thumbs.db",
+        "*.min.js",
+        "*.min.css",
+        "package-lock.json",
+        "yarn.lock",
+        "*.bundle.js",
+        "*.chunk.js"
+    ],
     "sensitive_patterns": [
         r'api[_-]?key\s*[:=]\s*["\']([^"\']+)["\']',
         r'password\s*[:=]\s*["\']([^"\']+)["\']',
@@ -99,6 +146,51 @@ class SecurityFilter:
         for pattern in self.patterns:
             cleaned = pattern.sub('[REDACTED]', cleaned)
         return cleaned
+
+class PathFilter:
+    """Filters files and directories that should be ignored during ingestion"""
+    
+    def __init__(self, ignore_directories: List[str], ignore_files: List[str]):
+        self.ignore_directories = set(ignore_directories)
+        self.ignore_file_patterns = ignore_files
+        # Compile file patterns for glob-style matching
+        self.compiled_file_patterns = []
+        for pattern in ignore_files:
+            # Convert glob pattern to regex
+            regex_pattern = pattern.replace('*', '.*').replace('?', '.')
+            self.compiled_file_patterns.append(re.compile(f'^{regex_pattern}$', re.IGNORECASE))
+    
+    def should_ignore_directory(self, dir_name: str) -> bool:
+        """Check if a directory should be ignored"""
+        # Always ignore hidden directories (starting with .)
+        if dir_name.startswith('.'):
+            return True
+        
+        # Check against ignore list
+        return dir_name in self.ignore_directories
+    
+    def should_ignore_file(self, file_name: str) -> bool:
+        """Check if a file should be ignored"""
+        # Check against file patterns
+        for pattern in self.compiled_file_patterns:
+            if pattern.match(file_name):
+                return True
+        return False
+    
+    def should_ignore_path(self, file_path: str) -> bool:
+        """Check if any part of the path should be ignored"""
+        path_parts = Path(file_path).parts
+        
+        # Check if any directory in the path should be ignored
+        for part in path_parts[:-1]:  # Exclude the filename
+            if self.should_ignore_directory(part):
+                return True
+        
+        # Check if the filename should be ignored
+        if len(path_parts) > 0:
+            return self.should_ignore_file(path_parts[-1])
+        
+        return False
 
 class TextChunker:
     """Intelligent text chunking for code and documentation"""
@@ -201,6 +293,7 @@ class ProjectKnowledgeAgent:
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.security_filter = SecurityFilter(config['sensitive_patterns'])
+        self.path_filter = PathFilter(config['ignore_directories'], config['ignore_files'])
         self.chunker = TextChunker(config['chunk_size'], config['chunk_overlap'])
         
         # Initialize ProjectManager
@@ -408,12 +501,17 @@ class ProjectKnowledgeAgent:
         total_chunks = 0
         
         for root, dirs, files in os.walk(directory):
-            # Skip hidden directories
-            dirs[:] = [d for d in dirs if not d.startswith('.')]
+            # Filter out directories that should be ignored
+            dirs[:] = [d for d in dirs if not self.path_filter.should_ignore_directory(d)]
             
             for file in files:
                 if any(file.endswith(ext) for ext in self.config['default_file_extensions']):
                     file_path = os.path.join(root, file)
+                    
+                    # Check if the full path should be ignored (comprehensive check)
+                    if self.path_filter.should_ignore_path(file_path):
+                        continue
+                    
                     chunks = await self.ingest_file(file_path)
                     total_chunks += chunks
         
@@ -603,6 +701,10 @@ class CodebaseWatcher(FileSystemEventHandler):
         if event.is_directory:
             return
         
+        # Check if the file should be ignored
+        if self.agent.path_filter.should_ignore_path(event.src_path):
+            return
+        
         if any(event.src_path.endswith(ext) for ext in self.agent.config['default_file_extensions']):
             logger.info(f"File modified: {event.src_path}")
             self.loop.run_until_complete(self.agent.ingest_file(event.src_path))
@@ -646,6 +748,9 @@ class RAGServer:
                 return jsonify({'error': 'Valid path required'}), 400
             
             if os.path.isfile(path):
+                # Check if single file should be ignored
+                if self.agent.path_filter.should_ignore_path(path):
+                    return jsonify({'error': 'File path is ignored by configuration', 'chunks_ingested': 0})
                 chunks = await self.agent.ingest_file(path)
             else:
                 chunks = await self.agent.ingest_directory(path)
@@ -1057,7 +1162,12 @@ async def main():
             return
         
         if os.path.isfile(args.path):
-            chunks = await agent.ingest_file(args.path)
+            # Check if single file should be ignored
+            if agent.path_filter.should_ignore_path(args.path):
+                print(f"⚠️  File path is ignored by configuration: {args.path}")
+                chunks = 0
+            else:
+                chunks = await agent.ingest_file(args.path)
         else:
             chunks = await agent.ingest_directory(args.path)
         
