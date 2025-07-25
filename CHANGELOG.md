@@ -5,6 +5,16 @@ All notable changes to the RAG Knowledge Agent will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2025-07-24
+
+### Added
+- **Sacred Layer**: Implemented immutable, verifiable plans for AI agents.
+- **Git-Based Activity Tracking**: Replaced file-watching with more reliable Git-based tracking.
+- **Enhanced Drift Detection**: Compares current development against sacred plans.
+- **MCP Server Integration**: Exposes sacred-aware context to AI tools.
+- **Analytics Dashboard**: Visual interface for monitoring project health and sacred plan adherence.
+- **Sacred CLI**: New `sacred` command for managing sacred plans.
+
 ## [2.0.0] - 2025-07-22
 
 ### Added

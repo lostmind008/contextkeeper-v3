@@ -8,25 +8,20 @@
 
 ## 🌟 What's New in v3.0?
 
-ContextKeeper v3.0 introduces the Sacred Layer and supports:
-- **Sacred Layer**: Immutable architectural plans with 2-layer verification
-- **Drift Detection**: Real-time monitoring of code alignment with sacred plans  
-- **MCP Integration**: 8 sacred-aware tools for Claude Code integration
-- **Multi-Project Management**: Track multiple projects simultaneously with independent configurations
-- **Project Lifecycle**: Create, pause, resume, archive, and focus on different projects
-- **Decision Tracking**: Record and retrieve architectural decisions with reasoning
-- **Objective Management**: Set development goals and track completion
-- **Context Export**: Generate rich context for AI assistants (Claude Code, GitHub Copilot)
-- **Git Integration**: Track development activity through commits and changes
-- **Project Isolation**: Each project maintains its own knowledge base
+ContextKeeper v3.0 introduces the **Sacred Layer**, a groundbreaking feature that ensures AI agents adhere to approved architectural plans.
 
-### Core Features (from v1.0)
-- **Remembers Everything**: Indexes your code and documentation automatically
-- **Answers Questions**: Search your entire codebase semantically
-- **Stays Current**: Watches files for changes and updates its knowledge
-- **Protects Secrets**: Automatically redacts API keys and sensitive data
+- **Sacred Layer**: Create immutable architectural plans with a 2-layer verification process. This ensures that the core architecture of your project is protected from unintended changes by AI agents.
+- **Git-Based Tracking**: ContextKeeper now uses Git to track file changes, providing a more robust and reliable way to keep the knowledge base up-to-date.
+- **Drift Detection**: The agent can now detect when the codebase has drifted from the sacred plan, providing warnings and suggestions for realignment.
+- **Enhanced MCP Integration**: The MCP server now exposes tools for interacting with the Sacred Layer, allowing AI assistants like Claude to be aware of and respect the sacred plans.
+- **Analytics Dashboard**: A new dashboard provides a visual overview of project health, including sacred plan adherence and recent activity.
 
-Built with ChromaDB for vector storage and Google's Gemini for embeddings.
+### Core Features
+- **Multi-Project Management**: Track multiple projects simultaneously with independent configurations.
+- **Decision & Objective Tracking**: Record architectural decisions and track development objectives.
+- **Context Export**: Generate rich context for AI assistants.
+- **Semantic Search**: Search your entire codebase using natural language.
+- **Security**: Automatically redacts API keys and sensitive data.
 
 ## Quick Start (5 minutes)
 

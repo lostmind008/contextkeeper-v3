@@ -1,11 +1,11 @@
 # CLAUDE.md - AI Assistant Context
 
 ## 🎯 CURRENT DEVELOPMENT STATE
-**Project**: ContextKeeper v3.0 Sacred Layer Upgrade  
-**Branch**: ContextKeeper-v3.0-upgrade  
-**Status**: ✅ Phase 3 COMPLETE - All Sacred Layer functionality operational  
-**Priority**: Documentation maintenance and optional enhancements  
-**Last Updated**: 2025-07-24 (Documentation cleanup completed)
+**Project**: ContextKeeper v3.0
+**Branch**: main
+**Status**: ✅ v3.0 Upgrade Complete
+**Priority**: General Maintenance
+**Last Updated**: 2025-07-24
 
 ## 🚀 QUICK START (Get Running in 2 Minutes)
 ```bash
@@ -92,29 +92,30 @@ v3 Approved Plan for AI Agent/
 
 ## ⚡ COMMON WORKFLOWS
 
-### Sacred Plan Workflow (v3.0 target)
+### Sacred Plan Workflow
 ```bash
-# 1. Create plan
-./rag_cli.sh sacred create proj_123 "Auth Architecture" auth_plan.md
+# 1. Create a sacred plan
+./rag_cli.sh sacred create proj_123 "API Authentication" api_auth_plan.md
 
-# 2. Approve with 2-layer verification  
+# 2. Approve the plan
 ./rag_cli.sh sacred approve plan_abc123
 
-# 3. Check alignment
+# 3. Check for drift
 ./rag_cli.sh sacred drift proj_123
 ```
 
-### LLM-Enhanced Query Testing (Phase 2.5)
+### Querying the Knowledge Base
 ```bash
-# Test natural language responses
+# Ask a question
+./rag_cli.sh ask "What is the approved method for API authentication?"
+```
+
+### LLM-Enhanced Query
+```bash
+# Get a natural language response
 curl -X POST http://localhost:5555/query_llm \
   -H "Content-Type: application/json" \
-  -d '{"question": "What is the sacred layer?", "k": 5}'
-
-# Compare with raw query  
-curl -X POST http://localhost:5555/query \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What is the sacred layer?", "k": 5}'
+  -d '{"question": "Explain the sacred layer.", "k": 5}'
 ```
 
 ## 🚨 CURRENT BLOCKERS & GOTCHAS
@@ -132,19 +133,18 @@ When you need more info, check in this order:
 3. `QUICK_REFERENCE.md` - All CLI commands
 4. `PROJECT_SUMMARY.md` - v2.0 implementation summary
 
-## 🎯 SUCCESS CRITERIA - ACHIEVED ✅
+## 🎯 MCP Server Tools
 
-**Phase 1-3 COMPLETE:**
-- [x] Sacred layer activated and operational on port 5556
-- [x] `rag_agent.py` imports and integrates sacred components
-- [x] Sacred plan creation works with 2-layer verification
-- [x] 2-layer approval process operational
-- [x] Drift detection compares against sacred plans
-- [x] All sacred endpoints responding correctly
-- [x] MCP Server Integration complete with 8 tools
-- [x] Claude Code can access all sacred functionality via MCP tools
+The MCP server provides the following tools for AI assistants:
 
-**PRODUCTION READY:** ContextKeeper v3.0 Sacred Layer is fully operational
+- **`get_sacred_context`**: Get approved sacred plans for a project.
+- **`check_sacred_drift`**: Check if current development aligns with sacred plans.
+- **`query_with_llm`**: Query the knowledge base with natural language responses.
+- **`export_development_context`**: Export complete development context including sacred plans.
+- **`get_development_context`**: Get comprehensive development context including project status, git activity, objectives, decisions, and sacred layer analysis.
+- **`intelligent_search`**: Search with semantic understanding across code, decisions, objectives, and sacred plans.
+- **`create_sacred_plan`**: Create a new sacred architectural plan.
+- **`health_check`**: Check the health status of the sacred layer and RAG agent.
 
 ## ⚙️ ENVIRONMENT CHECK
 
