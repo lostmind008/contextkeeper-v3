@@ -67,14 +67,16 @@ mkdir -p rag_knowledge_db/sacred_chromadb
 
 ## Verification
 
-### Test v2.0 Functionality
+### Test Current Working Functionality
 ```bash
 # Start agent
 python rag_agent.py start
 
-# Test basic functionality
-./rag_cli.sh projects list
-./rag_cli.sh ask "test query"
+# Test currently working endpoints
+curl http://localhost:5556/health      # Should return {"status":"healthy"}
+curl http://localhost:5556/projects    # Should return projects data
+
+# Note: Some endpoints may require database setup to function properly
 ```
 
 ### Test v3.0 Upgrade (When Ready)
@@ -122,7 +124,7 @@ ls tests/sacred/
 # Check agent logs
 tail -f rag_agent.log
 
-# Verify API health (v2.0 on 5555, v3.0 Sacred Layer on 5556)
+# Verify API health (ContextKeeper runs on port 5556)
 curl http://localhost:5556/health
 
 # Test embeddings

@@ -21,7 +21,7 @@ import path from 'path';
 
 const execAsync = promisify(exec);
 
-const RAG_AGENT_BASE_URL = process.env.RAG_AGENT_URL || 'http://localhost:5555';
+const RAG_AGENT_BASE_URL = process.env.RAG_AGENT_URL || 'http://localhost:5556';
 
 class EnhancedContextKeeperMCP {
   constructor() {

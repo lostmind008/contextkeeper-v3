@@ -12,14 +12,15 @@
 # 1. Activate environment
 source venv/bin/activate
 
-# 2. Start the agent (v2.0 working)
+# 2. Start the agent
 python rag_agent.py start
 
-# 3. Test current functionality
-./rag_cli.sh projects list
+# 3. Test working endpoints
+curl http://localhost:5556/health       # Should return {"status":"healthy"}
+curl http://localhost:5556/projects     # Should return projects data
 
-# 4. Run v3 upgrade (when ready)
-./upgrade_to_v3_sacred.sh
+# 4. Check MCP server is connected (optional)
+# Verify in Claude Code that contextkeeper-sacred tools are available
 ```
 
 ## 🔥 CURRENT STATUS - Sacred Layer COMPLETE ✅
@@ -113,17 +114,24 @@ v3 Approved Plan for AI Agent/
 ### LLM-Enhanced Query
 ```bash
 # Get a natural language response
-curl -X POST http://localhost:5555/query_llm \
+curl -X POST http://localhost:5556/query_llm \
   -H "Content-Type: application/json" \
   -d '{"question": "Explain the sacred layer.", "k": 5}'
 ```
 
-## 🚨 CURRENT BLOCKERS & GOTCHAS
+## 🚨 CURRENT STATUS & KNOWN ISSUES
 
-1. **Sacred Integration**: Need to import sacred components into `rag_agent.py`
-2. **Environment Key**: Set `SACRED_APPROVAL_KEY` in `.env` before testing
-3. **ChromaDB Isolation**: Sacred plans MUST use separate collections
-4. **Backward Compatibility**: v2.0 functionality must keep working
+### ✅ Currently Working
+- **Service Running**: ContextKeeper runs on port 5556
+- **Health Check**: `/health` endpoint returns {"status":"healthy"}
+- **Projects API**: `/projects` endpoint returns project data
+- **MCP Integration**: MCP server configured and connects to Claude Code
+
+### ⚠️ Known Issues
+- **Database Connectivity**: Some endpoints may have ChromaDB connection issues
+- **Query Endpoints**: May require database setup to function properly
+- **Sacred Integration**: Need to verify all sacred layer endpoints are functional
+- **Environment Setup**: Ensure `SACRED_APPROVAL_KEY` is set in `.env` if using sacred features
 
 ## 🧭 CONTEXT HIERARCHY
 

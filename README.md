@@ -92,7 +92,7 @@ No manual configuration needed! With v3.0, you can dynamically add projects:
 - 🔍 **Automatic Code Indexing**: Watches your project files and updates knowledge base
 - 🛡️ **Security**: Automatically redacts API keys and sensitive data
 - 🧠 **Smart Chunking**: Preserves code structure for better search results
-- 📡 **API Access**: Query via HTTP API at http://localhost:5555
+- 📡 **API Access**: Query via HTTP API at http://localhost:5556
 - 🎯 **Project-Agnostic**: Works with any development project
 - ⚡ **Fast Search**: Vector similarity search finds relevant code instantly
 - 📝 **Multiple Formats**: Supports .py, .js, .jsx, .ts, .tsx, .md, .json, .yaml
@@ -116,7 +116,7 @@ No manual configuration needed! With v3.0, you can dynamically add projects:
 
 ### Query Endpoint
 ```bash
-POST http://localhost:5555/query
+POST http://localhost:5556/query
 Content-Type: application/json
 
 {
@@ -127,7 +127,7 @@ Content-Type: application/json
 
 ### Add Decision Endpoint
 ```bash
-POST http://localhost:5555/decision
+POST http://localhost:5556/decision
 Content-Type: application/json
 
 {
@@ -139,7 +139,7 @@ Content-Type: application/json
 
 ### Health Check
 ```bash
-GET http://localhost:5555/health
+GET http://localhost:5556/health
 ```
 
 ## Troubleshooting
@@ -153,7 +153,7 @@ If the agent doesn't start:
 
 Add to your Claude Custom Instructions:
 ```
-When context is near limit, query http://localhost:5555/query for project context.
+When context is near limit, query http://localhost:5556/query for project context.
 ```
 
 ## 🔌 MCP Integration (v3.0)
