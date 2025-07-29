@@ -76,7 +76,7 @@ CONFIG = {
     "chunk_size": 1000,
     "chunk_overlap": 200,
     "max_results": 10,
-    "embedding_model": "text-embedding-004",
+    "embedding_model": "gemini-embedding-001",
     "api_port": 5556,
     # Directory patterns to ignore during ingestion
     "ignore_directories": [
@@ -177,16 +177,89 @@ class PathFilter:
                 return True
         return False
     
+    def _should_ignore_enhanced_patterns(self, file_path: str) -> bool:
+        """
+        Enhanced pattern matching for problematic directory structures.
+        Catches nested patterns that basic directory name matching misses.
+        """
+        # Convert to lowercase for case-insensitive matching
+        path_lower = file_path.lower()
+        
+        # Split path using both Unix and Windows separators for cross-platform compatibility
+        # Replace backslashes with forward slashes first, then split
+        normalised_path = file_path.replace('\\', '/')
+        path_parts = [part for part in normalised_path.split('/') if part]  # Remove empty parts
+        
+        # Check for venv-like directories using endswith logic
+        for part in path_parts:
+            part_lower = part.lower()
+            # Catch any directory name ending with 'venv' (handles .venv, demo_venv, test_venv, etc.)
+            if part_lower.endswith('venv'):
+                return True
+            # Also catch standalone '.venv' directory names
+            if part_lower == '.venv':
+                return True
+        
+        # Check for nested problematic directories anywhere in the path
+        # Use both Unix and Windows path separators for cross-platform compatibility
+        nested_patterns = [
+            # Python package installations
+            '/site-packages/',
+            '\\site-packages\\',
+            'site-packages/',      # Also catch without leading separator
+            'site-packages\\',
+            
+            # Python cache directories
+            '/__pycache__/',
+            '\\__pycache__\\',
+            '__pycache__/',        # Also catch without leading separator
+            '__pycache__\\',
+            
+            # Node.js dependencies
+            '/node_modules/',
+            '\\node_modules\\',
+            'node_modules/',       # Also catch without leading separator
+            'node_modules\\',
+            
+            # Git repository data
+            '/.git/',
+            '\\.git\\',
+            '.git/',               # Also catch without leading separator
+            '.git\\',
+            
+            # Distribution/build directories
+            '/dist/',
+            '\\dist\\',
+            '/build/',
+            '\\build\\',
+        ]
+        
+        # Check if any nested pattern exists in the path
+        # This approach catches patterns anywhere in the path structure
+        for pattern in nested_patterns:
+            if pattern in path_lower:
+                return True
+                
+        return False
+    
     def should_ignore_path(self, file_path: str) -> bool:
-        """Check if any part of the path should be ignored"""
+        """
+        Check if any part of the path should be ignored.
+        Uses both original logic (backwards compatibility) and enhanced pattern matching.
+        """
+        # First, use enhanced pattern matching to catch problematic nested structures
+        if self._should_ignore_enhanced_patterns(file_path):
+            return True
+        
+        # Then, apply original logic for backwards compatibility
         path_parts = Path(file_path).parts
         
-        # Check if any directory in the path should be ignored
+        # Check if any directory in the path should be ignored (original logic)
         for part in path_parts[:-1]:  # Exclude the filename
             if self.should_ignore_directory(part):
                 return True
         
-        # Check if the filename should be ignored
+        # Check if the filename should be ignored (original logic)
         if len(path_parts) > 0:
             return self.should_ignore_file(path_parts[-1])
         
@@ -398,7 +471,7 @@ class ProjectKnowledgeAgent:
         return None
     
     async def embed_text(self, text: str) -> List[float]:
-        """Generate embeddings using Google's text-embedding-004"""
+        """Generate embeddings using Google's gemini-embedding-001"""
         try:
             response = await asyncio.to_thread(
                 self.embedder.models.embed_content,
@@ -596,7 +669,7 @@ Answer:"""
         try:
             response = await asyncio.to_thread(
                 self.embedder.models.generate_content,
-                model="gemini-2.0-flash-001",
+                model="gemini-2.5-flash",
                 contents=prompt
             )
 
@@ -706,13 +779,30 @@ class RAGServer:
             self.agent.sacred_integration.sacred_manager
         )
     
+    def _run_async(self, coro):
+        """Helper method to run async functions in sync Flask routes"""
+        import concurrent.futures
+        import threading
+        
+        def run_in_thread():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                return loop.run_until_complete(coro)
+            finally:
+                loop.close()
+        
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(run_in_thread)
+            return future.result()
+    
     def _setup_routes(self):
         @self.app.route('/health', methods=['GET'])
         def health():
             return jsonify({'status': 'healthy', 'timestamp': datetime.now().isoformat()})
         
         @self.app.route('/query', methods=['POST'])
-        async def query():
+        def query():
             data = request.json
             question = data.get('question', '')
             k = data.get('k', 5)
@@ -720,11 +810,11 @@ class RAGServer:
             if not question:
                 return jsonify({'error': 'Question required'}), 400
             
-            results = await self.agent.query(question, k)
+            results = self._run_async(self.agent.query(question, k))
             return jsonify(results)
         
         @self.app.route('/ingest', methods=['POST'])
-        async def ingest():
+        def ingest():
             data = request.json
             path = data.get('path', '')
             
@@ -735,9 +825,9 @@ class RAGServer:
                 # Check if single file should be ignored
                 if self.agent.path_filter.should_ignore_path(path):
                     return jsonify({'error': 'File path is ignored by configuration', 'chunks_ingested': 0})
-                chunks = await self.agent.ingest_file(path)
+                chunks = self._run_async(self.agent.ingest_file(path))
             else:
-                chunks = await self.agent.ingest_directory(path)
+                chunks = self._run_async(self.agent.ingest_directory(path))
             
             return jsonify({'chunks_ingested': chunks})
         
@@ -842,33 +932,33 @@ class RAGServer:
         
         # Sacred Layer v3.0 endpoints
         @self.app.route('/sacred/plans', methods=['POST'])
-        async def create_sacred_plan():
+        def create_sacred_plan():
             data = request.json
-            result = await self.agent.sacred_integration.create_sacred_plan(
+            result = self._run_async(self.agent.sacred_integration.create_sacred_plan(
                 data['project_id'],
                 data['title'],
                 data.get('file_path') or data.get('content')
-            )
+            ))
             return jsonify(result)
 
         @self.app.route('/sacred/plans/<plan_id>/approve', methods=['POST'])
-        async def approve_sacred_plan(plan_id):
+        def approve_sacred_plan(plan_id):
             data = request.json
-            result = await self.agent.sacred_integration.approve_sacred_plan(
+            result = self._run_async(self.agent.sacred_integration.approve_sacred_plan(
                 plan_id,
                 data['approver'],
                 data['verification_code'],
                 data['secondary_verification']
-            )
+            ))
             return jsonify(result)
 
         @self.app.route('/sacred/query', methods=['POST'])
-        async def query_sacred_plans():
+        def query_sacred_plans():
             data = request.json
-            result = await self.agent.sacred_integration.query_sacred_context(
+            result = self._run_async(self.agent.sacred_integration.query_sacred_context(
                 data['project_id'],
                 data['query']
-            )
+            ))
             return jsonify(result)
         
         @self.app.route('/projects/<project_id>/git/activity', methods=['GET'])
@@ -883,15 +973,15 @@ class RAGServer:
             return jsonify(activity.__dict__)
 
         @self.app.route('/projects/<project_id>/git/sync', methods=['POST'])
-        async def sync_from_git(project_id):
+        def sync_from_git(project_id):
             try:
-                await self.agent.git_integration.update_project_from_git(project_id)
+                self._run_async(self.agent.git_integration.update_project_from_git(project_id))
                 return jsonify({'status': 'synced', 'timestamp': datetime.now().isoformat()})
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
         
         @self.app.route('/query_llm', methods=['POST'])
-        async def query_with_llm_endpoint():
+        def query_with_llm_endpoint():
             """Enhanced query endpoint with natural language responses"""
             data = request.json
             question = data.get('question', '')
@@ -906,7 +996,7 @@ class RAGServer:
                 # Focus on specific project (use existing logic)
                 pass
 
-            result = await self.agent.query_with_llm(question, k)
+            result = self._run_async(self.agent.query_with_llm(question, k))
             return jsonify(result)
 
         @self.app.route('/analytics/summary', methods=['GET'])

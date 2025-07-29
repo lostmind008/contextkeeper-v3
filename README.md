@@ -4,7 +4,7 @@
 [![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/lostmind008/contextkeeper/releases)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 
-**ContextKeeper** is an enhanced AI agent that maintains persistent knowledge across multiple projects and coding sessions using vector search, intelligent code indexing, and comprehensive project management.
+**ContextKeeper** is a production-ready AI agent that maintains persistent knowledge across multiple projects and coding sessions using vector search, intelligent code indexing, and the revolutionary Sacred Layer architecture protection system.
 
 ## 🌟 What's New in v3.0?
 
@@ -48,24 +48,31 @@ pip install -r requirements.txt
 
 Create a `.env` file with your Google Cloud credentials:
 ```bash
-# Google Cloud Configuration
+# Google Cloud Configuration (REQUIRED)
 export GOOGLE_CLOUD_PROJECT=your-project-id
 export GOOGLE_CLOUD_LOCATION=global
 export GOOGLE_GENAI_USE_VERTEXAI=True
 export GOOGLE_APPLICATION_CREDENTIALS=/path/to/your-service-account.json
+
+# Sacred Layer (OPTIONAL - for architecture protection)
+export SACRED_APPROVAL_KEY=your-secret-approval-key
 ```
 
 ### 3. Start the Agent
 
-No manual configuration needed! With v3.0, you can dynamically add projects:
+With v3.0, everything works out of the box:
 ```bash
-# Start the agent
-./rag_cli.sh start
+# Start the agent (all features enabled)
+python rag_agent.py start
+
+# Verify it's working
+curl http://localhost:5556/health  # Should return {"status":"healthy"}
 
 # Create your first project
 ./rag_cli.sh projects create "My Project" /path/to/project
 
-# The agent will automatically watch the project directories
+# Test sacred layer (optional)
+./rag_cli.sh sacred create test_proj "Test Plan" plan.md
 ```
 
 

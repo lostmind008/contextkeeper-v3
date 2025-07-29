@@ -54,7 +54,7 @@ class SacredLayerManager:
         self.db_path = Path(db_path)
         self.embedder = embedder
         self.plans_dir = self.db_path / "sacred_plans"
-        self.plans_dir.mkdir(exist_ok=True)
+        self.plans_dir.mkdir(parents=True, exist_ok=True)
         
         # Initialize ChromaDB client for sacred collections
         self.client = chromadb.PersistentClient(
@@ -82,20 +82,26 @@ class SacredLayerManager:
         if registry_file.exists():
             with open(registry_file, 'r') as f:
                 data = json.load(f)
-                return {
-                    plan_id: SacredPlan(**plan_data)
-                    for plan_id, plan_data in data.items()
-                }
+                registry = {}
+                for plan_id, plan_data in data.items():
+                    # Convert string status back to enum
+                    if 'status' in plan_data and isinstance(plan_data['status'], str):
+                        plan_data['status'] = PlanStatus(plan_data['status'])
+                    registry[plan_id] = SacredPlan(**plan_data)
+                return registry
         return {}
 
     def _save_registry(self):
         """Persist registry to disk"""
         registry_file = self.plans_dir / "registry.json"
         with open(registry_file, 'w') as f:
-            json.dump(
-                {plan_id: plan.__dict__ for plan_id, plan in self.plans_registry.items()},
-                f, indent=2
-            )
+            # Convert enum to string for JSON serialization
+            serializable_data = {}
+            for plan_id, plan in self.plans_registry.items():
+                plan_dict = plan.__dict__.copy()
+                plan_dict['status'] = plan.status.value  # Convert enum to string
+                serializable_data[plan_id] = plan_dict
+            json.dump(serializable_data, f, indent=2)
 
     def _get_sacred_collection(self, project_id: str):
         """Get or create sacred collection for a project"""

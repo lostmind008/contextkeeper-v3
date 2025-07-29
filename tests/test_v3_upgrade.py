@@ -22,7 +22,7 @@ async def test_agent():
         "chunk_size": 1000,
         "chunk_overlap": 200,
         "max_results": 10,
-        "embedding_model": "text-embedding-004",
+        "embedding_model": "gemini-embedding-001",
         "api_port": 5557,
         "ignore_directories": ["node_modules", ".git", "__pycache__"],
         "ignore_files": ["*.log"],
