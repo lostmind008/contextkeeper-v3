@@ -796,6 +796,350 @@ class EnhancedContextKeeperMCP {
     };
   }
 
+  async manageObjectives(args) {
+    const { action, project_id, objective_id, title, description, priority = 'medium' } = args;
+    
+    if (!action) {
+      throw new McpError(ErrorCode.InvalidParams, 'action is required');
+    }
+
+    try {
+      let result;
+      let responseText = `# Objective Management\n\n`;
+
+      switch (action) {
+        case 'add':
+          if (!title) {
+            throw new McpError(ErrorCode.InvalidParams, 'title is required for add action');
+          }
+          
+          result = await this.ragRequest('/objectives', 'POST', {
+            project_id,
+            title,
+            description,
+            priority
+          });
+          
+          responseText += `## Objective Added\n`;
+          responseText += `**Title**: ${title}\n`;
+          responseText += `**Priority**: ${priority}\n`;
+          responseText += `**Project**: ${project_id || 'Focused Project'}\n`;
+          if (description) {
+            responseText += `**Description**: ${description}\n`;
+          }
+          responseText += `**ID**: ${result.objective_id || 'Generated'}\n`;
+          break;
+
+        case 'complete':
+          if (!objective_id) {
+            throw new McpError(ErrorCode.InvalidParams, 'objective_id is required for complete action');
+          }
+          
+          result = await this.ragRequest(`/objectives/${objective_id}/complete`, 'POST', {
+            project_id
+          });
+          
+          responseText += `## Objective Completed\n`;
+          responseText += `**ID**: ${objective_id}\n`;
+          responseText += `**Status**: Completed\n`;
+          responseText += `**Completed At**: ${new Date().toISOString()}\n`;
+          break;
+
+        case 'update':
+          if (!objective_id) {
+            throw new McpError(ErrorCode.InvalidParams, 'objective_id is required for update action');
+          }
+          
+          const updateData = {};
+          if (title) updateData.title = title;
+          if (description) updateData.description = description;
+          if (priority) updateData.priority = priority;
+          
+          result = await this.ragRequest(`/objectives/${objective_id}`, 'PUT', {
+            project_id,
+            ...updateData
+          });
+          
+          responseText += `## Objective Updated\n`;
+          responseText += `**ID**: ${objective_id}\n`;
+          if (title) responseText += `**New Title**: ${title}\n`;
+          if (description) responseText += `**New Description**: ${description}\n`;
+          if (priority) responseText += `**New Priority**: ${priority}\n`;
+          break;
+
+        case 'list':
+          result = await this.ragRequest(
+            project_id ? `/objectives?project_id=${project_id}` : '/objectives'
+          );
+          
+          responseText += `## Project Objectives\n`;
+          responseText += `**Project**: ${project_id || 'All Projects'}\n\n`;
+          
+          if (result.objectives && result.objectives.length > 0) {
+            const pendingObjectives = result.objectives.filter(obj => obj.status === 'pending');
+            const completedObjectives = result.objectives.filter(obj => obj.status === 'completed');
+            
+            if (pendingObjectives.length > 0) {
+              responseText += `### Pending Objectives (${pendingObjectives.length})\n`;
+              for (const obj of pendingObjectives) {
+                responseText += `**${obj.priority.toUpperCase()}**: ${obj.title}\n`;
+                if (obj.description) {
+                  responseText += `${obj.description}\n`;
+                }
+                responseText += `*Created: ${this.formatTimeAgo(obj.created_at)}*\n\n`;
+              }
+            }
+            
+            if (completedObjectives.length > 0) {
+              responseText += `### Completed Objectives (${completedObjectives.length})\n`;
+              for (const obj of completedObjectives.slice(0, 5)) {
+                responseText += `✅ ${obj.title}\n`;
+                responseText += `*Completed: ${this.formatTimeAgo(obj.completed_at)}*\n\n`;
+              }
+            }
+          } else {
+            responseText += `No objectives found. Use 'add' action to create new objectives.\n`;
+          }
+          break;
+
+        default:
+          throw new McpError(ErrorCode.InvalidParams, `Unknown action: ${action}`);
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: responseText
+          }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `# Objective Management Error\n\nFailed to ${action} objective: ${error.message}`
+          }
+        ]
+      };
+    }
+  }
+
+  async getCodeContext(args) {
+    const { feature_description, project_id, include_similar = true } = args;
+    
+    if (!feature_description) {
+      throw new McpError(ErrorCode.InvalidParams, 'feature_description is required');
+    }
+
+    try {
+      // Get relevant code examples and patterns
+      const codeContext = await this.ragRequest('/code-context', 'POST', {
+        feature_description,
+        project_id,
+        include_similar,
+        k: include_similar ? 10 : 5
+      });
+
+      let contextText = `# Code Context for Feature Implementation\n\n`;
+      contextText += `**Feature**: ${feature_description}\n`;
+      contextText += `**Project**: ${project_id || 'Focused Project'}\n\n`;
+
+      if (codeContext.similar_implementations && codeContext.similar_implementations.length > 0) {
+        contextText += `## Similar Implementations Found\n\n`;
+        for (const impl of codeContext.similar_implementations) {
+          contextText += `### ${impl.file}\n`;
+          if (impl.function_name) {
+            contextText += `**Function**: \`${impl.function_name}\`\n`;
+          }
+          if (impl.description) {
+            contextText += `**Description**: ${impl.description}\n`;
+          }
+          contextText += `**Similarity**: ${(impl.similarity * 100).toFixed(0)}%\n`;
+          contextText += `\`\`\`${impl.language || ''}\n${impl.code}\n\`\`\`\n\n`;
+        }
+      }
+
+      if (codeContext.patterns && codeContext.patterns.length > 0) {
+        contextText += `## Relevant Patterns\n\n`;
+        for (const pattern of codeContext.patterns) {
+          contextText += `### ${pattern.name}\n`;
+          contextText += `${pattern.description}\n`;
+          if (pattern.example) {
+            contextText += `\`\`\`${pattern.language || ''}\n${pattern.example}\n\`\`\`\n\n`;
+          }
+        }
+      }
+
+      if (codeContext.dependencies && codeContext.dependencies.length > 0) {
+        contextText += `## Related Dependencies\n\n`;
+        for (const dep of codeContext.dependencies) {
+          contextText += `- **${dep.name}**: ${dep.purpose}\n`;
+          if (dep.file) {
+            contextText += `  *File*: ${dep.file}\n`;
+          }
+        }
+        contextText += `\n`;
+      }
+
+      if (codeContext.recommendations && codeContext.recommendations.length > 0) {
+        contextText += `## Implementation Recommendations\n\n`;
+        for (const rec of codeContext.recommendations) {
+          contextText += `- ${rec}\n`;
+        }
+        contextText += `\n`;
+      }
+
+      // Add architectural guidelines if available
+      if (codeContext.architectural_notes) {
+        contextText += `## Architectural Guidelines\n\n`;
+        contextText += `${codeContext.architectural_notes}\n\n`;
+      }
+
+      contextText += `## Next Steps\n`;
+      contextText += `1. Review similar implementations above\n`;
+      contextText += `2. Adapt patterns to your specific use case\n`;
+      contextText += `3. Follow project coding standards\n`;
+      contextText += `4. Consider dependencies and integration points\n`;
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: contextText
+          }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `# Code Context Error\n\nFailed to get code context for "${feature_description}": ${error.message}\n\nPlease ensure the feature description is clear and the project context is available.`
+          }
+        ]
+      };
+    }
+  }
+
+  async dailyBriefing(args) {
+    const { include_all_projects = false } = args;
+
+    try {
+      // Get comprehensive daily briefing
+      const briefing = await this.ragRequest(`/daily-briefing?include_all=${include_all_projects}`);
+
+      let briefingText = `# Daily Development Briefing\n\n`;
+      briefingText += `**Generated**: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}\n`;
+      briefingText += `**Scope**: ${include_all_projects ? 'All Projects' : 'Active Projects'}\n\n`;
+
+      // Project summaries
+      if (briefing.projects && briefing.projects.length > 0) {
+        briefingText += `## Project Status (${briefing.projects.length})\n\n`;
+        for (const project of briefing.projects) {
+          briefingText += `### ${project.name}\n`;
+          briefingText += `**Status**: ${project.status}\n`;
+          briefingText += `**Last Activity**: ${this.formatTimeAgo(project.last_active)}\n`;
+          
+          if (project.pending_objectives > 0) {
+            briefingText += `**Pending Objectives**: ${project.pending_objectives}\n`;
+          }
+          
+          if (project.recent_decisions > 0) {
+            briefingText += `**Recent Decisions**: ${project.recent_decisions}\n`;
+          }
+          
+          if (project.git_status) {
+            briefingText += `**Git Status**: ${project.git_status}\n`;
+          }
+          
+          briefingText += `\n`;
+        }
+      }
+
+      // High priority objectives across all projects
+      if (briefing.priority_objectives && briefing.priority_objectives.length > 0) {
+        briefingText += `## High Priority Objectives\n\n`;
+        for (const obj of briefing.priority_objectives) {
+          briefingText += `### ${obj.title}\n`;
+          briefingText += `**Project**: ${obj.project_name}\n`;
+          briefingText += `**Priority**: ${obj.priority.toUpperCase()}\n`;
+          if (obj.description) {
+            briefingText += `**Description**: ${obj.description}\n`;
+          }
+          briefingText += `**Age**: ${this.formatTimeAgo(obj.created_at)}\n\n`;
+        }
+      }
+
+      // Recent decisions with impact
+      if (briefing.recent_decisions && briefing.recent_decisions.length > 0) {
+        briefingText += `## Recent Architectural Decisions\n\n`;
+        for (const decision of briefing.recent_decisions.slice(0, 5)) {
+          briefingText += `### ${decision.decision}\n`;
+          briefingText += `**Project**: ${decision.project_name || 'Multiple'}\n`;
+          if (decision.reasoning) {
+            briefingText += `**Reasoning**: ${decision.reasoning}\n`;
+          }
+          if (decision.tags && decision.tags.length > 0) {
+            briefingText += `**Tags**: ${decision.tags.join(', ')}\n`;
+          }
+          briefingText += `**When**: ${this.formatTimeAgo(decision.timestamp)}\n\n`;
+        }
+      }
+
+      // Development recommendations
+      if (briefing.recommendations && briefing.recommendations.length > 0) {
+        briefingText += `## Today's Recommendations\n\n`;
+        for (const rec of briefing.recommendations) {
+          briefingText += `${rec.priority === 'high' ? '🚨' : rec.priority === 'medium' ? '⚠️' : 'ℹ️'} ${rec.message}\n`;
+          if (rec.project) {
+            briefingText += `   *Project: ${rec.project}*\n`;
+          }
+        }
+        briefingText += `\n`;
+      }
+
+      // Drift alerts
+      if (briefing.drift_alerts && briefing.drift_alerts.length > 0) {
+        briefingText += `## Alignment Alerts\n\n`;
+        for (const alert of briefing.drift_alerts) {
+          briefingText += `⚠️ **${alert.project}**: ${alert.message}\n`;
+          briefingText += `   *Alignment Score: ${(alert.score * 100).toFixed(0)}%*\n`;
+        }
+        briefingText += `\n`;
+      }
+
+      // Summary statistics
+      if (briefing.statistics) {
+        briefingText += `## Development Statistics\n`;
+        briefingText += `- **Active Projects**: ${briefing.statistics.active_projects || 0}\n`;
+        briefingText += `- **Total Objectives**: ${briefing.statistics.total_objectives || 0}\n`;
+        briefingText += `- **Completed This Week**: ${briefing.statistics.completed_this_week || 0}\n`;
+        briefingText += `- **Decisions Tracked**: ${briefing.statistics.total_decisions || 0}\n`;
+        briefingText += `- **Average Alignment**: ${briefing.statistics.average_alignment ? (briefing.statistics.average_alignment * 100).toFixed(0) + '%' : 'N/A'}\n`;
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: briefingText
+          }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `# Daily Briefing Error\n\nFailed to generate daily briefing: ${error.message}\n\nPlease ensure the ContextKeeper service is running and project data is available.`
+          }
+        ]
+      };
+    }
+  }
+
   async trackDecision(args) {
     const { decision, reasoning, alternatives_considered, tags = [], project_id } = args;
     
