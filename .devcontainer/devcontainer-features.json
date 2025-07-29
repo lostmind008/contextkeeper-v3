@@ -1,0 +1,18 @@
+{
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": false,
+      "installOhMyZsh": true,
+      "upgradePackages": true,
+      "username": "automatic",
+      "userUid": "automatic",
+      "userGid": "automatic"
+    },
+    "ghcr.io/devcontainers-contrib/features/curl-apt-get:1": {},
+    "ghcr.io/devcontainers-contrib/features/wget-apt-get:1": {},
+    "ghcr.io/devcontainers-contrib/features/jq-apt-get:1": {},
+    "ghcr.io/devcontainers-contrib/features/sqlite3:1": {},
+    "ghcr.io/devcontainers-contrib/features/tmux-apt-get:1": {}
+  }
+}

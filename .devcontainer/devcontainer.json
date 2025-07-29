@@ -1,15 +1,21 @@
 {
-  "name": "ContextKeeper v3 Development",
+  "name": "ContextKeeper v3 - AI-Powered Development Assistant",
   "image": "mcr.microsoft.com/devcontainers/universal:2-linux",
   
   "features": {
     "ghcr.io/devcontainers/features/python:1": {
-      "version": "3.11"
+      "version": "3.11",
+      "installTools": true
     },
     "ghcr.io/devcontainers/features/node:1": {
       "version": "18"
     },
-    "ghcr.io/devcontainers/features/git:1": {}
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest",
+      "ppa": false
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers-contrib/features/ripgrep:1": {}
   },
 
   "customizations": {
@@ -19,49 +25,122 @@
         "ms-python.vscode-pylance",
         "ms-python.flake8",
         "ms-python.black-formatter",
-        "ms-vscode.vscode-json",
+        "ms-python.debugpy",
+        "charliermarsh.ruff",
+        "tamasfe.even-better-toml",
+        "ms-vscode.makefile-tools",
+        "usernamehw.errorlens",
+        "eamodio.gitlens",
+        "mhutchie.git-graph",
+        "yzhang.markdown-all-in-one",
+        "bierner.markdown-mermaid",
+        "DavidAnson.vscode-markdownlint",
         "redhat.vscode-yaml",
-        "ms-vscode.vscode-markdown"
+        "ms-azuretools.vscode-docker",
+        "humao.rest-client",
+        "rangav.vscode-thunder-client"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "/usr/local/python/current/bin/python",
+        "python.defaultInterpreterPath": "${workspaceFolder}/venv/bin/python",
+        "python.terminal.activateEnvironment": true,
         "python.linting.enabled": true,
         "python.linting.flake8Enabled": true,
         "python.formatting.provider": "black",
+        "python.testing.pytestEnabled": true,
+        "python.testing.unittestEnabled": false,
+        "python.testing.pytestArgs": ["tests"],
+        "editor.formatOnSave": true,
+        "editor.rulers": [88, 120],
+        "files.trimTrailingWhitespace": true,
+        "files.insertFinalNewline": true,
         "files.associations": {
-          "*.md": "markdown"
-        }
+          "*.md": "markdown",
+          ".env*": "dotenv"
+        },
+        "[python]": {
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+          }
+        },
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "/bin/bash",
+            "args": ["-l"]
+          }
+        },
+        "git.autofetch": true,
+        "git.confirmSync": false,
+        "workbench.startupEditor": "readme"
       }
+    },
+    "codespaces": {
+      "openFiles": [
+        "README.md",
+        ".devcontainer/README.md"
+      ]
     }
   },
 
   "containerEnv": {
-    "PYTHONPATH": "/workspaces/contextkeeper-v3",
+    "PYTHONPATH": "${containerWorkspaceFolder}",
     "FLASK_ENV": "development",
-    "PYTHONUNBUFFERED": "1"
+    "FLASK_DEBUG": "1",
+    "PYTHONUNBUFFERED": "1",
+    "CONTEXTKEEPER_ENV": "codespace",
+    "WORKSPACE_FOLDER": "${containerWorkspaceFolder}",
+    "VIRTUAL_ENV": "${containerWorkspaceFolder}/venv",
+    "PATH": "${containerWorkspaceFolder}/venv/bin:${containerEnv:PATH}"
   },
 
-  "forwardPorts": [5556, 8000],
+  "forwardPorts": [5556, 8000, 5000, 3000],
   "portsAttributes": {
     "5556": {
       "label": "ContextKeeper API",
-      "onAutoForward": "notify"
+      "onAutoForward": "notify",
+      "protocol": "http"
     },
     "8000": {
       "label": "Development Server",
-      "onAutoForward": "silent"
+      "onAutoForward": "silent",
+      "protocol": "http"
+    },
+    "5000": {
+      "label": "Alternative API Port",
+      "onAutoForward": "silent",
+      "protocol": "http"
+    },
+    "3000": {
+      "label": "Frontend Dev Server",
+      "onAutoForward": "silent",
+      "protocol": "http"
     }
   },
 
-  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "postCreateCommand": "chmod +x .devcontainer/setup.sh && bash .devcontainer/setup.sh",
   
-  "mounts": [
-    "source=${localWorkspaceFolder}/.env,target=/workspaces/contextkeeper-v3/.env,type=bind,consistency=cached"
-  ],
+  "postStartCommand": "echo '🚀 ContextKeeper v3 is ready! Check .devcontainer/README.md for quick start guide.'",
+
+  "postAttachCommand": {
+    "showWelcome": "cat .devcontainer/README.md 2>/dev/null || echo 'Welcome to ContextKeeper v3!'"
+  },
+
+  "mounts": [],
 
   "remoteUser": "codespace",
-  
-  "onCreateCommand": {
-    "install-deps": "pip install --user -r requirements.txt"
+
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "4gb",
+    "storage": "32gb"
+  },
+
+  "waitFor": "postCreateCommand",
+
+  "updateContentCommand": "pip install -r requirements.txt",
+
+  "secrets": {
+    "description": "API keys for ContextKeeper",
+    "documentationUrl": "https://github.com/lostmind008/contextkeeper-v3/blob/main/docs/ENVIRONMENT_SETUP.md"
   }
 }

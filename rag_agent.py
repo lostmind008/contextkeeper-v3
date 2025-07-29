@@ -1071,6 +1071,377 @@ class RAGServer:
             summary = self.agent.project_manager.get_project_summary()
             # Add more analytics data here in the future
             return jsonify(summary)
+        
+        # Additional endpoints to match MCP server expectations
+        
+        @self.app.route('/context', methods=['GET'])
+        def get_global_context():
+            """Get context for the focused project (no project_id required)"""
+            focused_project = self.agent.project_manager.get_focused_project()
+            if not focused_project:
+                return jsonify({'error': 'No focused project. Use /projects/<id>/focus first'}), 400
+            
+            # Use the existing export_context functionality
+            context = self.agent.project_manager.export_context(focused_project.project_id)
+            if context:
+                return jsonify(context)
+            return jsonify({'error': 'Failed to get context'}), 500
+        
+        @self.app.route('/projects/<project_id>/drift', methods=['GET'])
+        def get_drift_analysis(project_id):
+            """Get drift analysis for a project"""
+            hours = int(request.args.get('hours', 24))
+            
+            project = self.agent.project_manager.get_project(project_id)
+            if not project:
+                return jsonify({'error': 'Project not found'}), 404
+            
+            # Use the SacredDriftDetector to get analysis
+            from enhanced_drift_sacred import SacredDriftDetector
+            detector = SacredDriftDetector(self.agent, self.agent.sacred_integration.sacred_manager)
+            
+            try:
+                analysis = self._run_async(detector.analyze_project_drift(project, hours))
+                
+                # Format the response to match MCP expectations
+                formatted_analysis = {
+                    'analysis': {
+                        'alignment_score': analysis.sacred_alignment_score,
+                        'status': 'aligned' if analysis.sacred_alignment_score > 0.7 else 'drifting',
+                        'objective_progress': {},  # Would need to calculate this
+                        'aligned_count': len([a for a in analysis.objective_alignment if a.is_aligned]),
+                        'recommendations': analysis.recommendations
+                    },
+                    'report': analysis.generate_report()
+                }
+                
+                return jsonify(formatted_analysis)
+            except Exception as e:
+                logger.error(f"Drift analysis error: {e}")
+                return jsonify({'error': str(e)}), 500
+        
+        @self.app.route('/objectives', methods=['GET'])
+        def list_all_objectives():
+            """List objectives across all projects or filtered by project_id"""
+            project_id = request.args.get('project_id')
+            
+            if project_id:
+                # Get objectives for specific project
+                project = self.agent.project_manager.get_project(project_id)
+                if not project:
+                    return jsonify({'error': 'Project not found'}), 404
+                
+                objectives = [{
+                    'id': obj.id,
+                    'title': obj.title,
+                    'description': obj.description,
+                    'priority': obj.priority,
+                    'status': obj.status,
+                    'created_at': obj.created_at,
+                    'completed_at': obj.completed_at,
+                    'project_id': project_id,
+                    'project_name': project.name
+                } for obj in project.objectives]
+            else:
+                # Get objectives for all projects
+                objectives = []
+                for proj_id, project in self.agent.project_manager.projects.items():
+                    for obj in project.objectives:
+                        objectives.append({
+                            'id': obj.id,
+                            'title': obj.title,
+                            'description': obj.description,
+                            'priority': obj.priority,
+                            'status': obj.status,
+                            'created_at': obj.created_at,
+                            'completed_at': obj.completed_at,
+                            'project_id': proj_id,
+                            'project_name': project.name
+                        })
+            
+            return jsonify({'objectives': objectives})
+        
+        @self.app.route('/objectives', methods=['POST'])
+        def add_objective_global():
+            """Add objective to focused project or specified project"""
+            data = request.json
+            title = data.get('title', '')
+            description = data.get('description', '')
+            priority = data.get('priority', 'medium')
+            project_id = data.get('project_id')
+            
+            if not title:
+                return jsonify({'error': 'Title required'}), 400
+            
+            # Use focused project if not specified
+            if not project_id:
+                focused_project = self.agent.project_manager.get_focused_project()
+                if focused_project:
+                    project_id = focused_project.project_id
+                else:
+                    return jsonify({'error': 'No project specified and no focused project'}), 400
+            
+            objective = self.agent.project_manager.add_objective(
+                project_id, title, description, priority
+            )
+            if objective:
+                return jsonify({
+                    'status': 'Objective added',
+                    'objective_id': objective.id,
+                    'project_id': project_id,
+                    'title': objective.title
+                })
+            return jsonify({'error': 'Failed to add objective'}), 400
+        
+        @self.app.route('/objectives/<objective_id>', methods=['PUT'])
+        def update_objective(objective_id):
+            """Update an objective"""
+            data = request.json
+            project_id = data.get('project_id')
+            
+            # Find which project contains this objective
+            target_project_id = None
+            target_objective = None
+            
+            if project_id:
+                # Check specific project
+                project = self.agent.project_manager.get_project(project_id)
+                if project:
+                    for obj in project.objectives:
+                        if obj.id == objective_id:
+                            target_project_id = project_id
+                            target_objective = obj
+                            break
+            else:
+                # Search all projects
+                for proj_id, project in self.agent.project_manager.projects.items():
+                    for obj in project.objectives:
+                        if obj.id == objective_id:
+                            target_project_id = proj_id
+                            target_objective = obj
+                            break
+                    if target_objective:
+                        break
+            
+            if not target_objective:
+                return jsonify({'error': 'Objective not found'}), 404
+            
+            # Update fields
+            if 'title' in data:
+                target_objective.title = data['title']
+            if 'description' in data:
+                target_objective.description = data['description']
+            if 'priority' in data:
+                target_objective.priority = data['priority']
+            
+            # Save changes
+            self.agent.project_manager._save_projects()
+            
+            return jsonify({
+                'status': 'Objective updated',
+                'objective_id': objective_id,
+                'project_id': target_project_id
+            })
+        
+        @self.app.route('/objectives/<objective_id>/complete', methods=['POST'])
+        def complete_objective_global(objective_id):
+            """Complete an objective"""
+            data = request.json
+            project_id = data.get('project_id')
+            
+            # Find and complete the objective
+            if project_id:
+                success = self.agent.project_manager.complete_objective(project_id, objective_id)
+                if success:
+                    return jsonify({'status': 'Objective completed'})
+            else:
+                # Search all projects
+                for proj_id in self.agent.project_manager.projects:
+                    if self.agent.project_manager.complete_objective(proj_id, objective_id):
+                        return jsonify({'status': 'Objective completed', 'project_id': proj_id})
+            
+            return jsonify({'error': 'Objective not found'}), 404
+        
+        @self.app.route('/code-context', methods=['POST'])
+        def get_code_context():
+            """Get relevant code examples and patterns for implementing a feature"""
+            data = request.json
+            feature_description = data.get('feature_description', '')
+            project_id = data.get('project_id')
+            include_similar = data.get('include_similar', True)
+            k = data.get('k', 10 if include_similar else 5)
+            
+            if not feature_description:
+                return jsonify({'error': 'feature_description required'}), 400
+            
+            # Use focused project if not specified
+            if not project_id:
+                focused_project = self.agent.project_manager.get_focused_project()
+                if focused_project:
+                    project_id = focused_project.project_id
+            
+            # Query for relevant code
+            query_results = self._run_async(self.agent.query(
+                f"code implementation example pattern {feature_description}",
+                k=k,
+                project_id=project_id
+            ))
+            
+            # Format results as code context
+            similar_implementations = []
+            patterns = []
+            dependencies = []
+            
+            for result in query_results.get('results', []):
+                metadata = result.get('metadata', {})
+                if metadata.get('type') == 'code':
+                    impl = {
+                        'file': metadata.get('file', ''),
+                        'code': result.get('content', ''),
+                        'similarity': 1.0 - (result.get('distance', 0) if result.get('distance') else 0),
+                        'language': metadata.get('file', '').split('.')[-1] if '.' in metadata.get('file', '') else ''
+                    }
+                    
+                    # Try to extract function name from code
+                    code_lines = impl['code'].split('\n')
+                    for line in code_lines[:10]:  # Check first 10 lines
+                        if 'def ' in line or 'function ' in line or 'class ' in line:
+                            impl['function_name'] = line.strip()
+                            break
+                    
+                    similar_implementations.append(impl)
+            
+            # Generate recommendations based on findings
+            recommendations = []
+            if similar_implementations:
+                recommendations.append(f"Found {len(similar_implementations)} similar implementations in the codebase")
+                recommendations.append("Consider following the existing patterns for consistency")
+                recommendations.append("Review the similar implementations for best practices")
+            else:
+                recommendations.append("No similar implementations found - this appears to be a new pattern")
+                recommendations.append("Consider establishing a new pattern that others can follow")
+                recommendations.append("Document your implementation thoroughly for future reference")
+            
+            response = {
+                'similar_implementations': similar_implementations[:5],  # Top 5
+                'patterns': patterns,
+                'dependencies': dependencies,
+                'recommendations': recommendations,
+                'architectural_notes': f"When implementing {feature_description}, ensure it aligns with the project's existing architecture and coding standards."
+            }
+            
+            return jsonify(response)
+        
+        @self.app.route('/daily-briefing', methods=['GET'])
+        def get_daily_briefing():
+            """Get comprehensive daily briefing across all projects"""
+            include_all = request.args.get('include_all', 'false').lower() == 'true'
+            
+            briefing = {
+                'projects': [],
+                'priority_objectives': [],
+                'recent_decisions': [],
+                'recommendations': [],
+                'drift_alerts': [],
+                'statistics': {
+                    'active_projects': 0,
+                    'total_objectives': 0,
+                    'completed_this_week': 0,
+                    'total_decisions': 0,
+                    'average_alignment': 0
+                }
+            }
+            
+            # Gather project summaries
+            alignment_scores = []
+            for project_id, project in self.agent.project_manager.projects.items():
+                if not include_all and project.status != ProjectStatus.ACTIVE:
+                    continue
+                
+                if project.status == ProjectStatus.ACTIVE:
+                    briefing['statistics']['active_projects'] += 1
+                
+                # Count objectives
+                pending_objectives = [obj for obj in project.objectives if obj.status == 'pending']
+                briefing['statistics']['total_objectives'] += len(project.objectives)
+                
+                # Check recent completions (would need to track completion time)
+                week_ago = datetime.now().timestamp() - (7 * 24 * 60 * 60)
+                completed_this_week = [obj for obj in project.objectives 
+                                     if obj.status == 'completed' and obj.completed_at and 
+                                     datetime.fromisoformat(obj.completed_at).timestamp() > week_ago]
+                briefing['statistics']['completed_this_week'] += len(completed_this_week)
+                
+                # Get recent decisions
+                recent_decisions = project.decisions[-5:] if hasattr(project, 'decisions') else []
+                briefing['statistics']['total_decisions'] += len(getattr(project, 'decisions', []))
+                
+                project_summary = {
+                    'name': project.name,
+                    'status': project.status,
+                    'last_active': project.last_updated,
+                    'pending_objectives': len(pending_objectives),
+                    'recent_decisions': len(recent_decisions)
+                }
+                
+                # Try to get git status if available
+                try:
+                    git_tracker = self.agent.git_integration.git_trackers.get(project_id)
+                    if git_tracker:
+                        # Would need to add a method to get status
+                        project_summary['git_status'] = 'Active'
+                except:
+                    pass
+                
+                briefing['projects'].append(project_summary)
+                
+                # Add high priority objectives
+                for obj in pending_objectives:
+                    if obj.priority == 'high':
+                        briefing['priority_objectives'].append({
+                            'title': obj.title,
+                            'description': obj.description,
+                            'priority': obj.priority,
+                            'created_at': obj.created_at,
+                            'project_name': project.name,
+                            'project_id': project_id
+                        })
+                
+                # Add recent decisions
+                for decision in recent_decisions:
+                    briefing['recent_decisions'].append({
+                        'decision': decision.decision,
+                        'reasoning': decision.reasoning,
+                        'tags': decision.tags,
+                        'timestamp': decision.timestamp,
+                        'project_name': project.name
+                    })
+            
+            # Sort priority objectives by age
+            briefing['priority_objectives'].sort(key=lambda x: x['created_at'])
+            
+            # Sort recent decisions by timestamp
+            briefing['recent_decisions'].sort(key=lambda x: x['timestamp'], reverse=True)
+            briefing['recent_decisions'] = briefing['recent_decisions'][:10]  # Top 10
+            
+            # Generate recommendations
+            if len(briefing['priority_objectives']) > 3:
+                briefing['recommendations'].append({
+                    'priority': 'high',
+                    'message': f"You have {len(briefing['priority_objectives'])} high-priority objectives pending"
+                })
+            
+            if briefing['statistics']['active_projects'] > 5:
+                briefing['recommendations'].append({
+                    'priority': 'medium',
+                    'message': "Consider archiving completed projects to maintain focus"
+                })
+            
+            # Calculate average alignment (would need actual drift scores)
+            if alignment_scores:
+                briefing['statistics']['average_alignment'] = sum(alignment_scores) / len(alignment_scores)
+            
+            return jsonify(briefing)
     
     def run(self):
         logger.info(f"Starting RAG server on port {self.port}")
