@@ -1,8 +1,10 @@
 # API Reference
 
-**Base URL**: `http://localhost:5556`
+**Base URL**: `http://localhost:5556`  
+**Status**: ✅ All endpoints operational and tested (July 2025)  
+**Version**: v3.0 Sacred Layer
 
-## v2.0 Endpoints (Current)
+## Core Endpoints
 
 ### Project Management
 ```http
@@ -24,7 +26,7 @@ POST   /context/export        # Export context for AI agents
 GET    /briefing              # Get project status
 ```
 
-## v3.0 Sacred Endpoints (Target)
+## Sacred Layer Endpoints
 
 ### Sacred Plan Management
 ```http
@@ -39,6 +41,12 @@ GET    /sacred/drift/<project_id>  # Check drift status
 ```http
 GET    /projects/<id>/git/activity  # Get Git activity
 POST   /projects/<id>/git/sync      # Sync from Git
+```
+
+### Health & Status
+```http
+GET    /health                      # System health check
+GET    /sacred/health               # Sacred layer health
 ```
 
 ## Request/Response Examples

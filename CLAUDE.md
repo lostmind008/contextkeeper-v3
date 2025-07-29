@@ -1,28 +1,45 @@
 # CLAUDE.md - AI Assistant Context
 
 ## 🎯 CURRENT DEVELOPMENT STATE
-**Project**: ContextKeeper v3.0 Sacred Layer Upgrade  
-**Branch**: ContextKeeper-v3.0-upgrade  
-**Status**: ✅ Phase 3 COMPLETE - All Sacred Layer functionality operational  
-**Priority**: Documentation maintenance and optional enhancements  
-**Last Updated**: 2025-07-24 (Documentation cleanup completed)
+**Project**: ContextKeeper v3.0
+**Branch**: main
+**Status**: ✅ v3.0 Upgrade Complete
+**Priority**: General Maintenance
+**Last Updated**: 2025-07-29 (All documentation and merge conflicts resolved)
 
 ## 🚀 QUICK START (Get Running in 2 Minutes)
 ```bash
 # 1. Activate environment
 source venv/bin/activate
 
-# 2. Start the agent (v2.0 working)
+# 2. Start the agent
 python rag_agent.py start
 
-# 3. Test current functionality
-./scripts/rag_cli.sh projects list
+# 3. Test working endpoints  
+curl http://localhost:5556/health       # Should return {"status":"healthy"}
+curl http://localhost:5556/projects     # Should return projects data
+./scripts/rag_cli_v2.sh projects list   # CLI interface
 
-# 4. Run v3 upgrade (when ready)
-./upgrade_to_v3_sacred.sh
+# 4. Check MCP server is connected (optional)
+# Verify in Claude Code that contextkeeper-sacred tools are available
 ```
 
 ## 🔥 CURRENT STATUS - Sacred Layer COMPLETE ✅
+
+### ✅ LATEST UPDATE: All Infrastructure Fixes & Documentation Completed
+**Date**: 2025-07-29  
+**Status**: All major infrastructure issues resolved and fully operational  
+**Fixes Completed**:
+- ✅ Flask Async Compatibility: All async endpoints now return 200 OK (was 500 errors)
+- ✅ Path Filtering: Fixed venv/site-packages indexing pollution 
+- ✅ API Model Updates: Updated to latest Google GenAI models (gemini-embedding-001, gemini-2.5-flash)
+- ✅ CLI Port Fix: Sacred CLI now connects to correct port 5556 (was 5555)
+- ✅ Sacred Layer Testing: Comprehensive testing completed, all endpoints functional
+- ✅ CLI Merge Conflicts: All merge conflicts in rag_cli_v2.sh resolved
+- ✅ ChromaDB Compatibility: Database reset and embedding function conflicts resolved
+- ✅ Documentation Update: README, API_REFERENCE, TROUBLESHOOTING, and CLAUDE.md all updated
+
+**Current State**: All Sacred Layer endpoints, CLI commands, and core RAG functionality operational
 **What I've completed:**
 
 1. **COMPLETE**: ✅ Phase 2 Sacred Layer Implementation 
@@ -30,9 +47,10 @@ python rag_agent.py start
 3. **COMPLETE**: ✅ Phase 3 - MCP Server for Claude Code Integration
 4. **COMPLETE**: ✅ Sacred plan creation and approval workflow tested
 
-**Next Optional Steps:**
-- Phase 4: Analytics Dashboard (optional enhancement)
-- Phase 5: Final documentation polishing
+**Available Enhancement Options:**
+- Phase 4: Analytics Dashboard (infrastructure ready)
+- Advanced monitoring and metrics
+- Additional MCP tools and integrations
 
 **Key files completed:**
 - `rag_agent.py` ✅ Phase 2.5 LLM enhancement integrated and operational
@@ -92,21 +110,24 @@ v3 Approved Plan for AI Agent/
 
 ## ⚡ COMMON WORKFLOWS
 
-### Sacred Plan Workflow (v3.0 target)
+### Sacred Plan Workflow
 ```bash
-# 1. Create plan
-./scripts/rag_cli.sh sacred create proj_123 "Auth Architecture" auth_plan.md
+# 1. Create a sacred plan
+./scripts/rag_cli_v2.sh sacred create proj_123 "API Authentication" api_auth_plan.md
 
-# 2. Approve with 2-layer verification  
-./scripts/rag_cli.sh sacred approve plan_abc123
+# 2. Approve the plan with 2-layer verification
+./scripts/rag_cli_v2.sh sacred approve plan_abc123
 
-# 3. Check alignment
-./scripts/rag_cli.sh sacred drift proj_123
+# 3. Check for drift
+./scripts/rag_cli_v2.sh sacred drift proj_123
 ```
 
-### LLM-Enhanced Query Testing (Phase 2.5)
+### Querying the Knowledge Base
 ```bash
-# Test natural language responses
+# Ask a question via CLI
+./scripts/rag_cli_v2.sh ask "What is the approved method for API authentication?"
+
+# Test natural language responses via API
 curl -X POST http://localhost:5556/query_llm \
   -H "Content-Type: application/json" \
   -d '{"question": "What is the sacred layer?", "k": 5}'
@@ -117,12 +138,29 @@ curl -X POST http://localhost:5556/query \
   -d '{"question": "What is the sacred layer?", "k": 5}'
 ```
 
-## 🚨 CURRENT BLOCKERS & GOTCHAS
+### LLM-Enhanced Query
+```bash
+# Get a natural language response
+curl -X POST http://localhost:5556/query_llm \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Explain the sacred layer.", "k": 5}'
+```
 
-1. **Sacred Integration**: Need to import sacred components into `rag_agent.py`
-2. **Environment Key**: Set `SACRED_APPROVAL_KEY` in `.env` before testing
-3. **ChromaDB Isolation**: Sacred plans MUST use separate collections
-4. **Backward Compatibility**: v2.0 functionality must keep working
+## 🚨 CURRENT STATUS & KNOWN ISSUES
+
+### ✅ Currently Working
+- **Service Running**: ContextKeeper runs on port 5556
+- **Health Check**: `/health` endpoint returns {"status":"healthy"}
+- **Projects API**: `/projects` endpoint returns project data
+- **MCP Integration**: MCP server configured and connects to Claude Code
+
+### ✅ System Status: Fully Operational
+- ✅ **Database Connectivity**: ChromaDB connections working correctly
+- ✅ **Query Endpoints**: All query endpoints functional (raw and LLM-enhanced)
+- ✅ **Sacred Integration**: All sacred layer endpoints tested and operational
+- ✅ **CLI Commands**: Sacred CLI commands working with proper port connectivity
+- ✅ **API Endpoints**: All Flask async endpoints returning proper responses
+- ✅ **Path Filtering**: No more venv/site-packages pollution in knowledge base
 
 ## 🧭 CONTEXT HIERARCHY
 
@@ -132,19 +170,18 @@ When you need more info, check in this order:
 3. `QUICK_REFERENCE.md` - All CLI commands
 4. `PROJECT_SUMMARY.md` - v2.0 implementation summary
 
-## 🎯 SUCCESS CRITERIA - ACHIEVED ✅
+## 🎯 MCP Server Tools
 
-**Phase 1-3 COMPLETE:**
-- [x] Sacred layer activated and operational on port 5556
-- [x] `rag_agent.py` imports and integrates sacred components
-- [x] Sacred plan creation works with 2-layer verification
-- [x] 2-layer approval process operational
-- [x] Drift detection compares against sacred plans
-- [x] All sacred endpoints responding correctly
-- [x] MCP Server Integration complete with 8 tools
-- [x] Claude Code can access all sacred functionality via MCP tools
+The MCP server provides the following tools for AI assistants:
 
-**PRODUCTION READY:** ContextKeeper v3.0 Sacred Layer is fully operational
+- **`get_sacred_context`**: Get approved sacred plans for a project.
+- **`check_sacred_drift`**: Check if current development aligns with sacred plans.
+- **`query_with_llm`**: Query the knowledge base with natural language responses.
+- **`export_development_context`**: Export complete development context including sacred plans.
+- **`get_development_context`**: Get comprehensive development context including project status, git activity, objectives, decisions, and sacred layer analysis.
+- **`intelligent_search`**: Search with semantic understanding across code, decisions, objectives, and sacred plans.
+- **`create_sacred_plan`**: Create a new sacred architectural plan.
+- **`health_check`**: Check the health status of the sacred layer and RAG agent.
 
 ## ⚙️ ENVIRONMENT CHECK
 

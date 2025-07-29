@@ -297,7 +297,12 @@ for proj in data['projects']:
 }
 
 # Main command handling
+source ./sacred_cli_integration_fixed.sh # Add this near the top
 case "$1" in
+    sacred|s)
+        shift
+        handle_sacred "$@"
+        ;;
     # Project management
     projects|proj|p)
         shift

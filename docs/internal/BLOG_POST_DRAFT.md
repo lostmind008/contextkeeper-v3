@@ -21,7 +21,7 @@ The agent uses a RAG (Retrieval-Augmented Generation) architecture:
 
 1. **File Watching**: Monitors your project directories for changes
 2. **Smart Chunking**: Breaks code into meaningful segments while preserving structure
-3. **Vector Embeddings**: Converts code into high-dimensional vectors using Google's text-embedding-004
+3. **Vector Embeddings**: Converts code into high-dimensional vectors using Google's gemini-embedding-001
 4. **Semantic Search**: Finds relevant code based on meaning, not just text matching
 
 ## Why Open Source?

@@ -208,7 +208,7 @@ Queries the knowledge base using natural language and returns conversational res
 
 ### Internal Components
 - **Primary**: `rag_agent.py` → `ProjectKnowledgeAgent.query_with_llm()`
-- **Vector Search**: ChromaDB → `text-embedding-004` → Google Gemini
+- **Vector Search**: ChromaDB → `gemini-embedding-001` → Google Gemini
 - **LLM Processing**: Google Gemini 2.0 Flash (via Vertex AI)
 - **API Endpoint**: `POST /query_llm`
 
@@ -484,7 +484,7 @@ Performs semantic search across code, decisions, objectives, and sacred plans us
 
 ### Internal Components
 - **Primary**: `rag_agent.py` → `ProjectKnowledgeAgent.query_with_llm()`
-- **Search Engine**: ChromaDB with `text-embedding-004` embeddings
+- **Search Engine**: ChromaDB with `gemini-embedding-001` embeddings
 - **Content Types**: Code files, decisions, objectives, sacred plans
 - **API Endpoint**: `POST /query_llm` (leverages LLM enhancement)
 

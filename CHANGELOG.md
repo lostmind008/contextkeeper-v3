@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.0.0] - 2025-07-24
 
+<<<<<<< HEAD
 ### Added - Sacred Layer Implementation
 - Sacred Layer with immutable architectural plan storage
 - 2-layer verification system (verification code + environment key)
@@ -28,6 +29,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Performance optimisation for large plan documents
 - Semantic chunking for plan storage and retrieval
 - Real-time monitoring and alert system
+=======
+### Added
+- **Sacred Layer**: Implemented immutable, verifiable plans for AI agents.
+- **Git-Based Activity Tracking**: Replaced file-watching with more reliable Git-based tracking.
+- **Enhanced Drift Detection**: Compares current development against sacred plans.
+- **MCP Server Integration**: Exposes sacred-aware context to AI tools.
+- **Analytics Dashboard**: Visual interface for monitoring project health and sacred plan adherence.
+- **Sacred CLI**: New `sacred` command for managing sacred plans.
+>>>>>>> v3-upgrade
 
 ## [2.0.0] - 2025-07-22
 

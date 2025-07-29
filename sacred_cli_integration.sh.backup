@@ -24,7 +24,7 @@ handle_sacred() {
 
             echo -e "${BLUE}Creating sacred plan...${NC}"
 
-            RESPONSE=$(curl -s -X POST "http://localhost:5556/sacred/plans" \
+            RESPONSE=$(curl -s -X POST "http://localhost:5555/sacred/plans" \
                 -H "Content-Type: application/json" \
                 -d "{
                     \"project_id\": \"$PROJECT_ID\",
@@ -56,7 +56,7 @@ handle_sacred() {
             echo ""
 
             # Show plan details
-            PLAN_STATUS=$(curl -s "http://localhost:5556/sacred/plans/$PLAN_ID/status")
+            PLAN_STATUS=$(curl -s "http://localhost:5555/sacred/plans/$PLAN_ID/status")
             echo -e "Plan Title: $(echo "$PLAN_STATUS" | jq -r '.title')"
             echo -e "Created: $(echo "$PLAN_STATUS" | jq -r '.created_at')"
             echo ""
@@ -82,7 +82,7 @@ handle_sacred() {
             fi
 
             # Submit approval
-            RESPONSE=$(curl -s -X POST "http://localhost:5556/sacred/plans/$PLAN_ID/approve" \
+            RESPONSE=$(curl -s -X POST "http://localhost:5555/sacred/plans/$PLAN_ID/approve" \
                 -H "Content-Type: application/json" \
                 -d "{
                     \"approver\": \"$APPROVER\",
@@ -109,7 +109,7 @@ handle_sacred() {
 
             echo -e "${BLUE}📜 Sacred Plans${NC}"
 
-            URL="http://localhost:5556/sacred/plans"
+            URL="http://localhost:5555/sacred/plans"
             if [ -n "$PROJECT_ID" ]; then
                 URL="$URL?project_id=$PROJECT_ID"
             fi
@@ -154,7 +154,7 @@ handle_sacred() {
 
             echo -e "${BLUE}🔍 Searching sacred plans...${NC}"
 
-            RESPONSE=$(curl -s -X POST "http://localhost:5556/sacred/query" \
+            RESPONSE=$(curl -s -X POST "http://localhost:5555/sacred/query" \
                 -H "Content-Type: application/json" \
                 -d "{
                     \"project_id\": \"$PROJECT_ID\",
@@ -180,7 +180,7 @@ handle_sacred() {
 
             echo -e "${BLUE}🎯 Analyzing drift from sacred plans...${NC}"
 
-            RESPONSE=$(curl -s "http://localhost:5556/projects/$PROJECT_ID/sacred-drift?hours=$HOURS")
+            RESPONSE=$(curl -s "http://localhost:5555/projects/$PROJECT_ID/sacred-drift?hours=$HOURS")
 
             ALIGNMENT=$(echo "$RESPONSE" | jq -r '.analysis.alignment_score')
             STATUS=$(echo "$RESPONSE" | jq -r '.analysis.status')
@@ -249,7 +249,7 @@ handle_sacred() {
                 exit 0
             fi
 
-            RESPONSE=$(curl -s -X POST "http://localhost:5556/sacred/plans/$PLAN_ID/lock")
+            RESPONSE=$(curl -s -X POST "http://localhost:5555/sacred/plans/$PLAN_ID/lock")
             SUCCESS=$(echo "$RESPONSE" | jq -r '.success')
 
             if [ "$SUCCESS" = "true" ]; then
@@ -271,7 +271,7 @@ handle_sacred() {
 
             echo -e "${BLUE}Superseding plan $OLD_PLAN with $NEW_PLAN${NC}"
 
-            RESPONSE=$(curl -s -X POST "http://localhost:5556/sacred/plans/supersede" \
+            RESPONSE=$(curl -s -X POST "http://localhost:5555/sacred/plans/supersede" \
                 -H "Content-Type: application/json" \
                 -d "{
                     \"old_plan_id\": \"$OLD_PLAN\",
@@ -315,44 +315,9 @@ check_sacred_before_action() {
     ACTION="$2"
     
     # Quick drift check
-    DRIFT_CHECK=$(curl -s "http://localhost:5556/projects/$PROJECT_ID/sacred-drift?hours=1")
+    DRIFT_CHECK=$(curl -s "http://localhost:5555/projects/$PROJECT_ID/sacred-drift?hours=1")
     STATUS=$(echo "$DRIFT_CHECK" | jq -r '.analysis.status')
     
-<<<<<<< HEAD:scripts/sacred_cli_integration.sh
-    if [ ! -f "$file_path" ]; then
-        echo "Error: File not found: $file_path"
-        return 1
-    fi
-    
-    echo "Creating sacred plan..."
-    echo "Project: $project_id"
-    echo "Title: $title"
-    echo "File: $file_path"
-    
-    # Make API call to create sacred plan
-    response=$(curl -s -X POST http://localhost:5556/sacred/plans \
-        -H "Content-Type: application/json" \
-        -d "{
-            \"project_id\": \"$project_id\",
-            \"title\": \"$title\",
-            \"file_path\": \"$file_path\"
-        }")
-    
-    # Parse response
-    plan_id=$(echo "$response" | jq -r '.plan_id')
-    verification_code=$(echo "$response" | jq -r '.verification_code')
-    
-    if [ "$plan_id" != "null" ]; then
-        echo ""
-        echo "✅ Sacred plan created"
-        echo "Plan ID: $plan_id"
-        echo "Verification Code: $verification_code"
-        echo ""
-        echo "⚠️  Save this verification code - you'll need it for approval"
-    else
-        echo "❌ Failed to create sacred plan"
-        echo "$response" | jq '.'
-=======
     if [ "$STATUS" = "critical_violation" ]; then
         echo -e "${RED}⚠️  WARNING: Critical sacred plan violations detected!${NC}"
         echo -e "${RED}Action '$ACTION' may violate approved plans.${NC}"
@@ -363,7 +328,6 @@ check_sacred_before_action() {
         fi
     elif [ "$STATUS" = "major_drift" ]; then
         echo -e "${YELLOW}⚠️  Caution: Significant drift from sacred plans detected${NC}"
->>>>>>> v3-upgrade:sacred_cli_integration.sh
     fi
 }
 
@@ -372,218 +336,20 @@ sacred_briefing() {
     echo -e "${PURPLE}📜 Sacred Plans Status${NC}"
     
     # Get all projects with sacred plans
-    PROJECTS=$(curl -s "http://localhost:5556/projects")
+    PROJECTS=$(curl -s "http://localhost:5555/projects")
     
-<<<<<<< HEAD:scripts/sacred_cli_integration.sh
-    # Prompt for verification code
-    echo -n "Enter verification code: "
-    read -r verification_code
-    
-    # Prompt for secondary verification (environment key)
-    echo -n "Enter approval key: "
-    read -rs approval_key
-    echo ""
-    
-    # Get approver name
-    approver=$(whoami)
-    
-    echo "Approving sacred plan..."
-    
-    # Make API call to approve
-    response=$(curl -s -X POST "http://localhost:5556/sacred/plans/$plan_id/approve" \
-        -H "Content-Type: application/json" \
-        -d "{
-            \"approver\": \"$approver\",
-            \"verification_code\": \"$verification_code\",
-            \"secondary_verification\": \"$approval_key\"
-        }")
-    
-    # Check response
-    status=$(echo "$response" | jq -r '.status')
-    
-    if [ "$status" = "approved" ]; then
-        echo "✅ Sacred plan approved and locked"
-        echo "This plan is now immutable and will guide development"
-    else
-        echo "❌ Failed to approve sacred plan"
-        echo "$response" | jq '.'
-    fi
-}
-
-# Check drift against sacred plans
-check_sacred_drift() {
-    local project_id=$1
-    local detailed=${2:-""}
-    
-    if [ -z "$project_id" ]; then
-        echo "Usage: sacred drift <project_id> [--detailed]"
-        return 1
-    fi
-    
-    echo "Analyzing sacred drift for project: $project_id"
-    
-    # Make API call
-    response=$(curl -s "http://localhost:5556/sacred/drift/$project_id")
-    
-    # Parse response
-    status=$(echo "$response" | jq -r '.status')
-    alignment=$(echo "$response" | jq -r '.alignment_score')
-    violations=$(echo "$response" | jq -r '.violations | length')
-    
-    # Display results with color coding
-    case "$status" in
-        "aligned")
-            echo "✅ Status: aligned"
-            ;;
-        "minor_drift")
-            echo "⚠️  Status: minor_drift"
-            ;;
-        "moderate_drift")
-            echo "🟠 Status: moderate_drift"
-            ;;
-        "critical_violation")
-            echo "🔴 Status: critical_violation"
-            ;;
-    esac
-    
-    echo "Alignment Score: ${alignment}%"
-    echo "Violations: $violations"
-    
-    if [ "$violations" -gt 0 ]; then
-        echo ""
-        echo "Plan Adherence:"
-        echo "$response" | jq -r '.sacred_plans_checked[] | "  \(.status_icon) \(.plan_id): \(.alignment)%"'
-    fi
-    
-    # Show recommendations
-    echo ""
-    echo "Recommendations:"
-    echo "$response" | jq -r '.recommendations[] | "  • \(.)"'
-    
-    # Detailed view if requested
-    if [ "$detailed" = "--detailed" ]; then
-        echo ""
-        echo "Detailed Violations:"
-        echo "$response" | jq '.violations'
-    fi
-}
-
-# List sacred plans for a project
-list_sacred_plans() {
-    local project_id=$1
-    
-    if [ -z "$project_id" ]; then
-        echo "Usage: sacred list <project_id>"
-        return 1
-    fi
-    
-    echo "Sacred Plans for project: $project_id"
-    echo ""
-    
-    # Make API call
-    response=$(curl -s "http://localhost:5556/sacred/plans?project_id=$project_id")
-    
-    # Display plans
-    echo "$response" | jq -r '.plans[] | "\(.status_icon) [\(.plan_id)] \(.title) - \(.status) (created: \(.created_at))"'
-}
-
-# Query sacred plans
-query_sacred_plans() {
-    local project_id=$1
-    local query=$2
-    
-    if [ -z "$project_id" ] || [ -z "$query" ]; then
-        echo "Usage: sacred query <project_id> <query>"
-        return 1
-    fi
-    
-    echo "Querying sacred plans..."
-    
-    # Make API call
-    response=$(curl -s -X POST http://localhost:5556/sacred/query \
-        -H "Content-Type: application/json" \
-        -d "{
-            \"project_id\": \"$project_id\",
-            \"query\": \"$query\"
-        }")
-    
-    # Display results
-    echo "$response" | jq '.'
-}
-
-# Verify sacred database integrity
-verify_sacred_integrity() {
-    echo "Verifying sacred database integrity..."
-    
-    # Make API call
-    response=$(curl -s http://localhost:5556/sacred/verify)
-    
-    # Display results
-    status=$(echo "$response" | jq -r '.status')
-    
-    if [ "$status" = "healthy" ]; then
-        echo "✅ Sacred database integrity verified"
-        echo "$response" | jq '.'
-    else
-        echo "❌ Sacred database integrity check failed"
-        echo "$response" | jq '.'
-    fi
-}
-
-# Export sacred plans
-export_sacred_plans() {
-    local project_id=$1
-    local format=${2:-"json"}
-    
-    if [ -z "$project_id" ]; then
-        echo "Usage: sacred export <project_id> [--format markdown|json]"
-        return 1
-    fi
-    
-    echo "Exporting sacred plans for project: $project_id"
-    
-    # Make API call
-    curl -s "http://localhost:5556/sacred/export?project_id=$project_id&format=$format"
-}
-
-# Helper function to display sacred status icons
-get_sacred_status_icon() {
-    local status=$1
-    
-    case "$status" in
-        "draft")
-            echo "📝"
-            ;;
-        "pending_approval")
-            echo "⏳"
-            ;;
-        "approved")
-            echo "🔒"
-            ;;
-        "superseded")
-            echo "🔄"
-            ;;
-        "archived")
-            echo "📦"
-            ;;
-        *)
-            echo "❓"
-            ;;
-    esac
-}
-=======
     echo "$PROJECTS" | jq -r '.projects[]' | while read -r project; do
         PROJECT_ID=$(echo "$project" | jq -r '.id')
         PROJECT_NAME=$(echo "$project" | jq -r '.name')
 
         # Check for sacred plans
-        SACRED_COUNT=$(curl -s "http://localhost:5556/sacred/plans?project_id=$PROJECT_ID" | jq '. | length')
+        SACRED_COUNT=$(curl -s "http://localhost:5555/sacred/plans?project_id=$PROJECT_ID" | jq '. | length')
 
         if [ "$SACRED_COUNT" -gt 0 ]; then
             echo -e "\n${CYAN}$PROJECT_NAME${NC}"
 
             # Get drift status
-            DRIFT=$(curl -s "http://localhost:5556/projects/$PROJECT_ID/sacred-drift?hours=24")
+            DRIFT=$(curl -s "http://localhost:5555/projects/$PROJECT_ID/sacred-drift?hours=24")
             ALIGNMENT=$(echo "$DRIFT" | jq -r '.analysis.alignment_score')
             STATUS=$(echo "$DRIFT" | jq -r '.analysis.status')
 
@@ -610,4 +376,3 @@ get_sacred_status_icon() {
 export -f handle_sacred
 export -f check_sacred_before_action
 export -f sacred_briefing
->>>>>>> v3-upgrade:sacred_cli_integration.sh

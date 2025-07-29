@@ -47,9 +47,9 @@ from flask_cors import CORS
 from project_manager import ProjectManager, ProjectStatus
 
 # Import v3.0 Sacred Layer components
-from sacred_layer_implementation import SacredLayerManager
-from git_activity_tracker import GitActivityTracker
-from enhanced_drift_sacred import SacredDriftDetector
+from sacred_layer_implementation import SacredLayerManager, SacredIntegratedRAGAgent
+from git_activity_tracker import GitActivityTracker, GitIntegratedRAGAgent
+from enhanced_drift_sacred import SacredDriftDetector, add_sacred_drift_endpoint
 
 # ChromaDB embedding function for Google GenAI
 class GoogleGenAIEmbeddingFunction:
@@ -102,7 +102,7 @@ CONFIG = {
     "chunk_size": 1000,
     "chunk_overlap": 200,
     "max_results": 10,
-    "embedding_model": "text-embedding-004",
+    "embedding_model": "gemini-embedding-001",
     "api_port": 5556,
     # Directory patterns to ignore during ingestion
     "ignore_directories": [
@@ -246,16 +246,89 @@ class PathFilter:
                 return True
         return False
     
+    def _should_ignore_enhanced_patterns(self, file_path: str) -> bool:
+        """
+        Enhanced pattern matching for problematic directory structures.
+        Catches nested patterns that basic directory name matching misses.
+        """
+        # Convert to lowercase for case-insensitive matching
+        path_lower = file_path.lower()
+        
+        # Split path using both Unix and Windows separators for cross-platform compatibility
+        # Replace backslashes with forward slashes first, then split
+        normalised_path = file_path.replace('\\', '/')
+        path_parts = [part for part in normalised_path.split('/') if part]  # Remove empty parts
+        
+        # Check for venv-like directories using endswith logic
+        for part in path_parts:
+            part_lower = part.lower()
+            # Catch any directory name ending with 'venv' (handles .venv, demo_venv, test_venv, etc.)
+            if part_lower.endswith('venv'):
+                return True
+            # Also catch standalone '.venv' directory names
+            if part_lower == '.venv':
+                return True
+        
+        # Check for nested problematic directories anywhere in the path
+        # Use both Unix and Windows path separators for cross-platform compatibility
+        nested_patterns = [
+            # Python package installations
+            '/site-packages/',
+            '\\site-packages\\',
+            'site-packages/',      # Also catch without leading separator
+            'site-packages\\',
+            
+            # Python cache directories
+            '/__pycache__/',
+            '\\__pycache__\\',
+            '__pycache__/',        # Also catch without leading separator
+            '__pycache__\\',
+            
+            # Node.js dependencies
+            '/node_modules/',
+            '\\node_modules\\',
+            'node_modules/',       # Also catch without leading separator
+            'node_modules\\',
+            
+            # Git repository data
+            '/.git/',
+            '\\.git\\',
+            '.git/',               # Also catch without leading separator
+            '.git\\',
+            
+            # Distribution/build directories
+            '/dist/',
+            '\\dist\\',
+            '/build/',
+            '\\build\\',
+        ]
+        
+        # Check if any nested pattern exists in the path
+        # This approach catches patterns anywhere in the path structure
+        for pattern in nested_patterns:
+            if pattern in path_lower:
+                return True
+                
+        return False
+    
     def should_ignore_path(self, file_path: str) -> bool:
-        """Check if any part of the path should be ignored"""
+        """
+        Check if any part of the path should be ignored.
+        Uses both original logic (backwards compatibility) and enhanced pattern matching.
+        """
+        # First, use enhanced pattern matching to catch problematic nested structures
+        if self._should_ignore_enhanced_patterns(file_path):
+            return True
+        
+        # Then, apply original logic for backwards compatibility
         path_parts = Path(file_path).parts
         
-        # Check if any directory in the path should be ignored
+        # Check if any directory in the path should be ignored (original logic)
         for part in path_parts[:-1]:  # Exclude the filename
             if self.should_ignore_directory(part):
                 return True
         
-        # Check if the filename should be ignored
+        # Check if the filename should be ignored (original logic)
         if len(path_parts) > 0:
             return self.should_ignore_file(path_parts[-1])
         
@@ -372,7 +445,8 @@ class ProjectKnowledgeAgent:
         # Initialize Google GenAI
         try:
             self.embedder = genai.Client(
-                http_options=HttpOptions(api_version="v1")
+                http_options=HttpOptions(api_version="v1beta"),
+                api_key=os.environ.get("GOOGLE_API_KEY")
             )
             # Create embedding function for ChromaDB
             self.embedding_function = GoogleGenAIEmbeddingFunction(
@@ -402,10 +476,14 @@ class ProjectKnowledgeAgent:
         self._load_all_processed_files()
         
         # Initialize v3.0 Sacred Layer components
-        self.sacred_layer = None
-        self.git_trackers = {}  # Per-project git trackers
-        self.drift_detector = None
-        self._init_sacred_layer()
+        self.git_integration = GitIntegratedRAGAgent(self, self.project_manager)
+        for project in self.project_manager.get_active_projects():
+            try:
+                self.git_integration.init_git_tracking(project.project_id)
+                logger.info(f"Git tracking initialized for {project.name}")
+            except Exception as e:
+                logger.warning(f"Could not initialize git tracking for {project.name}: {e}")
+        self.sacred_integration = SacredIntegratedRAGAgent(self)
     
     def _setup_legacy_project(self):
         """Import legacy watch directories as a project if no projects exist"""
@@ -448,33 +526,6 @@ class ProjectKnowledgeAgent:
                 with open(hash_file, 'r') as f:
                     self.processed_files[project.project_id] = json.load(f)
     
-    def _init_sacred_layer(self):
-        """Initialize v3.0 Sacred Layer components"""
-        try:
-            # Initialize Sacred Layer Manager with storage path
-            self.sacred_layer = SacredLayerManager(self.config['db_path'])
-            logger.info("Sacred Layer Manager initialized")
-            
-            # Initialize Git Activity Trackers for each project
-            for project in self.project_manager.get_active_projects():
-                if project.watch_dirs:
-                    try:
-                        # Use first watch dir as repo root
-                        self.git_trackers[project.project_id] = GitActivityTracker(
-                            project.watch_dirs[0], project.project_id
-                        )
-                        logger.info(f"Git Activity Tracker initialized for project: {project.name}")
-                    except Exception as e:
-                        logger.warning(f"Failed to init Git tracker for {project.name}: {e}")
-            
-            # Initialize Sacred Drift Detector (needs git tracker, will be set per project)
-            self.drift_detector = None
-            logger.info("Sacred Drift Detector will be initialized per project")
-            
-            logger.info("✅ Sacred Layer v3.0 components activated successfully")
-        except Exception as e:
-            logger.warning(f"Sacred Layer initialization failed (non-critical): {e}")
-            logger.info("Continuing with v2.0 functionality")
     
     def _save_processed_files(self, project_id: str):
         """Save hash of processed files for a project"""
@@ -498,7 +549,7 @@ class ProjectKnowledgeAgent:
         return None
     
     async def embed_text(self, text: str) -> List[float]:
-        """Generate embeddings using Google's text-embedding-004"""
+        """Generate embeddings using Google's gemini-embedding-001"""
         try:
             response = await asyncio.to_thread(
                 self.embedder.models.embed_content,
@@ -690,7 +741,7 @@ Answer:"""
         try:
             response = await asyncio.to_thread(
                 self.embedder.models.generate_content,
-                model="gemini-2.0-flash-001",
+                model="gemini-2.5-flash",
                 contents=prompt
             )
 
@@ -787,6 +838,29 @@ class RAGServer:
         CORS(self.app)
         self.port = port
         self._setup_routes()
+        add_sacred_drift_endpoint(
+            self.app,
+            self.agent,
+            self.agent.project_manager,
+            self.agent.sacred_integration.sacred_manager
+        )
+    
+    def _run_async(self, coro):
+        """Helper method to run async functions in sync Flask routes"""
+        import concurrent.futures
+        import threading
+        
+        def run_in_thread():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                return loop.run_until_complete(coro)
+            finally:
+                loop.close()
+        
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(run_in_thread)
+            return future.result()
     
     def _setup_routes(self):
         @self.app.route('/health', methods=['GET'])
@@ -794,7 +868,7 @@ class RAGServer:
             return jsonify({'status': 'healthy', 'timestamp': datetime.now().isoformat()})
         
         @self.app.route('/query', methods=['POST'])
-        async def query():
+        def query():
             data = request.json
             question = data.get('question', '')
             k = data.get('k', 5)
@@ -802,11 +876,11 @@ class RAGServer:
             if not question:
                 return jsonify({'error': 'Question required'}), 400
             
-            results = await self.agent.query(question, k)
+            results = self._run_async(self.agent.query(question, k))
             return jsonify(results)
         
         @self.app.route('/ingest', methods=['POST'])
-        async def ingest():
+        def ingest():
             data = request.json
             path = data.get('path', '')
             
@@ -817,9 +891,9 @@ class RAGServer:
                 # Check if single file should be ignored
                 if self.agent.path_filter.should_ignore_path(path):
                     return jsonify({'error': 'File path is ignored by configuration', 'chunks_ingested': 0})
-                chunks = await self.agent.ingest_file(path)
+                chunks = self._run_async(self.agent.ingest_file(path))
             else:
-                chunks = await self.agent.ingest_directory(path)
+                chunks = self._run_async(self.agent.ingest_directory(path))
             
             return jsonify({'chunks_ingested': chunks})
         
@@ -923,155 +997,57 @@ class RAGServer:
             return jsonify({'error': 'Project not found'}), 404
         
         # Sacred Layer v3.0 endpoints
-        @self.app.route('/sacred/health', methods=['GET'])
-        def sacred_health():
-            """Check if sacred layer is active"""
-            return jsonify({
-                'sacred_layer_active': self.agent.sacred_layer is not None,
-                'git_trackers_count': len(self.agent.git_trackers),
-                'drift_detector_available': self.agent.sacred_layer is not None
-            })
-        
         @self.app.route('/sacred/plans', methods=['POST'])
         def create_sacred_plan():
-            """Create a new sacred plan"""
-            if not self.agent.sacred_layer:
-                return jsonify({'error': 'Sacred layer not initialized'}), 503
-            
             data = request.json
-            project_id = data.get('project_id')
-            title = data.get('title')
-            content = data.get('content')
-            
-            if not all([project_id, title, content]):
-                return jsonify({'error': 'project_id, title, and content required'}), 400
-            
-            try:
-                # Sacred layer methods are synchronous
-                plan = self.agent.sacred_layer.create_plan(
-                    project_id, title, content
-                )
-                return jsonify({
-                    'plan_id': plan.plan_id,
-                    'status': 'created',
-                    'verification_required': True,
-                    'verification_code': plan.verification_code
-                })
-            except Exception as e:
-                return jsonify({'error': str(e)}), 500
-        
-        @self.app.route('/sacred/plans', methods=['GET'])
-        def list_sacred_plans():
-            """List sacred plans for a project"""
-            if not self.agent.sacred_layer:
-                return jsonify({'error': 'Sacred layer not initialized'}), 503
-            
-            project_id = request.args.get('project_id')
-            status = request.args.get('status', 'approved')
-            
-            try:
-                # Get plans from sacred layer
-                plans = self.agent.sacred_layer.list_plans(
-                    project_id=project_id,
-                    status=status if status != 'all' else None
-                )
-                
-                return jsonify({
-                    'plans': [
-                        {
-                            'plan_id': plan.plan_id,
-                            'title': plan.title,
-                            'content': plan.content,
-                            'status': plan.status,
-                            'created_at': plan.created_at.isoformat(),
-                            'approved_at': plan.approved_at.isoformat() if plan.approved_at else None,
-                            'project_id': project_id
-                        }
-                        for plan in plans
-                    ]
-                })
-            except Exception as e:
-                return jsonify({'error': str(e)}), 500
+            result = self._run_async(self.agent.sacred_integration.create_sacred_plan(
+                data['project_id'],
+                data['title'],
+                data.get('file_path') or data.get('content')
+            ))
+            return jsonify(result)
 
         @self.app.route('/sacred/plans/<plan_id>/approve', methods=['POST'])
         def approve_sacred_plan(plan_id):
-            """Approve a sacred plan with 2-layer verification"""
-            if not self.agent.sacred_layer:
-                return jsonify({'error': 'Sacred layer not initialized'}), 503
-            
             data = request.json
-            verification_code = data.get('verification_code')
-            approval_key = data.get('approval_key')
-            
-            if not all([verification_code, approval_key]):
-                return jsonify({'error': 'verification_code and approval_key required'}), 400
-            
-            try:
-                # Sacred layer methods are synchronous
-                success = self.agent.sacred_layer.approve_plan(
-                    plan_id, verification_code, approval_key
-                )
-                if success:
-                    return jsonify({'status': 'approved', 'plan_id': plan_id})
-                else:
-                    return jsonify({'error': 'Verification failed'}), 401
-            except Exception as e:
-                return jsonify({'error': str(e)}), 500
+            result = self._run_async(self.agent.sacred_integration.approve_sacred_plan(
+                plan_id,
+                data['approver'],
+                data['verification_code'],
+                data['secondary_verification']
+            ))
+            return jsonify(result)
+
+        @self.app.route('/sacred/query', methods=['POST'])
+        def query_sacred_plans():
+            data = request.json
+            result = self._run_async(self.agent.sacred_integration.query_sacred_context(
+                data['project_id'],
+                data['query']
+            ))
+            return jsonify(result)
         
-        @self.app.route('/sacred/drift/<project_id>', methods=['GET'])
-        def check_drift(project_id):
-            """Check drift between code and sacred plans"""
-            if not self.agent.sacred_layer:
-                return jsonify({'error': 'Sacred layer not initialized'}), 503
+        @self.app.route('/projects/<project_id>/git/activity', methods=['GET'])
+        def get_git_activity(project_id):
+            hours = int(request.args.get('hours', 24))
+            if project_id not in self.agent.git_integration.git_trackers:
+                return jsonify({'error': 'Git not initialized for project'}), 404
             
-            if project_id not in self.agent.git_trackers:
-                return jsonify({'error': 'Git tracker not initialized for this project'}), 503
-            
+            activity = self.agent.git_integration.git_trackers[project_id].analyze_activity(hours)
+            # Note: The dataclasses from git_activity_tracker need to be JSON serializable.
+            # A helper function might be needed here if they are not.
+            return jsonify(activity.__dict__)
+
+        @self.app.route('/projects/<project_id>/git/sync', methods=['POST'])
+        def sync_from_git(project_id):
             try:
-                # Create drift detector for this project
-                git_tracker = self.agent.git_trackers[project_id]
-                drift_detector = SacredDriftDetector(self.agent.sacred_layer, git_tracker)
-                # Convert async call to sync using asyncio.run
-                drift_report = asyncio.run(drift_detector.analyze_sacred_drift(project_id))
-                # Convert to dict and handle enum/datetime serialization
-                drift_dict = {
-                    'project_id': drift_report.project_id,
-                    'status': drift_report.status.value,  # Convert enum to string
-                    'alignment_score': drift_report.alignment_score,
-                    'violations': drift_report.violations,
-                    'recommendations': drift_report.recommendations,
-                    'analyzed_at': drift_report.analyzed_at.isoformat(),  # Convert datetime to ISO string
-                    'sacred_plans_checked': drift_report.sacred_plans_checked
-                }
-                return jsonify(drift_dict)
-            except Exception as e:
-                return jsonify({'error': str(e)}), 500
-        
-        @self.app.route('/git/activity/<project_id>', methods=['GET'])  
-        def git_activity(project_id):
-            """Get recent git activity for a project"""
-            if project_id not in self.agent.git_trackers:
-                return jsonify({'error': 'Git tracker not initialized for this project'}), 503
-            
-            try:
-                git_tracker = self.agent.git_trackers[project_id]
-                # Convert async call to sync using asyncio.run
-                activity = git_tracker.analyze_activity()
-                # Convert to dict and handle set serialization
-                activity_dict = {
-                    'project_id': activity.project_id,
-                    'commits_count': activity.commits_count,
-                    'files_changed': list(activity.files_changed),  # Convert set to list
-                    'active_branches': activity.active_branches,
-                    'recent_commits': activity.recent_commits,
-                    'activity_summary': activity.activity_summary
-                }
-                return jsonify(activity_dict)
+                self._run_async(self.agent.git_integration.update_project_from_git(project_id))
+                return jsonify({'status': 'synced', 'timestamp': datetime.now().isoformat()})
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
         
         @self.app.route('/query_llm', methods=['POST'])
-        async def query_with_llm_endpoint():
+        def query_with_llm_endpoint():
             """Enhanced query endpoint with natural language responses"""
             data = request.json
             question = data.get('question', '')
@@ -1086,8 +1062,15 @@ class RAGServer:
                 # Focus on specific project (use existing logic)
                 pass
 
-            result = await self.agent.query_with_llm(question, k)
+            result = self._run_async(self.agent.query_with_llm(question, k))
             return jsonify(result)
+
+        @self.app.route('/analytics/summary', methods=['GET'])
+        def get_analytics_summary():
+            # This should be expanded with real data from git/drift analysis
+            summary = self.agent.project_manager.get_project_summary()
+            # Add more analytics data here in the future
+            return jsonify(summary)
     
     def run(self):
         logger.info(f"Starting RAG server on port {self.port}")
