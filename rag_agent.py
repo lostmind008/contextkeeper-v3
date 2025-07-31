@@ -448,6 +448,10 @@ class ProjectKnowledgeAgent:
                 http_options=HttpOptions(api_version="v1beta"),
                 api_key=os.environ.get("GOOGLE_API_KEY")
             )
+            # Initialize content generation client for LLM responses
+            self.client = genai.Client(
+                api_key=os.environ.get("GOOGLE_API_KEY")
+            )
             # Create embedding function for ChromaDB
             self.embedding_function = GoogleGenAIEmbeddingFunction(
                 api_key=os.getenv('GEMINI_API_KEY'),
@@ -622,7 +626,7 @@ class ProjectKnowledgeAgent:
             logger.error(f"Error ingesting {file_path}: {e}")
             return 0
     
-    async def ingest_directory(self, directory: str) -> int:
+    async def ingest_directory(self, directory: str, project_id: str = None) -> int:
         """Recursively ingest all files in a directory"""
         total_chunks = 0
         
@@ -638,79 +642,98 @@ class ProjectKnowledgeAgent:
                     if self.path_filter.should_ignore_path(file_path):
                         continue
                     
-                    chunks = await self.ingest_file(file_path)
+                    chunks = await self.ingest_file(file_path, project_id)  # FIXED: Pass project_id
                     total_chunks += chunks
         
         return total_chunks
     
     async def query(self, question: str, k: int = None, project_id: str = None) -> Dict[str, Any]:
-        """Query the knowledge base with optional project filtering"""
+        """Query the knowledge base with STRICT project filtering"""
         if k is None:
             k = self.config['max_results']
         
-        # Use focused project if no project specified
+        # CRITICAL: Require project_id - fail closed, not open
         if project_id is None:
-            focused_project = self.project_manager.get_focused_project()
-            if focused_project:
-                project_id = focused_project.project_id
+            # FAIL CLOSED: No project = no results
+            logger.warning(f"Query attempted without project_id: {question[:50]}...")
+            return {
+                'query': question,
+                'error': 'No project context specified',
+                'results': [],
+                'timestamp': datetime.now().isoformat()
+            }
+        
+        # Validate project exists and is accessible
+        if project_id not in self.collections:
+            logger.error(f"Query attempted for non-existent project: {project_id}")
+            return {
+                'query': question,
+                'error': f'Project {project_id} not found',
+                'results': [],
+                'timestamp': datetime.now().isoformat()
+            }
         
         try:
-            # Search in appropriate collection(s) (ChromaDB will handle embeddings)
-            all_results = {'ids': [[]], 'distances': [[]], 'metadatas': [[]], 'documents': [[]]}
+            # Search ONLY the specified project - no cross-project contamination
+            results = self.collections[project_id].query(
+                query_texts=[question],
+                n_results=k
+            )
             
-            if project_id and project_id in self.collections:
-                # Search specific project
-                results = self.collections[project_id].query(
-                    query_texts=[question],
-                    n_results=k
-                )
-                all_results = results
-            else:
-                # Search all active projects
-                for proj_id, collection in self.collections.items():
-                    if self.project_manager.projects[proj_id].status == ProjectStatus.ACTIVE:
-                        results = collection.query(
-                            query_texts=[question],
-                            n_results=k
-                        )
-                        # Merge results
-                        for key in ['ids', 'distances', 'metadatas', 'documents']:
-                            if results[key] and results[key][0]:
-                                all_results[key][0].extend(results[key][0])
-            
-            # Format results
+            # Format results with project context
             formatted_results = []
-            for i in range(len(all_results['ids'][0])):
-                formatted_results.append({
-                    'content': all_results['documents'][0][i],
-                    'metadata': all_results['metadatas'][0][i],
-                    'distance': all_results['distances'][0][i] if 'distances' in all_results else None
-                })
+            if results and 'ids' in results and results['ids'] and results['ids'][0]:
+                for i in range(len(results['ids'][0])):
+                    formatted_results.append({
+                        'content': results['documents'][0][i],
+                        'metadata': results['metadatas'][0][i],
+                        'distance': results['distances'][0][i] if 'distances' in results else None,
+                        'project_id': project_id  # Always include source project
+                    })
             
             return {
                 'query': question,
                 'results': formatted_results,
+                'project_id': project_id,  # Always include project context
                 'timestamp': datetime.now().isoformat()
             }
             
         except Exception as e:
-            logger.error(f"Query error: {e}")
+            logger.error(f"Query error in project {project_id}: {e}")
             return {
                 'query': question,
                 'error': str(e),
-                'results': []
+                'results': [],
+                'project_id': project_id
             }
-    
-    async def query_with_llm(self, question: str, k: int = None) -> Dict[str, Any]:
+    async def query_with_llm(self, question: str, k: int = None, project_id: str = None) -> Dict[str, Any]:
         """Enhanced query with natural language response generation"""
-        # Get raw RAG results using existing method
-        raw_results = await self.query(question, k)
+        # CRITICAL: Enforce project_id requirement
+        if project_id is None:
+            return {
+                'question': question,
+                'answer': "No project context specified. Please select a project first.",
+                'sources': [],
+                'error': 'No project context'
+            }
+        
+        # Get raw RAG results using the fixed query method
+        raw_results = await self.query(question, k, project_id)
+
+        if raw_results.get('error'):
+            return {
+                'question': question,
+                'answer': f"Error: {raw_results['error']}",
+                'sources': [],
+                'project_id': project_id
+            }
 
         if not raw_results['results']:
             return {
                 'question': question,
-                'answer': "I couldn't find relevant information in the knowledge base.",
-                'sources': []
+                'answer': f"I couldn't find relevant information in project {project_id}.",
+                'sources': [],
+                'project_id': project_id
             }
 
         # Prepare context for LLM
@@ -723,62 +746,36 @@ class ProjectKnowledgeAgent:
 
         context = "\n\n---\n\n".join(context_chunks)
 
-        # Generate natural language response using existing Gemini client
-        prompt = f"""Based on the following context from the ContextKeeper knowledge base, provide a clear, helpful answer to this question: "{question}"
+        # Generate response using LLM
+        try:
+            response = self.client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=f'''Based on the following context from the project "{project_id}", answer this question: {question}
 
-Context from codebase:
+Context from the codebase:
 {context}
 
-Instructions:
-- Provide a conversational, well-structured response
-- Focus on the most relevant information
-- If code is mentioned, explain what it does in plain English
-- Keep the response concise but comprehensive
-- If the context doesn't fully answer the question, acknowledge this
-
-Answer:"""
-
-        try:
-            response = await asyncio.to_thread(
-                self.embedder.models.generate_content,
-                model="gemini-2.5-flash",
-                contents=prompt
+Provide a helpful and accurate answer based solely on the given context. If the context doesn't contain enough information, say so.'''
             )
 
             return {
                 'question': question,
                 'answer': response.text,
-                'sources': list(set(sources)),  # Remove duplicates
-                'context_used': len(context_chunks),
+                'sources': list(set(sources)),  # Unique sources
+                'project_id': project_id,
                 'timestamp': datetime.now().isoformat()
             }
 
         except Exception as e:
-            logger.error(f"LLM enhancement error: {e}")
-            # Fallback to raw results
+            logger.error(f"LLM generation error: {e}")
             return {
                 'question': question,
-                'answer': f"Found {len(raw_results['results'])} relevant results, but couldn't generate natural language response.",
-                'raw_results': raw_results['results'][:3],
+                'answer': f"Error generating response: {str(e)}",
+                'sources': sources,
+                'project_id': project_id,
                 'error': str(e)
             }
-    
-    def add_decision(self, decision: str, reasoning: str = "", project_id: str = None,
-                    tags: List[str] = None):
-        """Add a project decision to the knowledge base and project config"""
-        # Use focused project if not specified
-        if project_id is None:
-            focused_project = self.project_manager.get_focused_project()
-            if focused_project:
-                project_id = focused_project.project_id
-            else:
-                logger.warning("No project specified and no focused project")
-                return None
-        
-        # Add to project manager
-        decision_obj = self.project_manager.add_decision(
-            project_id, decision, reasoning, tags
-        )
+    async def interactive_mode(self):
         
         if decision_obj and project_id in self.collections:
             # Create content for embedding
@@ -872,28 +869,46 @@ class RAGServer:
             data = request.json
             question = data.get('question', '')
             k = data.get('k', 5)
+            project_id = data.get('project_id')  # Extract project_id from request
             
             if not question:
                 return jsonify({'error': 'Question required'}), 400
             
-            results = self._run_async(self.agent.query(question, k))
+            # Pass project_id to query method (will use focused project if None)
+            results = self._run_async(self.agent.query(question, k, project_id))
+            
+            # Security audit logging
+            logger.info(f"Query executed - Project: {project_id or 'FOCUSED'}, Question: {question[:50]}...")
+            
             return jsonify(results)
         
         @self.app.route('/ingest', methods=['POST'])
         def ingest():
             data = request.json
             path = data.get('path', '')
+            project_id = data.get('project_id')  # CRITICAL: Extract project_id
             
             if not path or not os.path.exists(path):
                 return jsonify({'error': 'Valid path required'}), 400
+            
+            # CRITICAL: Enforce project isolation - require project_id for security
+            if not project_id:
+                return jsonify({'error': 'project_id required for secure ingestion'}), 400
+            
+            # Validate project exists
+            if project_id not in self.agent.collections:
+                # Try to initialize collections in case project was just created
+                self.agent._init_project_collections()
+                if project_id not in self.agent.collections:
+                    return jsonify({'error': f'Project {project_id} not found or not accessible'}), 404
             
             if os.path.isfile(path):
                 # Check if single file should be ignored
                 if self.agent.path_filter.should_ignore_path(path):
                     return jsonify({'error': 'File path is ignored by configuration', 'chunks_ingested': 0})
-                chunks = self._run_async(self.agent.ingest_file(path))
+                chunks = self._run_async(self.agent.ingest_file(path, project_id))
             else:
-                chunks = self._run_async(self.agent.ingest_directory(path))
+                chunks = self._run_async(self.agent.ingest_directory(path, project_id))
             
             return jsonify({'chunks_ingested': chunks})
         
@@ -948,6 +963,30 @@ class RAGServer:
             if self.agent.project_manager.set_focus(project_id):
                 return jsonify({'status': 'Project focused', 'project_id': project_id})
             return jsonify({'error': 'Project not found'}), 404
+        
+        @self.app.route('/projects/validate/<project_id>', methods=['GET'])
+        def validate_project_access(project_id):
+            """Validate if a project exists and is accessible"""
+            if project_id not in self.agent.collections:
+                return jsonify({
+                    'valid': False,
+                    'error': f'Project {project_id} not found'
+                }), 404
+            
+            project = self.agent.project_manager.projects.get(project_id)
+            if not project:
+                return jsonify({
+                    'valid': False,
+                    'error': f'Project {project_id} not in project manager'
+                }), 404
+            
+            return jsonify({
+                'valid': True,
+                'project_id': project_id,
+                'name': project.name,
+                'status': project.status.value,
+                'is_focused': project_id == self.agent.project_manager.focused_project_id
+            })
         
         @self.app.route('/projects/<project_id>/status', methods=['PUT'])
         def update_project_status(project_id):
@@ -1007,6 +1046,28 @@ class RAGServer:
             ))
             return jsonify(result)
 
+        @self.app.route('/sacred/plans', methods=['GET'])
+        def list_sacred_plans():
+            """List sacred plans with optional filtering"""
+            try:
+                # Get query parameters
+                project_id = request.args.get('project_id')
+                status = request.args.get('status')
+                
+                # Get the sacred manager
+                sacred_manager = self.agent.sacred_integration.sacred_manager
+                
+                # List plans with optional filters
+                plans = sacred_manager.list_plans(
+                    project_id=project_id,
+                    status=status
+                )
+                
+                return jsonify(plans)
+            except Exception as e:
+                logger.error(f"Error listing sacred plans: {str(e)}")
+                return jsonify({'error': str(e)}), 500
+
         @self.app.route('/sacred/plans/<plan_id>/approve', methods=['POST'])
         def approve_sacred_plan(plan_id):
             data = request.json
@@ -1020,12 +1081,120 @@ class RAGServer:
 
         @self.app.route('/sacred/query', methods=['POST'])
         def query_sacred_plans():
-            data = request.json
-            result = self._run_async(self.agent.sacred_integration.query_sacred_context(
-                data['project_id'],
-                data['query']
-            ))
-            return jsonify(result)
+            try:
+                data = request.json
+                
+                # Validate required fields
+                if not data or 'query' not in data:
+                    return jsonify({'error': 'Query is required'}), 400
+                
+                # Project ID is optional - will use focused project if not provided
+                project_id = data.get('project_id')
+                query = data['query']
+                
+                # If no project_id provided, use the focused project
+                if not project_id:
+                    if hasattr(self.agent, 'project_manager') and hasattr(self.agent.project_manager, 'focused_project_id') and self.agent.project_manager.focused_project_id:
+                        project_id = self.agent.project_manager.focused_project_id
+                    else:
+                        return jsonify({'error': 'No project_id provided and no focused project set'}), 400
+                
+                # Execute the query
+                result = self._run_async(self.agent.sacred_integration.query_sacred_context(
+                    project_id,
+                    query
+                ))
+                return jsonify(result)
+            except Exception as e:
+                logger.error(f"Error in sacred query endpoint: {str(e)}", exc_info=True)
+                return jsonify({'error': f'Failed to query sacred plans: {str(e)}'}), 500
+        
+        @self.app.route('/sacred/plans/<plan_id>/status', methods=['GET'])
+        def get_sacred_plan_status(plan_id):
+            """Get status of a specific sacred plan"""
+            try:
+                sacred_manager = self.agent.sacred_integration.sacred_manager
+                
+                # Find the plan
+                if plan_id not in sacred_manager.plans_registry:
+                    return jsonify({'error': 'Plan not found'}), 404
+                
+                plan = sacred_manager.plans_registry[plan_id]
+                return jsonify({
+                    'plan_id': plan['plan_id'],
+                    'title': plan['title'],
+                    'status': plan['status'],
+                    'created_at': plan['created_at'],
+                    'approved_at': plan.get('approved_at'),
+                    'project_id': plan['project_id']
+                })
+            except Exception as e:
+                logger.error(f"Error getting plan status: {str(e)}")
+                return jsonify({'error': str(e)}), 500
+        
+        @self.app.route('/sacred/plans/<plan_id>/lock', methods=['POST'])
+        def lock_sacred_plan(plan_id):
+            """Lock a sacred plan"""
+            try:
+                sacred_manager = self.agent.sacred_integration.sacred_manager
+                
+                # Check if plan exists and is approved
+                if plan_id not in sacred_manager.plans_registry:
+                    return jsonify({'error': 'Plan not found'}), 404
+                
+                plan = sacred_manager.plans_registry[plan_id]
+                if plan['status'] != 'approved':
+                    return jsonify({'error': 'Only approved plans can be locked'}), 400
+                
+                # Lock the plan
+                plan['status'] = 'locked'
+                sacred_manager._save_registry()
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Plan locked successfully',
+                    'plan_id': plan_id
+                })
+            except Exception as e:
+                logger.error(f"Error locking plan: {str(e)}")
+                return jsonify({'error': str(e)}), 500
+        
+        @self.app.route('/sacred/plans/supersede', methods=['POST'])
+        def supersede_sacred_plan():
+            """Supersede an old plan with a new one"""
+            try:
+                data = request.json
+                old_plan_id = data.get('old_plan_id')
+                new_plan_id = data.get('new_plan_id')
+                
+                if not old_plan_id or not new_plan_id:
+                    return jsonify({'error': 'Both old_plan_id and new_plan_id are required'}), 400
+                
+                sacred_manager = self.agent.sacred_integration.sacred_manager
+                
+                # Check both plans exist
+                if old_plan_id not in sacred_manager.plans_registry:
+                    return jsonify({'error': 'Old plan not found'}), 404
+                if new_plan_id not in sacred_manager.plans_registry:
+                    return jsonify({'error': 'New plan not found'}), 404
+                
+                # Update old plan status
+                sacred_manager.plans_registry[old_plan_id]['status'] = 'superseded'
+                sacred_manager.plans_registry[old_plan_id]['superseded_by'] = new_plan_id
+                sacred_manager.plans_registry[old_plan_id]['superseded_at'] = datetime.now().isoformat()
+                
+                # Save changes
+                sacred_manager._save_registry()
+                
+                return jsonify({
+                    'success': True,
+                    'message': f'Plan {old_plan_id} superseded by {new_plan_id}',
+                    'old_plan_id': old_plan_id,
+                    'new_plan_id': new_plan_id
+                })
+            except Exception as e:
+                logger.error(f"Error superseding plan: {str(e)}")
+                return jsonify({'error': str(e)}), 500
         
         @self.app.route('/projects/<project_id>/git/activity', methods=['GET'])
         def get_git_activity(project_id):
@@ -1053,16 +1222,16 @@ class RAGServer:
             question = data.get('question', '')
             k = data.get('k', 5)
             project_id = data.get('project_id')
-
+            
             if not question:
                 return jsonify({'error': 'Question required'}), 400
-
-            # Set project context if provided
-            if project_id and project_id in self.agent.collections:
-                # Focus on specific project (use existing logic)
-                pass
-
-            result = self._run_async(self.agent.query_with_llm(question, k))
+            
+            # Pass project_id to query_with_llm (will handle validation internally)
+            result = self._run_async(self.agent.query_with_llm(question, k, project_id))
+            
+            # Security audit logging
+            logger.info(f"LLM Query executed - Project: {project_id or 'FOCUSED'}, Question: {question[:50]}...")
+            
             return jsonify(result)
 
         @self.app.route('/analytics/summary', methods=['GET'])
@@ -1173,13 +1342,9 @@ class RAGServer:
             if not title:
                 return jsonify({'error': 'Title required'}), 400
             
-            # Use focused project if not specified
+            # FAIL CLOSED: Require explicit project_id
             if not project_id:
-                focused_project = self.agent.project_manager.get_focused_project()
-                if focused_project:
-                    project_id = focused_project.project_id
-                else:
-                    return jsonify({'error': 'No project specified and no focused project'}), 400
+                return jsonify({'error': 'No project specified. Please provide project_id.'}), 400
             
             objective = self.agent.project_manager.add_objective(
                 project_id, title, description, priority
@@ -1274,11 +1439,9 @@ class RAGServer:
             if not feature_description:
                 return jsonify({'error': 'feature_description required'}), 400
             
-            # Use focused project if not specified
+            # FAIL CLOSED: Require explicit project_id
             if not project_id:
-                focused_project = self.agent.project_manager.get_focused_project()
-                if focused_project:
-                    project_id = focused_project.project_id
+                return jsonify({'error': 'No project specified. Please provide project_id.'}), 400
             
             # Query for relevant code
             query_results = self._run_async(self.agent.query(

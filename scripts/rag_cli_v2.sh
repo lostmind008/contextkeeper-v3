@@ -297,7 +297,14 @@ for proj in data['projects']:
 }
 
 # Main command handling
-source ./sacred_cli_integration_fixed.sh # Add this near the top
+# Source sacred commands if available
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+if [ -f "$SCRIPT_DIR/sacred_cli_integration_clean.sh" ]; then
+    source "$SCRIPT_DIR/sacred_cli_integration_clean.sh"
+elif [ -f "$SCRIPT_DIR/sacred_cli_integration.sh" ]; then
+    source "$SCRIPT_DIR/sacred_cli_integration.sh"
+fi
+
 case "$1" in
     sacred|s)
         shift

@@ -420,9 +420,44 @@ class EnhancedContextKeeperMCP {
   async getDevelopmentContext(args) {
     const { project_id, include_git = true, include_drift = true, hours = 24 } = args;
     
+    // CRITICAL: Require project_id
+    let effectiveProjectId = project_id;
+    
+    if (!effectiveProjectId) {
+      // Try focused project as fallback
+      try {
+        const focusedResponse = await this.ragRequest('/projects/focused', 'GET');
+        if (focusedResponse && focusedResponse.project_id) {
+          effectiveProjectId = focusedResponse.project_id;
+        }
+      } catch (error) {
+        console.error('Failed to get focused project:', error);
+      }
+      
+      if (!effectiveProjectId) {
+        throw new McpError(
+          ErrorCode.InvalidParams,
+          'Project ID required. No focused project available.'
+        );
+      }
+    }
+    
+    // Validate project before proceeding
+    const validationResponse = await this.ragRequest(
+      `/projects/validate/${effectiveProjectId}`, 
+      'GET'
+    );
+    
+    if (!validationResponse.valid) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `Project ${effectiveProjectId} is not accessible`
+      );
+    }
+    
     // Get project context
     const context = await this.ragRequest(
-      project_id ? `/projects/${project_id}/context` : '/context'
+      `/projects/${effectiveProjectId}/context`
     );
 
     let formattedContext = `# Development Context\n\n`;
@@ -461,9 +496,9 @@ class EnhancedContextKeeperMCP {
     }
 
     // Add git activity if requested
-    if (include_git && project_id) {
+    if (include_git && effectiveProjectId) {
       try {
-        const gitActivity = await this.getGitSummary(project_id, hours);
+        const gitActivity = await this.getGitSummary(effectiveProjectId, hours);
         if (gitActivity) {
           formattedContext += gitActivity;
         }
@@ -473,9 +508,9 @@ class EnhancedContextKeeperMCP {
     }
 
     // Add drift analysis if requested
-    if (include_drift && project_id) {
+    if (include_drift && effectiveProjectId) {
       try {
-        const driftAnalysis = await this.ragRequest(`/projects/${project_id}/drift?hours=${hours}`);
+        const driftAnalysis = await this.ragRequest(`/projects/${effectiveProjectId}/drift?hours=${hours}`);
         if (driftAnalysis.analysis) {
           formattedContext += `## Objective Alignment\n`;
           formattedContext += `**Status:** ${driftAnalysis.analysis.status}\n`;
@@ -513,16 +548,63 @@ class EnhancedContextKeeperMCP {
   async intelligentSearch(args) {
     const { query, search_types = ['all'], project_id, max_results = 5 } = args;
     
-    // Perform search
+    // CRITICAL: Enforce project context
+    let effectiveProjectId = project_id;
+    
+    if (!effectiveProjectId) {
+      // Try to get focused project as fallback
+      try {
+        const focusedResponse = await this.ragRequest('/projects/focused', 'GET');
+        if (focusedResponse && focusedResponse.project_id) {
+          effectiveProjectId = focusedResponse.project_id;
+          console.log(`Using focused project: ${effectiveProjectId}`);
+        }
+      } catch (error) {
+        console.error('Failed to get focused project:', error);
+      }
+      
+      // If still no project context, fail closed
+      if (!effectiveProjectId) {
+        throw new McpError(
+          ErrorCode.InvalidParams, 
+          'No project context available. Please specify project_id or set a focused project.'
+        );
+      }
+    }
+    
+    // Validate project exists before querying
+    try {
+      const validationResponse = await this.ragRequest(
+        `/projects/validate/${effectiveProjectId}`, 
+        'GET'
+      );
+      
+      if (!validationResponse.valid) {
+        throw new McpError(
+          ErrorCode.InvalidParams,
+          `Project ${effectiveProjectId} is not accessible`
+        );
+      }
+    } catch (error) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `Failed to validate project ${effectiveProjectId}: ${error.message}`
+      );
+    }
+    
+    // Perform search with enforced project_id
     const searchResults = await this.ragRequest('/query', 'POST', {
       question: query,
-      k: max_results * 3, // Get more to filter by type
-      project_id
+      k: max_results * 3,
+      project_id: effectiveProjectId  // Always send validated project_id
     });
 
     if (searchResults.error) {
       throw new McpError(ErrorCode.InternalError, searchResults.error);
     }
+
+    // Log for security audit
+    console.log(`Search executed - Project: ${effectiveProjectId}, Query: ${query.substring(0, 50)}...`);
 
     // Categorize results by type
     const categorized = {
@@ -533,19 +615,44 @@ class EnhancedContextKeeperMCP {
       other: []
     };
 
-    for (const result of searchResults.results || []) {
-      const type = result.metadata?.type || 'other';
-      const category = categorized[type] || categorized.other;
-      
-      if (search_types.includes('all') || search_types.includes(type)) {
-        category.push(result);
+    // Process results...
+    if (searchResults.results) {
+      for (const result of searchResults.results) {
+        const metadata = result.metadata || {};
+        const content = result.content || '';
+        
+        // Categorize based on metadata or content patterns
+        if (metadata.type === 'code' || /\.(py|js|ts|java|cpp)$/.test(metadata.file || '')) {
+          categorized.code.push(result);
+        } else if (content.includes('Decision:') || content.includes('Reasoning:')) {
+          categorized.decisions.push(result);
+        } else if (content.includes('Objective:') || content.includes('Goal:')) {
+          categorized.objectives.push(result);
+        } else if (metadata.source === 'git' || content.includes('commit')) {
+          categorized.git_activity.push(result);
+        } else {
+          categorized.other.push(result);
+        }
       }
     }
 
-    // Format results
-    let formattedResults = `# Search Results for: "${query}"\n\n`;
+    // Filter by requested search types
+    const filteredResults = {};
+    if (search_types.includes('all')) {
+      filteredResults = categorized;
+    } else {
+      for (const type of search_types) {
+        if (categorized[type]) {
+          filteredResults[type] = categorized[type].slice(0, max_results);
+        }
+      }
+    }
 
-    for (const [type, results] of Object.entries(categorized)) {
+    // Format results for display
+    let formattedResults = `# Search Results for: "${query}"\n`;
+    formattedResults += `**Project**: ${effectiveProjectId}\n\n`;
+
+    for (const [type, results] of Object.entries(filteredResults)) {
       if (results.length > 0) {
         formattedResults += `## ${type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')}\n\n`;
 

@@ -20,6 +20,7 @@ from unittest.mock import Mock, patch, MagicMock
 import sys
 
 # Add parent directory to path for imports
+import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 

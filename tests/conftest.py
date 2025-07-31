@@ -24,7 +24,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sacred_layer_implementation import SacredLayerManager, SacredIntegratedRAGAgent, PlanStatus
 from project_manager import ProjectManager
-from rag_agent import RAGAgent
+from rag_agent import ProjectKnowledgeAgent
 
 # Test configuration constants
 TEST_PROJECT_ID = "test_project_12345"

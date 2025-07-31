@@ -254,11 +254,32 @@ class SacredLayerManager:
         query_embedding = await self.embedder.embed_text(query)
         
         # Search only in sacred plans
-        results = collection.query(
-            query_embeddings=[query_embedding],
-            n_results=10,
-            where={"$and": [{"type": "sacred_plan"}, {"status": "approved"}]}
-        )
+        try:
+            # Try the newer ChromaDB filter syntax first
+            results = collection.query(
+                query_embeddings=[query_embedding],
+                n_results=10,
+                where={
+                    "type": {"$eq": "sacred_plan"},
+                    "status": {"$eq": "approved"}
+                }
+            )
+        except Exception as e:
+            # Fall back to older syntax if needed
+            logger.warning(f"ChromaDB filter error with new syntax: {e}, trying older syntax")
+            try:
+                results = collection.query(
+                    query_embeddings=[query_embedding],
+                    n_results=10,
+                    where={"$and": [{"type": "sacred_plan"}, {"status": "approved"}]}
+                )
+            except Exception as e2:
+                logger.error(f"ChromaDB filter error with both syntaxes: {e2}")
+                # Last resort - no filter
+                results = collection.query(
+                    query_embeddings=[query_embedding],
+                    n_results=10
+                )
 
         if not results['ids'][0]:
             return {"plans": [], "query": query}
