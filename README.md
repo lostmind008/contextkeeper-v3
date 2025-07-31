@@ -6,7 +6,7 @@
 
 **ContextKeeper** is a production-ready RAG-powered development context management system that prevents AI agents from derailing from approved architectural plans through the revolutionary **Sacred Layer** - an immutable plan storage system with 2-layer verification.
 
-> **✅ CURRENT STATUS (July 2025)**: All systems operational. CLI merge conflicts resolved, Sacred Layer endpoints functional, API updated to gemini-embedding-001, and server running stable on port 5556.
+> **✅ CURRENT STATUS (August 2025)**: v3.0.0 - Production Ready! All critical fixes complete, LLM integration working, sacred layer tests passing, analytics dashboard live with real-time metrics.
 
 ## 🌟 What's New in v3.0
 
@@ -14,13 +14,16 @@ ContextKeeper v3.0 introduces groundbreaking features that ensure AI agents adhe
 
 - **🛡️ Sacred Layer**: Create immutable architectural plans with 2-layer verification that protects core architecture from unintended AI changes
 - **🔄 Git-Based Tracking**: Robust file change tracking using Git for reliable knowledge base updates  
-- **📊 Drift Detection**: Detect when codebase has drifted from sacred plans with warnings and realignment suggestions
+- **📊 Enhanced Drift Detection**: AI-powered drift analysis with automated recommendations and sacred plan alignment
 - **🤖 Enhanced MCP Integration**: 8 MCP tools for seamless Claude Code integration with Sacred Layer awareness
-- **📈 Analytics Dashboard**: Visual overview of project health, sacred plan adherence, and recent activity
-- **🎯 Multi-Project Management**: Track multiple projects simultaneously with independent configurations
+- **📈 Live Analytics Dashboard**: Professional dashboard with real-time metrics, dark mode, export functionality, and mobile support
+- **🎯 Complete Project Isolation**: Secure multi-project management with zero cross-contamination
+- **💬 LLM-Enhanced Queries**: Natural language responses powered by Google Gemini 2.5 Flash
 - **📝 Decision & Objective Tracking**: Record architectural decisions and track development objectives
-- **🔍 Semantic Search**: Search entire codebase using natural language with LLM-enhanced responses
+- **🔍 Semantic Search**: Search entire codebase using natural language with context-aware results
 - **🔐 Auto Security**: Automatically redacts API keys and sensitive data
+- **📊 Sacred Metrics API**: Comprehensive analytics endpoint for sacred plan adherence and governance
+- **⚡ Performance**: Async Flask endpoints, optimized embeddings, and intelligent caching
 
 ## 🚀 Quick Start (5 minutes)
 
@@ -28,11 +31,18 @@ ContextKeeper v3.0 introduces groundbreaking features that ensure AI agents adhe
 
 ```bash
 # Clone the repository
-git clone https://github.com/lostmind008/contextkeeper.git
+git clone https://github.com/lostmind008/contextkeeper-v3.git
 cd contextkeeper
 
-# Run automated setup (installs dependencies, creates venv, initializes database)
-./setup.sh
+# Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Initialize the database (if needed)
+python rag_agent.py init
 ```
 
 ### 2. Configure Environment
@@ -43,14 +53,16 @@ Create your `.env` file with Google Cloud credentials:
 # Copy template and edit
 cp .env.template .env
 
-# Required Google Cloud Configuration
-export GOOGLE_CLOUD_PROJECT=your-project-id
-export GOOGLE_CLOUD_LOCATION=global
-export GOOGLE_GENAI_USE_VERTEXAI=True
-export GOOGLE_APPLICATION_CREDENTIALS=/path/to/your-service-account.json
+# Required: Google API Key (for embeddings and LLM)
+export GOOGLE_API_KEY=your-google-api-key
+export GEMINI_API_KEY=your-gemini-api-key  # Same as GOOGLE_API_KEY
 
-# Optional Sacred Layer (for architecture protection)
-export SACRED_APPROVAL_KEY=your-secret-approval-key
+# Required: Sacred Layer Approval Key
+export SACRED_APPROVAL_KEY=your-secure-approval-key  # For 2-layer verification
+
+# Optional: Analytics and Performance
+export ANALYTICS_CACHE_DURATION=300  # Cache duration in seconds (default: 300)
+export FLASK_ASYNC_MODE=True         # Enable async endpoints (default: True)
 ```
 
 ### 3. Start ContextKeeper
@@ -217,7 +229,7 @@ Add ContextKeeper to your Claude Code MCP configuration:
 
 ## 🛠️ Troubleshooting
 
-### Common Issues & Solutions (All Fixed as of July 2025)
+### Common Issues & Solutions (All Fixed as of August 2025)
 
 #### ✅ CLI Not Working / Merge Conflicts
 **Issue**: CLI commands failing with merge conflict errors  
@@ -381,21 +393,30 @@ curl -X POST http://localhost:5556/sacred/query \
 - **🔍 Data Redaction**: Automatic detection and redaction of API keys and sensitive data
 - **🚧 Path Security**: Smart filtering prevents access to sensitive system directories
 
-## 🔄 Recent Updates (July 2025)
+## 🔄 v3.0.0 Release (August 2025)
 
-### ✅ Infrastructure Fixes Completed
-- **CLI Integration**: All merge conflicts in rag_cli_v2.sh resolved
-- **Sacred Layer Endpoints**: ChromaDB filter formatting corrected, all endpoints operational
-- **API Compatibility**: Successfully updated to gemini-embedding-001 with v1beta API
-- **Database Stability**: ChromaDB reset completed, embedding function conflicts resolved
-- **Path Filtering**: Confirmed working correctly with comprehensive exclusion patterns
-- **Server Performance**: Running stable on port 5556 with consistent health checks
+### ✅ Major Features Completed
+- **Sacred Layer**: Full implementation with 2-layer verification and immutable plans
+- **Analytics Dashboard**: Live dashboard with real-time metrics, dark mode, and export functionality
+- **LLM Integration**: Natural language query responses using Google Gemini 2.5 Flash
+- **Project Isolation**: Complete isolation with zero cross-contamination verified
+- **Git Integration**: Comprehensive development activity tracking
+- **MCP Tools**: 8 powerful tools for Claude Code integration
+- **Sacred Metrics API**: Comprehensive analytics endpoint for governance metrics
 
-### 🚀 Performance Improvements
-- **Faster Queries**: Optimized ChromaDB queries with proper filter syntax
-- **Better Filtering**: Enhanced path exclusion prevents database pollution
-- **API Efficiency**: Updated embedding model provides better performance
-- **Error Handling**: Improved error messages and recovery procedures
+### 🐛 Critical Fixes Applied
+- **Sacred Query Endpoint**: Fixed 500 errors with proper error handling
+- **CLI JSON Parsing**: Resolved merge conflicts and added proper validation
+- **LLM Client Integration**: Added missing client attribute to ProjectKnowledgeAgent
+- **Test Suite Updates**: All sacred layer tests updated to match implementation
+- **Vector Search**: Verified proper project isolation (false positive resolved)
+
+### 🚀 Performance & Quality Improvements
+- **Async Endpoints**: All Flask endpoints now use async for better performance
+- **Smart Caching**: 5-minute caching for analytics endpoints
+- **Error Recovery**: Exponential backoff and automatic retry logic
+- **Mobile Support**: Fully responsive analytics dashboard
+- **Export Options**: PDF, PNG, and JSON export functionality
 
 ## 📜 License
 
@@ -408,14 +429,23 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 - Integrated with [Claude Code](https://claude.ai/code) via MCP protocol
 - Git integration using native Python git libraries
 
-## 📞 Support & Documentation
+## 📚 Documentation
 
-- **📖 Full Documentation**: [docs/](docs/) - Comprehensive guides and references
-- **🚀 Quick Reference**: [docs/guides/QUICK_REFERENCE.md](docs/guides/QUICK_REFERENCE.md) - Command cheat sheet
-- **🔧 API Reference**: [docs/api/API_REFERENCE.md](docs/api/API_REFERENCE.md) - Complete endpoint documentation  
-- **🤖 MCP Integration**: [docs/api/MCP_TOOLS_REFERENCE.md](docs/api/MCP_TOOLS_REFERENCE.md) - Claude Code setup
-- **🐛 Issues**: [GitHub Issues](https://github.com/lostmind008/contextkeeper/issues) - Bug reports and feature requests
-- **💬 Discussions**: [GitHub Discussions](https://github.com/lostmind008/contextkeeper/discussions) - Community support
+### Core Documentation
+- **📖 User Guide**: [USER_GUIDE.md](USER_GUIDE.md) - Comprehensive user manual
+- **🚀 Deployment Guide**: [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) - Production deployment steps
+- **📊 Analytics Guide**: Access dashboard at `http://localhost:5556/analytics_dashboard_live.html`
+- **🔧 API Reference**: [API_REFERENCE.md](API_REFERENCE.md) - Complete endpoint documentation
+
+### Technical References
+- **🏗️ Architecture**: [ARCHITECTURE.md](ARCHITECTURE.md) - System design and components
+- **🤖 MCP Tools**: 8 tools available in Claude Code (see MCP integration above)
+- **📝 Test Report**: [TEST_REPORT_2025-07-31.md](TEST_REPORT_2025-07-31.md) - Comprehensive test analysis
+- **🔍 Troubleshooting**: [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues and solutions
+
+### Support
+- **🐛 Issues**: [GitHub Issues](https://github.com/lostmind008/contextkeeper-v3/issues)
+- **💬 Discussions**: [GitHub Discussions](https://github.com/lostmind008/contextkeeper-v3/discussions)
 
 ---
 

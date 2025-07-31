@@ -3,7 +3,6 @@
 Sacred Layer Implementation for ContextKeeper
 Provides immutable plan storage with 2-layer verification and isolated embeddings
 """
-
 import os
 import json
 import hashlib
@@ -13,21 +12,17 @@ from dataclasses import dataclass
 from enum import Enum
 import logging
 from pathlib import Path
-
 # For chunking large plans
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import chromadb
 from chromadb.config import Settings
-
 logger = logging.getLogger(__name__)
-
 class PlanStatus(Enum):
     DRAFT = "draft"
     PENDING_APPROVAL = "pending_approval"
     APPROVED = "approved"
     LOCKED = "locked"
     SUPERSEDED = "superseded"
-
 @dataclass
 class SacredPlan:
     """Represents an approved, immutable plan"""
@@ -42,11 +37,9 @@ class SacredPlan:
     verification_code: Optional[str]
     chunk_count: int = 1
     metadata: Dict[str, Any] = None
-
     def __post_init__(self):
         if self.metadata is None:
             self.metadata = {}
-
 class SacredLayerManager:
     """Manages sacred plans with verification and isolation"""
     
@@ -75,7 +68,6 @@ class SacredLayerManager:
         
         # Load plan registry
         self.plans_registry = self._load_registry()
-
     def _load_registry(self) -> Dict[str, SacredPlan]:
         """Load registry of all sacred plans"""
         registry_file = self.plans_dir / "registry.json"
@@ -90,7 +82,6 @@ class SacredLayerManager:
                     registry[plan_id] = SacredPlan(**plan_data)
                 return registry
         return {}
-
     def _save_registry(self):
         """Persist registry to disk"""
         registry_file = self.plans_dir / "registry.json"
@@ -102,7 +93,6 @@ class SacredLayerManager:
                 plan_dict['status'] = plan.status.value  # Convert enum to string
                 serializable_data[plan_id] = plan_dict
             json.dump(serializable_data, f, indent=2)
-
     def _get_sacred_collection(self, project_id: str):
         """Get or create sacred collection for a project"""
         collection_name = f"sacred_{project_id}"
@@ -117,7 +107,6 @@ class SacredLayerManager:
                     "created_at": datetime.now().isoformat()
                 }
             )
-
     async def create_plan(self, project_id: str, title: str,
                          content: str, file_path: Optional[str] = None) -> SacredPlan:
         """Create a new plan in draft status"""
@@ -143,61 +132,47 @@ class SacredLayerManager:
         # Save to registry
         self.plans_registry[plan_id] = plan
         self._save_registry()
-
         # Save full content to file
         plan_file = self.plans_dir / f"{plan_id}.txt"
         with open(plan_file, 'w', encoding='utf-8') as f:
             f.write(content)
-
         logger.info(f"Created draft plan: {plan_id} for project {project_id}")
         return plan
-
     async def approve_plan(self, plan_id: str, approver: str,
                           verification_code: str, secondary_verification: str) -> Tuple[bool, str]:
         """Approve a plan with 2-layer verification"""
         if plan_id not in self.plans_registry:
             return False, "Plan not found"
-
         plan = self.plans_registry[plan_id]
-
         if plan.status != PlanStatus.DRAFT:
             return False, f"Plan is not in draft status (current: {plan.status.value})"
-
         # Layer 1: Verification code check
         expected_code = self._generate_verification_code(plan)
         if verification_code != expected_code:
             logger.warning(f"Failed verification for plan {plan_id}: invalid code")
             return False, "Invalid verification code"
-
         # Layer 2: Secondary verification (could be password, 2FA, etc.)
         if not self._verify_secondary(approver, secondary_verification):
             logger.warning(f"Failed secondary verification for plan {plan_id}")
             return False, "Secondary verification failed"
-
         # Update plan status
         plan.status = PlanStatus.APPROVED
         plan.approved_at = datetime.now().isoformat()
         plan.approved_by = approver
         plan.verification_code = verification_code
-
         # Embed and store in sacred collection
         await self._embed_and_store_plan(plan)
-
         # Save registry
         self._save_registry()
-
         logger.info(f"Plan {plan_id} approved by {approver}")
         return True, "Plan approved and locked"
-
     async def _embed_and_store_plan(self, plan: SacredPlan):
         """Embed and store plan in isolated sacred collection"""
         collection = self._get_sacred_collection(plan.project_id)
-
         # Load full content
         plan_file = self.plans_dir / f"{plan.plan_id}.txt"
         with open(plan_file, 'r', encoding='utf-8') as f:
             content = f.read()
-
         # Check if chunking is needed
         if len(content) > 2000:  # Threshold for chunking
             chunks = self.text_splitter.split_text(content)
@@ -207,7 +182,6 @@ class SacredLayerManager:
             for i, chunk in enumerate(chunks):
                 chunk_id = f"{plan.plan_id}_chunk_{i}"
                 embedding = await self.embedder.embed_text(chunk)
-
                 collection.upsert(
                     ids=[chunk_id],
                     embeddings=[embedding],
@@ -280,7 +254,6 @@ class SacredLayerManager:
                     query_embeddings=[query_embedding],
                     n_results=10
                 )
-
         if not results['ids'][0]:
             return {"plans": [], "query": query}
         
@@ -299,7 +272,6 @@ class SacredLayerManager:
                         'total_chunks': metadata['total_chunks'],
                         'relevance_score': results['distances'][0][i] if 'distances' in results else None
                     }
-
                 chunk_index = metadata['chunk_index']
                 reconstructed_plans[plan_id]['chunks'][chunk_index] = results['documents'][0][i]
             
@@ -324,7 +296,6 @@ class SacredLayerManager:
                         i for i in range(plan_data['total_chunks'])
                         if i not in plan_data['chunks']
                     ]
-
                 # Remove chunks from response
                 del plan_data['chunks']
             
@@ -353,10 +324,8 @@ class SacredLayerManager:
         
         plan.status = PlanStatus.LOCKED
         self._save_registry()
-
         logger.info(f"Plan {plan_id} locked")
         return True, "Plan locked successfully"
-
     def supersede_plan(self, old_plan_id: str, new_plan_id: str) -> Tuple[bool, str]:
         """Mark a plan as superseded by a new plan"""
         if old_plan_id not in self.plans_registry:
@@ -376,12 +345,9 @@ class SacredLayerManager:
         old_plan.metadata['superseded_at'] = datetime.now().isoformat()
         
         new_plan.metadata['supersedes'] = old_plan_id
-
         self._save_registry()
-
         logger.info(f"Plan {old_plan_id} superseded by {new_plan_id}")
         return True, "Plan superseded successfully"
-
     def _generate_verification_code(self, plan: SacredPlan) -> str:
         """Generate verification code for a plan"""
         # Combine plan content hash with timestamp for unique code
@@ -400,7 +366,6 @@ class SacredLayerManager:
         # For demo, check against environment variable
         expected = os.environ.get('SACRED_APPROVAL_KEY', 'default-key')
         return verification == expected
-
     def get_plan_status(self, plan_id: str) -> Optional[Dict[str, Any]]:
         """Get status and metadata for a plan"""
         if plan_id not in self.plans_registry:
@@ -442,6 +407,41 @@ class SacredLayerManager:
         
         return sorted(plans, key=lambda x: x['created_at'], reverse=True)
 
+    def get_plans_statistics(self) -> Dict[str, Any]:
+        """Get comprehensive plan statistics for analytics"""
+        stats = {
+            'total_plans': len(self.plans_registry),
+            'by_status': {},
+            'by_project': {}
+        }
+        
+        for plan in self.plans_registry.values():
+            status = plan.status.value
+            project_id = plan.project_id
+            
+            # Count by status
+            stats['by_status'][status] = stats['by_status'].get(status, 0) + 1
+            
+            # Count by project
+            stats['by_project'][project_id] = stats['by_project'].get(project_id, 0) + 1
+        
+        return stats
+    
+    def get_project_plan_summary(self, project_id: str) -> Dict[str, Any]:
+        """Get plan summary for specific project"""
+        project_plans = [
+            plan for plan in self.plans_registry.values()
+            if plan.project_id == project_id
+        ]
+        
+        return {
+            'total_plans': len(project_plans),
+            'approved_plans': len([p for p in project_plans if p.status == PlanStatus.APPROVED]),
+            'draft_plans': len([p for p in project_plans if p.status == PlanStatus.DRAFT]),
+            'locked_plans': len([p for p in project_plans if p.status == PlanStatus.LOCKED]),
+            'superseded_plans': len([p for p in project_plans if p.status == PlanStatus.SUPERSEDED])
+        }
+
 # Integration with main RAG agent
 class SacredIntegratedRAGAgent:
     """Extension to integrate sacred layer with RAG agent"""
@@ -452,7 +452,6 @@ class SacredIntegratedRAGAgent:
             db_path=rag_agent.config['db_path'],
             embedder=rag_agent
         )
-
     async def create_sacred_plan(self, project_id: str, title: str, 
                                content_or_file: str) -> Dict[str, Any]:
         """Create a new sacred plan"""
@@ -497,7 +496,6 @@ class SacredIntegratedRAGAgent:
                 context += f"## {plan['title']}\n"
                 context += f"Status: Approved and Locked\n"
                 context += f"Relevance: {plan.get('relevance_score', 'N/A')}\n\n"
-
                 if plan.get('reconstruction_complete', True):
                     context += plan['content'][:1000]  # First 1000 chars
                     if len(plan['content']) > 1000:
@@ -505,7 +503,6 @@ class SacredIntegratedRAGAgent:
                 else:
                     context += f"Warning: Partial reconstruction ({len(plan.get('missing_chunks', []))} chunks missing)\n"
                     context += plan['content'][:500]
-
                 context += "\n\n---\n\n"
             
             return {
@@ -519,7 +516,6 @@ class SacredIntegratedRAGAgent:
             'plan_count': 0,
             'query': query
         }
-
     def check_against_sacred_plans(self, project_id: str,
                                  proposed_action: str) -> Dict[str, Any]:
         """Check if a proposed action violates sacred plans"""
