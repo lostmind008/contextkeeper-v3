@@ -40,7 +40,7 @@ from google.genai.types import HttpOptions
 import tiktoken
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 
 # Import ProjectManager for multi-project support
@@ -1240,6 +1240,16 @@ class RAGServer:
             summary = self.agent.project_manager.get_project_summary()
             # Add more analytics data here in the future
             return jsonify(summary)
+        
+        @self.app.route('/analytics_dashboard_live.html', methods=['GET'])
+        def get_analytics_dashboard():
+            """Serve the analytics dashboard HTML file"""
+            # Serve the HTML file from the current directory
+            dashboard_path = os.path.join(os.getcwd(), 'analytics_dashboard_live.html')
+            if os.path.exists(dashboard_path):
+                return send_from_directory(os.getcwd(), 'analytics_dashboard_live.html')
+            else:
+                return jsonify({'error': 'Analytics dashboard not found'}), 404
         
         # Additional endpoints to match MCP server expectations
         
