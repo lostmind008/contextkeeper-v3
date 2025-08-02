@@ -90,15 +90,25 @@ Experience the stunning Three.js particle animation with:
 ### 5. Create Your First Project
 
 ```bash
-# Create a new project with automatic file filtering
+# Step 1: Create a new project
 ./scripts/rag_cli_v2.sh projects create "My Project" /path/to/project
+# Note the project_id returned (e.g., proj_abc123def456)
+
+# Step 2: Focus on the project
+./scripts/rag_cli_v2.sh projects focus <project_id>
+
+# Step 3: Index the project files (ESSENTIAL!)
+python rag_agent.py ingest --path /path/to/project
+# This will process all files - may take 2-3 minutes for large projects
+
+# Step 4: Verify it's working
+./scripts/rag_cli_v2.sh ask "What is this project about?"
 
 # List all projects
 ./scripts/rag_cli_v2.sh projects list
-
-# Ask questions with LLM-enhanced responses
-./scripts/rag_cli_v2.sh ask "What is this project about?"
 ```
+
+⚠️ **Important**: Always remember to index files after creating a project! Without indexing, queries will return no results.
 
 ## ✨ Key Features
 
@@ -128,17 +138,25 @@ Experience the stunning Three.js particle animation with:
 ### Project Management (✅ Currently Working)
 
 ```bash
+# COMPLETE WORKFLOW FOR NEW PROJECTS:
+
+# 1. Create a new project
+./scripts/rag_cli_v2.sh projects create "My Project" /path/to/project
+# Returns: project_id (e.g., proj_abc123def456)
+
+# 2. Focus on the project
+./scripts/rag_cli_v2.sh projects focus proj_abc123def456
+
+# 3. Index the project files (CRITICAL STEP!)
+python rag_agent.py ingest --path /path/to/project
+
+# 4. Now you can query the project
+./scripts/rag_cli_v2.sh ask "What authentication system are we using?"
+
+# OTHER USEFUL COMMANDS:
+
 # List all projects
 ./scripts/rag_cli_v2.sh projects list
-
-# Create a new project with automatic file filtering
-./scripts/rag_cli_v2.sh projects create "My Project" /path/to/project
-
-# Focus on a specific project
-./scripts/rag_cli_v2.sh projects focus proj_123
-
-# Ask questions with LLM-enhanced natural language responses
-./scripts/rag_cli_v2.sh ask "What authentication system are we using?"
 
 # Get daily briefing with project statistics
 ./scripts/rag_cli_v2.sh briefing
@@ -146,6 +164,11 @@ Experience the stunning Three.js particle animation with:
 # Track decisions and objectives
 ./scripts/rag_cli_v2.sh decisions add "Using Redis for caching" "Performance reasons"
 ./scripts/rag_cli_v2.sh objectives add "Implement user auth" "High priority"
+
+# Query with API (includes project context)
+curl -X POST http://localhost:5556/query_llm \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Explain the architecture", "k": 5, "project_id": "proj_abc123def456"}'
 ```
 
 ### Sacred Plan Management (✅ Currently Working)

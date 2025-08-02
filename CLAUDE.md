@@ -5,7 +5,7 @@
 **Branch**: main
 **Status**: ✅ v3.0 Upgrade Complete
 **Priority**: General Maintenance
-**Last Updated**: 2025-07-29 (All documentation and merge conflicts resolved)
+**Last Updated**: 2025-08-02 (Added essential project workflow documentation)
 
 ## 🚀 QUICK START (Get Running in 2 Minutes)
 ```bash
@@ -23,6 +23,37 @@ curl http://localhost:5556/projects     # Should return projects data
 # 4. Check MCP server is connected (optional)
 # Verify in Claude Code that contextkeeper-sacred tools are available
 ```
+
+## 🎯 ESSENTIAL WORKFLOW: Creating & Tracking New Projects
+
+**CRITICAL**: Always follow this exact sequence when adding a new project:
+
+```bash
+# 1. Create the project with its path
+./scripts/rag_cli_v2.sh projects create <project_name> <project_path>
+# Example: ./scripts/rag_cli_v2.sh projects create veo3app /Users/sumitm1/Documents/myproject/veo3-video-application
+
+# 2. Focus on the project (make it active)
+./scripts/rag_cli_v2.sh projects focus <project_id>
+# The project_id is returned from step 1 (e.g., proj_736df3fd80a4)
+
+# 3. Index the project files (ESSENTIAL - often missed!)
+python rag_agent.py ingest --path <project_path>
+# This will process all files and may take 2-3 minutes for large projects
+
+# 4. Verify it's working
+./scripts/rag_cli_v2.sh ask "How does this project work?" --project <project_id>
+# OR use the API:
+curl -X POST http://localhost:5556/query_llm \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Explain the project architecture", "k": 5, "project_id": "<project_id>"}'
+```
+
+**Common Pitfalls to Avoid**:
+- ❌ Forgetting to index files after project creation
+- ❌ Using old CLI (rag_cli.sh) instead of v2 (rag_cli_v2.sh)
+- ❌ Not focusing on a project before querying
+- ❌ Expecting immediate results without indexing
 
 ## 🔥 CURRENT STATUS - Sacred Layer COMPLETE ✅
 
