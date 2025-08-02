@@ -4,41 +4,148 @@ __pycache__/
 *$py.class
 *.so
 .Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
 venv/
 env/
 ENV/
-
-# ContextKeeper specific
-rag_knowledge_db/
-processed_files.json
-*.log
-*.out
-nohup.out
-test_env.py
-
-# Development artifacts (retain docs/internal/ for future AI tasks)
-# docs/internal/ - Keep important planning documents and future task lists
-examples/test_*.py
-scripts/test_*.sh
+env.bak/
+venv.bak/
 
 # Environment variables
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
+# Database files
+rag_knowledge_db/
+.chromadb/
+test_db/
+*.db
+*.sqlite
+*.sqlite3
 
-# OS
-.DS_Store
-Thumbs.db
+# Logs
+*.log
+logs/
+rag_agent.log
 
 # Temporary files
 *.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Test files
+.coverage
+coverage.txt
+.pytest_cache/
+.tox/
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Backup files
+*.backup
 *.bak
-*.cache
-*.log
+backups/
+rag_agent.py.backup.*
+
+# Temporary directories
+tmp/
+temp/
+.tmp/
+
+# Node modules (if any)
 node_modules/
-*/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Package files
+package-lock.json
+yarn.lock
+
+# Documentation build
+docs/_build/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# ContextKeeper specific
+projects/
+*.json
+!package.json
+!requirements.txt
+!setup.py
+!pyproject.toml
