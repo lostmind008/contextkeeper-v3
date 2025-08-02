@@ -11,10 +11,61 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from enum import Enum
 
 logger = logging.getLogger(__name__)
+
+class EventType(Enum):
+    """Types of development events"""
+    CODE_CHANGE = "code_change"
+    ERROR = "error"
+    DEPLOYMENT = "deployment"
+    DECISION = "decision"
+    OBJECTIVE = "objective"
+    BUILD = "build"
+    TEST = "test"
+    PERFORMANCE = "performance"
+    SECURITY = "security"
+    API_CALL = "api_call"
+    USER_ACTION = "user_action"
+    
+
+class EventSeverity(Enum):
+    """Severity levels for events"""
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
+    CRITICAL = "critical"
+
+
+@dataclass
+class DevelopmentEvent:
+    """Real-time development event"""
+    id: str = field(default_factory=lambda: f"evt_{uuid.uuid4().hex[:12]}")
+    type: EventType = EventType.CODE_CHANGE
+    severity: EventSeverity = EventSeverity.INFO
+    title: str = ""
+    description: str = ""
+    project_id: str = ""
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    timestamp: datetime = field(default_factory=datetime.now)
+    tags: List[str] = field(default_factory=list)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary"""
+        return {
+            'id': self.id,
+            'type': self.type.value,
+            'severity': self.severity.value,
+            'title': self.title,
+            'description': self.description,
+            'project_id': self.project_id,
+            'metadata': self.metadata,
+            'timestamp': self.timestamp.isoformat(),
+            'tags': self.tags
+        }
+
 
 class ProjectStatus(Enum):
     ACTIVE = "active"
@@ -59,6 +110,7 @@ class ProjectConfig:
     file_extensions: List[str] = None
     decisions: List[Decision] = None
     objectives: List[Objective] = None
+    events: List[DevelopmentEvent] = None
     metadata: Dict[str, Any] = None
     
     def __post_init__(self):
@@ -68,6 +120,8 @@ class ProjectConfig:
             self.decisions = []
         if self.objectives is None:
             self.objectives = []
+        if self.events is None:
+            self.events = []
         if self.metadata is None:
             self.metadata = {}
             
@@ -77,6 +131,7 @@ class ProjectConfig:
         data['status'] = self.status.value
         data['decisions'] = [asdict(d) for d in self.decisions]
         data['objectives'] = [asdict(o) for o in self.objectives]
+        data['events'] = [e.to_dict() for e in self.events]
         return data
     
     @classmethod
@@ -86,6 +141,16 @@ class ProjectConfig:
         data['status'] = ProjectStatus(data['status'])
         data['decisions'] = [Decision(**d) for d in data.get('decisions', [])]
         data['objectives'] = [Objective(**o) for o in data.get('objectives', [])]
+        # Handle events deserialization
+        events_data = data.get('events', [])
+        events = []
+        for e in events_data:
+            e_copy = e.copy()
+            e_copy['type'] = EventType(e_copy['type'])
+            e_copy['severity'] = EventSeverity(e_copy['severity'])
+            e_copy['timestamp'] = datetime.fromisoformat(e_copy['timestamp'])
+            events.append(DevelopmentEvent(**e_copy))
+        data['events'] = events
         return cls(**data)
 
 class ProjectManager:
@@ -357,3 +422,83 @@ class ProjectManager:
             })
             
         return summary
+    
+    def add_event(self, event: DevelopmentEvent) -> Optional[DevelopmentEvent]:
+        """Add a development event to a project
+        
+        Args:
+            event: DevelopmentEvent instance with project_id set
+            
+        Returns:
+            The event if successful, None otherwise
+        """
+        try:
+            # Use focused project if no project_id
+            if not event.project_id:
+                event.project_id = self.focused_project_id
+                
+            if not event.project_id:
+                logger.error("No project specified for event")
+                return None
+                
+            project = self.get_project(event.project_id)
+            if not project:
+                logger.error(f"Project {event.project_id} not found")
+                return None
+                
+            # Add event to project
+            project.events.append(event)
+            
+            # Keep only last 1000 events per project
+            if len(project.events) > 1000:
+                project.events = project.events[-1000:]
+            
+            # Update last active
+            project.last_active = datetime.now().isoformat()
+            
+            # Save configuration
+            self.save_project(project)
+            
+            logger.info(f"Added event {event.type.value} to project {project.name}")
+            return event
+            
+        except Exception as e:
+            logger.error(f"Failed to add event: {e}")
+            return None
+    
+    def get_recent_events(self, project_id: str = None, limit: int = 100, 
+                         event_types: List[EventType] = None,
+                         severity: EventSeverity = None) -> List[DevelopmentEvent]:
+        """Get recent events for a project with optional filtering
+        
+        Args:
+            project_id: Project ID (uses focused project if None)
+            limit: Maximum number of events to return
+            event_types: Filter by event types
+            severity: Minimum severity level
+            
+        Returns:
+            List of recent events
+        """
+        project_id = project_id or self.focused_project_id
+        if not project_id:
+            return []
+            
+        project = self.get_project(project_id)
+        if not project:
+            return []
+            
+        events = project.events[-limit:]  # Get most recent
+        
+        # Apply filters
+        if event_types:
+            events = [e for e in events if e.type in event_types]
+            
+        if severity:
+            severity_order = [EventSeverity.INFO, EventSeverity.WARNING, 
+                            EventSeverity.ERROR, EventSeverity.CRITICAL]
+            min_severity_index = severity_order.index(severity)
+            events = [e for e in events 
+                     if severity_order.index(e.severity) >= min_severity_index]
+        
+        return events

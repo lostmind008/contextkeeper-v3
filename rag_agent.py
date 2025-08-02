@@ -488,6 +488,13 @@ class ProjectKnowledgeAgent:
             except Exception as e:
                 logger.warning(f"Could not initialize git tracking for {project.name}: {e}")
         self.sacred_integration = SacredIntegratedRAGAgent(self)
+        
+        # Verify critical methods are accessible (debugging aid)
+        logger.info(f"ProjectKnowledgeAgent initialization complete. Methods: {[m for m in dir(self) if not m.startswith('_')]}")
+        if hasattr(self, 'add_decision'):
+            logger.info("✅ add_decision method is accessible")
+        else:
+            logger.error("❌ add_decision method NOT found after initialization!")
     
     def _setup_legacy_project(self):
         """Import legacy watch directories as a project if no projects exist"""
@@ -775,32 +782,119 @@ Provide a helpful and accurate answer based solely on the given context. If the 
                 'project_id': project_id,
                 'error': str(e)
             }
-    async def interactive_mode(self):
-        
-        if decision_obj and project_id in self.collections:
-            # Create content for embedding
-            content = f"PROJECT DECISION: {decision}"
-            if reasoning:
-                content += f"\nREASONING: {reasoning}"
-            if tags:
-                content += f"\nTAGS: {', '.join(tags)}"
-            content += f"\nDATE: {decision_obj.timestamp}"
+    
+    def add_decision(self, decision: str, reasoning: str = "", project_id: str = None, tags: List[str] = None) -> Optional[Any]:
+        """Add a decision to a project with embedding/search functionality"""
+        try:
+            logger.info(f"add_decision called with: decision='{decision[:50]}...', project_id={project_id}")
             
-            # Store decision (ChromaDB will handle embeddings)
-            self.collections[project_id].add(
-                ids=[decision_obj.id],
-                documents=[content],
-                metadatas=[{
-                    'type': 'decision',
-                    'project_id': project_id,
-                    'tags': tags or [],
-                    'date': decision_obj.timestamp
-                }]
+            # Use focused project if no project_id provided
+            if project_id is None:
+                project_id = self.project_manager.focused_project_id
+                if not project_id:
+                    logger.error("No project specified and no focused project available")
+                    return None
+                logger.info(f"Using focused project: {project_id}")
+            
+            # Validate project exists
+            if project_id not in self.project_manager.projects:
+                logger.error(f"Project {project_id} not found. Available projects: {list(self.project_manager.projects.keys())}")
+                return None
+            
+            # Use project manager to create and persist the decision
+            logger.info(f"Creating decision via project manager for project {project_id}")
+            decision_obj = self.project_manager.add_decision(
+                project_id=project_id,
+                decision=decision,
+                reasoning=reasoning,
+                tags=tags or []
             )
             
-            logger.info(f"Added decision to project {project_id}: {decision[:50]}...")
-        
-        return decision_obj
+            if decision_obj and project_id in self.collections:
+                # Create content for embedding
+                content = f"PROJECT DECISION: {decision}"
+                if reasoning:
+                    content += f"\nREASONING: {reasoning}"
+                if tags:
+                    content += f"\nTAGS: {', '.join(tags)}"
+                content += f"\nDATE: {decision_obj.timestamp}"
+                
+                # Store decision in ChromaDB for embedding/search functionality
+                logger.info(f"Adding decision to ChromaDB collection for project {project_id}")
+                self.collections[project_id].add(
+                    ids=[decision_obj.id],
+                    documents=[content],
+                    metadatas=[{
+                        'type': 'decision',
+                        'project_id': project_id,
+                        'tags': ', '.join(tags) if tags else '',
+                        'date': decision_obj.timestamp
+                    }]
+                )
+                
+                logger.info(f"Successfully added decision to project {project_id}: {decision[:50]}...")
+            elif not decision_obj:
+                logger.error("Project manager failed to create decision object")
+                return None
+            elif project_id not in self.collections:
+                logger.warning(f"ChromaDB collection not found for project {project_id}. Decision saved to project manager only.")
+            
+            return decision_obj
+            
+        except Exception as e:
+            logger.error(f"Error adding decision: {e}", exc_info=True)
+            return None
+    
+    def add_objective(self, title: str, description: str = "", priority: str = "medium", project_id: str = None) -> Optional[Any]:
+        """Add an objective to a project with embedding/search functionality"""
+        try:
+            # Use focused project if no project_id provided
+            if project_id is None:
+                project_id = self.project_manager.focused_project_id
+                if not project_id:
+                    logger.error("No project specified and no focused project available")
+                    return None
+            
+            # Validate project exists
+            if project_id not in self.project_manager.projects:
+                logger.error(f"Project {project_id} not found")
+                return None
+            
+            # Use project manager to create and persist the objective
+            objective_obj = self.project_manager.add_objective(
+                project_id=project_id,
+                title=title,
+                description=description,
+                priority=priority
+            )
+            
+            if objective_obj and project_id in self.collections:
+                # Create content for embedding
+                content = f"PROJECT OBJECTIVE: {title}"
+                if description:
+                    content += f"\nDESCRIPTION: {description}"
+                content += f"\nPRIORITY: {priority}"
+                content += f"\nDATE: {objective_obj.created_at}"
+                
+                # Store objective in ChromaDB for embedding/search functionality
+                self.collections[project_id].add(
+                    ids=[objective_obj.id],
+                    documents=[content],
+                    metadatas=[{
+                        'type': 'objective',
+                        'project_id': project_id,
+                        'priority': priority,
+                        'date': objective_obj.created_at
+                    }]
+                )
+                
+                logger.info(f"Added objective to project {project_id}: {title}")
+            
+            return objective_obj
+            
+        except Exception as e:
+            logger.error(f"Error adding objective: {e}")
+            return None
 
 class CodebaseWatcher(FileSystemEventHandler):
     """Watches for file changes and updates knowledge base"""
@@ -914,24 +1008,145 @@ class RAGServer:
         
         @self.app.route('/decision', methods=['POST'])
         def add_decision():
-            data = request.json
-            decision = data.get('decision', '')
-            reasoning = data.get('reasoning', data.get('context', ''))  # Support old 'context' param
-            project_id = data.get('project_id')
-            tags = data.get('tags', [])
-            
-            if not decision:
-                return jsonify({'error': 'Decision required'}), 400
-            
-            decision_obj = self.agent.add_decision(decision, reasoning, project_id, tags)
-            if decision_obj:
+            try:
+                logger.info("Flask /decision endpoint called")
+                
+                # Verify agent has add_decision method
+                if not hasattr(self.agent, 'add_decision'):
+                    logger.error("Agent does not have add_decision method!")
+                    logger.error(f"Agent type: {type(self.agent)}")
+                    logger.error(f"Agent attributes: {dir(self.agent)}")
+                    return jsonify({'error': 'Internal server error: add_decision method not found'}), 500
+                
+                data = request.json
+                if not data:
+                    return jsonify({'error': 'No JSON data provided'}), 400
+                
+                decision = data.get('decision', '')
+                reasoning = data.get('reasoning', data.get('context', ''))  # Support old 'context' param
+                project_id = data.get('project_id')
+                tags = data.get('tags', [])
+                
+                logger.info(f"Request data: decision='{decision[:50]}...', project_id={project_id}")
+                
+                if not decision:
+                    return jsonify({'error': 'Decision required'}), 400
+                
+                # Call the method with proper error handling  
+                decision_obj = self.agent.add_decision(decision, reasoning, project_id, tags)
+                
+                if decision_obj:
+                    logger.info(f"Successfully created decision: {decision_obj.id}")
+                    return jsonify({
+                        'status': 'Decision added',
+                        'decision_id': decision_obj.id,
+                        'project_id': project_id or self.agent.project_manager.focused_project_id
+                    })
+                else:
+                    logger.error("add_decision returned None - check method implementation")
+                    return jsonify({'error': 'Failed to add decision - method returned None'}), 400
+                    
+            except AttributeError as e:
+                logger.error(f"AttributeError in /decision endpoint: {e}", exc_info=True)
+                return jsonify({'error': f'Method access error: {str(e)}'}), 500
+            except Exception as e:
+                logger.error(f"Unexpected error in /decision endpoint: {e}", exc_info=True)
+                return jsonify({'error': f'Internal server error: {str(e)}'}), 500
+        
+        # Event tracking endpoints
+        @self.app.route('/events', methods=['POST'])
+        def track_event():
+            """Track a development event"""
+            try:
+                data = request.json
+                
+                # Import event models
+                from project_manager import DevelopmentEvent, EventType, EventSeverity
+                
+                # Create event from request data
+                event = DevelopmentEvent(
+                    type=EventType(data.get('type', 'code_change')),
+                    severity=EventSeverity(data.get('severity', 'info')),
+                    title=data.get('title', ''),
+                    description=data.get('description', ''),
+                    project_id=data.get('project_id', ''),
+                    metadata=data.get('metadata', {}),
+                    tags=data.get('tags', [])
+                )
+                
+                # Add event to project manager
+                saved_event = self.agent.project_manager.add_event(event)
+                
+                if saved_event:
+                    # Also add to ChromaDB for searchability
+                    project_id = saved_event.project_id
+                    if project_id in self.agent.collections:
+                        content = f"EVENT: {saved_event.title}\n"
+                        content += f"TYPE: {saved_event.type.value}\n"
+                        content += f"SEVERITY: {saved_event.severity.value}\n"
+                        content += f"DESCRIPTION: {saved_event.description}\n"
+                        content += f"TIMESTAMP: {saved_event.timestamp.isoformat()}\n"
+                        
+                        # Handle metadata safely
+                        tags_str = ', '.join(saved_event.tags) if saved_event.tags else ''
+                        
+                        self.agent.collections[project_id].add(
+                            ids=[saved_event.id],
+                            documents=[content],
+                            metadatas=[{
+                                'type': 'event',
+                                'event_type': saved_event.type.value,
+                                'severity': saved_event.severity.value,
+                                'project_id': project_id,
+                                'tags': tags_str,
+                                'date': saved_event.timestamp.isoformat()
+                            }]
+                        )
+                    
+                    return jsonify({
+                        'event_id': saved_event.id,
+                        'project_id': saved_event.project_id,
+                        'status': 'Event tracked'
+                    }), 200
+                else:
+                    return jsonify({'error': 'Failed to track event'}), 400
+                    
+            except Exception as e:
+                logger.error(f"Error tracking event: {e}", exc_info=True)
+                return jsonify({'error': str(e)}), 500
+        
+        @self.app.route('/events', methods=['GET'])
+        def get_events():
+            """Get recent events with optional filtering"""
+            try:
+                project_id = request.args.get('project_id')
+                limit = int(request.args.get('limit', 100))
+                event_type = request.args.get('type')
+                severity = request.args.get('severity')
+                
+                # Import event models
+                from project_manager import EventType, EventSeverity
+                
+                # Parse filters
+                event_types = [EventType(event_type)] if event_type else None
+                min_severity = EventSeverity(severity) if severity else None
+                
+                # Get events from project manager
+                events = self.agent.project_manager.get_recent_events(
+                    project_id=project_id,
+                    limit=limit,
+                    event_types=event_types,
+                    severity=min_severity
+                )
+                
                 return jsonify({
-                    'status': 'Decision added',
-                    'decision_id': decision_obj.id,
-                    'project_id': project_id or self.agent.project_manager.focused_project_id
-                })
-            else:
-                return jsonify({'error': 'Failed to add decision'}), 400
+                    'events': [e.to_dict() for e in events],
+                    'count': len(events)
+                }), 200
+                
+            except Exception as e:
+                logger.error(f"Error getting events: {e}", exc_info=True)
+                return jsonify({'error': str(e)}), 500
         
         # Project management endpoints
         @self.app.route('/projects', methods=['GET'])
