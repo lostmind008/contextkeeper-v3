@@ -3,1863 +3,564 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ContextKeeper Sacred Layer Analytics</title>
+
+    <!-- SEO Meta Tags -->
+    <title>LostMind AI - ContextKeeper</title>
+    <meta name="description" content="ContextKeeper: Revolutionary AI-Powered Development Context Management by LostMindAI.">
+    <meta name="author" content="LostMindAI">
+
+    <!-- Tailwind CSS & Google Fonts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
-    <!-- Core Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.0/index.min.js"></script>
-    
-    <!-- Export Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    
-    <!-- Icons -->
+    <!-- Font Awesome for Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
+
     <style>
-        :root {
-            --primary-color: #6366f1;
-            --secondary-color: #ec4899;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --danger-color: #ef4444;
-            --info-color: #06b6d4;
-            --bg-primary: #ffffff;
-            --bg-secondary: #f8fafc;
-            --bg-tertiary: #f1f5f9;
-            --text-primary: #1f2937;
-            --text-secondary: #6b7280;
-            --text-muted: #9ca3af;
-            --border-color: #e5e7eb;
-            --border-color-light: #f3f4f6;
-            --shadow-light: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-            --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-large: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            --border-radius: 12px;
-            --border-radius-sm: 8px;
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        /* Base styles matching the template */
+        html {
+            scroll-behavior: smooth;
         }
-
-        [data-theme="dark"] {
-            --bg-primary: #1f2937;
-            --bg-secondary: #111827;
-            --bg-tertiary: #374151;
-            --text-primary: #f9fafb;
-            --text-secondary: #d1d5db;
-            --text-muted: #9ca3af;
-            --border-color: #374151;
-            --border-color-light: #4b5563;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            line-height: 1.6;
-            transition: var(--transition);
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a0a;
+            color: #e2e8f0;
         }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        /* Header Styles */
-        .header {
-            background: var(--bg-primary);
-            padding: 30px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-medium);
-            margin-bottom: 30px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .header::before {
-            content: '';
-            position: absolute;
+        /* Container for the three.js canvas background */
+        #three-canvas-container {
+            position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color), var(--success-color));
-        }
-
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-
-        .header-title {
-            flex: 1;
-            text-align: center;
-        }
-
-        .header h1 {
-            color: var(--primary-color);
-            font-size: clamp(2rem, 4vw, 2.5rem);
-            margin-bottom: 10px;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .header p {
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-        }
-
-        .header-controls {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        /* Control Buttons */
-        .btn {
-            padding: 10px 16px;
-            border: none;
-            border-radius: var(--border-radius-sm);
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: var(--transition);
-            text-decoration: none;
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-medium);
-        }
-
-        .btn-primary {
-            background: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
-
-        .btn-secondary {
-            background: var(--secondary-color);
-            color: white;
-            border-color: var(--secondary-color);
-        }
-
-        .btn-success {
-            background: var(--success-color);
-            color: white;
-            border-color: var(--success-color);
-        }
-
-        /* Search and Filter */
-        .search-filter-container {
-            background: var(--bg-primary);
-            padding: 20px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-light);
-            margin-bottom: 30px;
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .search-box {
-            flex: 1;
-            min-width: 300px;
-            position: relative;
-        }
-
-        .search-input {
             width: 100%;
-            padding: 12px 16px 12px 40px;
-            border: 2px solid var(--border-color);
-            border-radius: var(--border-radius-sm);
-            font-size: 16px;
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            transition: var(--transition);
+            height: 100vh;
+            z-index: 1;
         }
-
-        .search-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-        }
-
-        .filter-select {
-            padding: 12px 16px;
-            border: 2px solid var(--border-color);
-            border-radius: var(--border-radius-sm);
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            font-size: 14px;
-            min-width: 150px;
-        }
-
-        /* Status Grid */
-        .status-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .status-card {
-            background: var(--bg-primary);
-            padding: 25px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-light);
-            border-left: 4px solid var(--primary-color);
-            transition: var(--transition);
+        
+        /* The main content area that will scroll over the fixed canvas */
+        .main-content {
             position: relative;
-            overflow: hidden;
+            z-index: 10;
+            background-color: #0a0a0a;
         }
 
-        .status-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-large);
-        }
-
-        .status-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 60px;
-            height: 60px;
-            background: var(--primary-color);
-            opacity: 0.1;
-            border-radius: 50%;
-            transform: translate(20px, -20px);
-        }
-
-        .status-card h3 {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-
-        .status-card .value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--primary-color);
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .status-card .trend {
-            font-size: 0.9rem;
-            color: var(--success-color);
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .status-card.healthy { border-left-color: var(--success-color); }
-        .status-card.warning { border-left-color: var(--warning-color); }
-        .status-card.danger { border-left-color: var(--danger-color); }
-
-        .status-card.healthy .value { color: var(--success-color); }
-        .status-card.warning .value { color: var(--warning-color); }
-        .status-card.danger .value { color: var(--danger-color); }
-
-        /* Charts Grid */
-        .charts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-            gap: 30px;
-            margin-bottom: 30px;
-        }
-
-        .chart-container {
-            background: var(--bg-primary);
-            padding: 25px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-light);
-            transition: var(--transition);
-            position: relative;
-        }
-
-        .chart-container:hover {
-            box-shadow: var(--shadow-medium);
-        }
-
-        .chart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .chart-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .chart-controls {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .chart-export-btn {
-            padding: 6px 12px;
-            font-size: 12px;
-            background: transparent;
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
-        }
-
-        /* Project Cards */
-        .projects-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .project-card {
-            background: var(--bg-primary);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-light);
-            transition: var(--transition);
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-        }
-
-        .project-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-medium);
-        }
-
-        .project-header {
-            padding: 20px;
-            border-bottom: 1px solid var(--border-color-light);
-        }
-
-        .project-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: var(--text-primary);
-        }
-
-        .project-meta {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        .project-health {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            margin-top: 10px;
-        }
-
-        .project-health.healthy {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--success-color);
-        }
-
-        .project-health.warning {
-            background: rgba(245, 158, 11, 0.1);
-            color: var(--warning-color);
-        }
-
-        .project-health.critical {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger-color);
-        }
-
-        .project-stats {
-            padding: 15px 20px;
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 15px;
-            text-align: center;
-        }
-
-        .project-stat {
+        /* The hero section that fills the initial viewport */
+        .hero-section {
+            height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-        }
-
-        .project-stat-value {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--primary-color);
-        }
-
-        .project-stat-label {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-top: 2px;
-        }
-
-        /* Sacred Timeline */
-        .timeline-container {
-            background: var(--bg-primary);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-light);
-            padding: 25px;
-            margin-bottom: 30px;
-        }
-
-        .timeline {
+            justify-content: center;
             position: relative;
-            padding-left: 30px;
+            z-index: 10;
+        }
+        
+        /* Custom scrollbar for a modern look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
         }
 
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 15px;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: var(--border-color);
-        }
-
-        .timeline-item {
-            position: relative;
-            margin-bottom: 30px;
-            padding-left: 30px;
-        }
-
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            left: -8px;
-            top: 8px;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: var(--primary-color);
-            border: 3px solid var(--bg-primary);
-            box-shadow: 0 0 0 3px var(--border-color);
-        }
-
-        .timeline-content {
-            background: var(--bg-secondary);
-            padding: 15px;
-            border-radius: var(--border-radius-sm);
-            border: 1px solid var(--border-color);
-        }
-
-        .timeline-date {
-            color: var(--text-muted);
-            font-size: 0.8rem;
-            margin-bottom: 5px;
-        }
-
-        .timeline-title {
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: var(--text-primary);
-        }
-
-        .timeline-description {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        /* Loading and Error States */
-        .loading {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-secondary);
-        }
-
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid var(--border-color);
-            border-top: 4px solid var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
+        /* Animation for the loading spinner */
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
-        .error {
-            background: linear-gradient(135deg, #fef2f2, #fee2e2);
-            border: 1px solid #fecaca;
-            color: #991b1b;
-            padding: 20px;
-            border-radius: var(--border-radius);
-            margin: 20px 0;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .error-icon {
-            font-size: 1.5rem;
-            color: var(--danger-color);
-        }
-
-        /* Export Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-        }
-
-        .modal-content {
-            background: var(--bg-primary);
-            margin: 15% auto;
-            padding: 30px;
-            border-radius: var(--border-radius);
-            width: 90%;
-            max-width: 500px;
-            box-shadow: var(--shadow-large);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .modal-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .close {
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            color: var(--text-muted);
-            line-height: 1;
-        }
-
-        .close:hover {
-            color: var(--text-primary);
-        }
-
-        .export-options {
-            display: grid;
-            gap: 15px;
-        }
-
-        .export-option {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px;
-            border: 2px solid var(--border-color);
-            border-radius: var(--border-radius-sm);
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .export-option:hover {
-            border-color: var(--primary-color);
-            background: rgba(99, 102, 241, 0.05);
-        }
-
-        .export-icon {
-            font-size: 1.5rem;
-            color: var(--primary-color);
-        }
-
-        .export-info h4 {
-            margin-bottom: 5px;
-            color: var(--text-primary);
-        }
-
-        .export-info p {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .container {
-                padding: 15px;
-            }
-
-            .header {
-                padding: 20px;
-            }
-
-            .header-content {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .charts-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .status-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .search-filter-container {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .search-box {
-                min-width: auto;
-            }
-
-            .project-stats {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .chart-container {
-                padding: 15px;
-            }
-
-            .status-card {
-                padding: 20px;
-            }
-
-            .modal-content {
-                margin: 10% auto;
-                padding: 20px;
-            }
-        }
-
-        /* Animation Classes */
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .slide-up {
-            animation: slideUp 0.3s ease-out;
-        }
-
-        @keyframes slideUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        /* Tooltip Styles */
-        .chart-tooltip {
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius-sm);
-            padding: 12px;
-            box-shadow: var(--shadow-medium);
-            color: var(--text-primary);
-            font-size: 14px;
-        }
-
-        /* Dark Mode Toggle */
-        .theme-toggle {
-            position: relative;
-            width: 60px;
-            height: 30px;
-            background: var(--border-color);
-            border-radius: 15px;
-            cursor: pointer;
-            transition: var(--transition);
-            border: none;
-            outline: none;
-        }
-
-        .theme-toggle::before {
-            content: '';
-            position: absolute;
-            top: 3px;
-            left: 3px;
-            width: 24px;
-            height: 24px;
-            background: white;
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-top: 3px solid #a78bfa; /* A nice violet color */
             border-radius: 50%;
-            transition: var(--transition);
-            box-shadow: var(--shadow-light);
-        }
-
-        .theme-toggle.active {
-            background: var(--primary-color);
-        }
-
-        .theme-toggle.active::before {
-            transform: translateX(30px);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header fade-in">
-            <div class="header-content">
-                <div class="header-title">
-                    <h1><i class="fas fa-shield-alt"></i> ContextKeeper Sacred Layer Analytics</h1>
-                    <p>Real-time monitoring of sacred plans, drift detection, and system governance</p>
-                </div>
-                <div class="header-controls">
-                    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">
-                        <i class="fas fa-moon" style="display: none;"></i>
-                        <i class="fas fa-sun"></i>
-                    </button>
-                    <button class="btn btn-primary" onclick="refreshDashboard()">
-                        <i class="fas fa-sync-alt"></i> Refresh
-                    </button>
-                    <button class="btn btn-secondary" onclick="openExportModal()">
-                        <i class="fas fa-download"></i> Export
-                    </button>
-                    <button class="btn" onclick="toggleAutoRefresh()">
-                        <i class="fas fa-play" id="auto-refresh-icon"></i>
-                        <span id="auto-refresh-text">Auto Refresh</span>
-                    </button>
-                </div>
-            </div>
+<body class="antialiased">
+
+    <!-- three.js canvas container -->
+    <div id="three-canvas-container"></div>
+
+    <!-- Hero Section -->
+    <section class="hero-section text-center p-4">
+        <h1 class="text-4xl md:text-6xl font-black text-white leading-tight mb-4">
+            ContextKeeper
+        </h1>
+        <p class="max-w-3xl mx-auto text-lg text-slate-400">
+            Revolutionary AI-Powered Development Context Management.
+        </p>
+        <div class="absolute bottom-8 text-slate-500 animate-bounce">
+            <a href="#dashboard-content" aria-label="Scroll to content">
+                <i class="fas fa-chevron-down text-2xl"></i>
+            </a>
         </div>
+    </section>
 
-        <!-- Search and Filter -->
-        <div class="search-filter-container fade-in">
-            <div class="search-box">
-                <i class="fas fa-search search-icon"></i>
-                <input type="text" class="search-input" placeholder="Search projects, plans, or keywords..." id="searchInput" oninput="handleSearch()">
-            </div>
-            <select class="filter-select" id="healthFilter" onchange="handleFilter()">
-                <option value="">All Health Status</option>
-                <option value="healthy">Healthy</option>
-                <option value="warning">Warning</option>
-                <option value="critical">Critical</option>
-            </select>
-            <select class="filter-select" id="timeRangeFilter" onchange="handleTimeFilter()">
-                <option value="24h">Last 24 Hours</option>
-                <option value="7d">Last 7 Days</option>
-                <option value="30d">Last 30 Days</option>
-                <option value="90d">Last 90 Days</option>
-            </select>
+    <!-- Main Dashboard Content -->
+    <main id="dashboard-content" class="main-content">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+
+            <!-- Stats Grid -->
+            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="statsGrid">
+                <!-- Stat Card Template -->
+                <div class="bg-slate-900/50 p-6 rounded-lg border border-slate-800 text-center transition-all duration-300 hover:border-violet-500 hover:shadow-2xl hover:shadow-violet-500/10">
+                    <div class="text-4xl mb-3 text-violet-400"><i class="fas fa-folder-open"></i></div>
+                    <div class="text-3xl font-bold text-white" id="totalProjects">-</div>
+                    <div class="text-sm font-medium text-slate-400 uppercase tracking-wider">Active Projects</div>
+                </div>
+                <div class="bg-slate-900/50 p-6 rounded-lg border border-slate-800 text-center transition-all duration-300 hover:border-pink-500 hover:shadow-2xl hover:shadow-pink-500/10">
+                    <div class="text-4xl mb-3 text-pink-400"><i class="fas fa-crosshairs"></i></div>
+                    <div class="text-3xl font-bold text-white" id="focusedProject">-</div>
+                    <div class="text-sm font-medium text-slate-400 uppercase tracking-wider">Focused Project</div>
+                </div>
+                <div class="bg-slate-900/50 p-6 rounded-lg border border-slate-800 text-center transition-all duration-300 hover:border-cyan-500 hover:shadow-2xl hover:shadow-cyan-500/10">
+                    <div class="text-4xl mb-3 text-cyan-400"><i class="fas fa-lightbulb"></i></div>
+                    <div class="text-3xl font-bold text-white" id="totalDecisions">-</div>
+                    <div class="text-sm font-medium text-slate-400 uppercase tracking-wider">Total Decisions</div>
+                </div>
+                <div class="bg-slate-900/50 p-6 rounded-lg border border-slate-800 text-center transition-all duration-300 hover:border-green-500 hover:shadow-2xl hover:shadow-green-500/10">
+                    <div class="text-4xl mb-3 text-green-400"><i class="fas fa-heart-pulse"></i></div>
+                    <div class="text-3xl font-bold text-white" id="systemHealth">-</div>
+                    <div class="text-sm font-medium text-slate-400 uppercase tracking-wider">System Health</div>
+                </div>
+            </section>
+
+            <!-- Controls -->
+            <section class="flex flex-wrap gap-4 justify-center mb-12">
+                <button class="bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2 px-5 rounded-lg inline-flex items-center gap-2 transition-all duration-200 transform hover:scale-105" onclick="refreshData()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+                <button class="bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2 px-5 rounded-lg inline-flex items-center gap-2 transition-all duration-200 transform hover:scale-105" onclick="openAnalytics()">
+                    <i class="fas fa-chart-line"></i> Analytics
+                </button>
+                <button class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-5 rounded-lg inline-flex items-center gap-2 transition-all duration-200 transform hover:scale-105" onclick="openAPI()">
+                    <i class="fas fa-code"></i> API Docs
+                </button>
+                <button class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-5 rounded-lg inline-flex items-center gap-2 transition-all duration-200 transform hover:scale-105" onclick="openGitHub()">
+                    <i class="fab fa-github"></i> GitHub
+                </button>
+            </section>
+
+            <!-- Projects Section -->
+            <section class="bg-slate-900/50 border border-slate-800 rounded-lg overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center flex-wrap gap-4">
+                    <h2 class="text-xl font-bold text-white flex items-center gap-3">
+                        <i class="fas fa-folder"></i> Your Projects
+                    </h2>
+                     <button class="bg-white text-violet-600 font-bold py-2 px-5 rounded-full hover:bg-slate-200 transition-colors transform hover:scale-105 duration-300 inline-flex items-center gap-2 text-sm" onclick="openCreateProjectModal()">
+                        <i class="fas fa-plus"></i> Create New Project
+                    </button>
+                </div>
+                <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="projectsGrid">
+                    <!-- Loading State -->
+                    <div class="loading-state col-span-full text-center py-10 text-slate-400">
+                        <div class="spinner"></div>
+                        <p>Loading projects...</p>
+                    </div>
+                </div>
+            </section>
         </div>
+    </main>
 
-        <!-- Loading State -->
-        <div id="loading" class="loading">
-            <div class="loading-spinner"></div>
-            <h3>Loading analytics data...</h3>
-            <p>Fetching sacred layer metrics and project status...</p>
-        </div>
-
-        <!-- Main Dashboard -->
-        <div id="dashboard" style="display: none;">
-            <!-- Status Cards -->
-            <div class="status-grid">
-                <div class="status-card healthy slide-up">
-                    <h3><i class="fas fa-project-diagram"></i> Total Projects</h3>
-                    <div class="value" id="total-projects">
-                        <span>-</span>
-                        <i class="fas fa-folder"></i>
-                    </div>
-                    <div class="trend" id="projects-trend">
-                        <i class="fas fa-arrow-up"></i>
-                        Active monitoring
-                    </div>
-                </div>
-                <div class="status-card slide-up">
-                    <h3><i class="fas fa-shield-check"></i> Sacred Plans</h3>
-                    <div class="value" id="sacred-plans">
-                        <span>-</span>
-                        <i class="fas fa-scroll"></i>
-                    </div>
-                    <div class="trend">
-                        <i class="fas fa-check-circle"></i>
-                        Approved & active
-                    </div>
-                </div>
-                <div class="status-card warning slide-up">
-                    <h3><i class="fas fa-exclamation-triangle"></i> Drift Detected</h3>
-                    <div class="value" id="drift-count">
-                        <span>-</span>
-                        <i class="fas fa-wave-square"></i>
-                    </div>
-                    <div class="trend" id="drift-trend">
-                        <i class="fas fa-eye"></i>
-                        Requiring attention
-                    </div>
-                </div>
-                <div class="status-card slide-up">
-                    <h3><i class="fas fa-heartbeat"></i> System Health</h3>
-                    <div class="value" id="system-health">
-                        <span>-</span>
-                        <i class="fas fa-pulse"></i>
-                    </div>
-                    <div class="trend">
-                        <i class="fas fa-chart-line"></i>
-                        Overall status
-                    </div>
-                </div>
-            </div>
-
-            <!-- Charts -->
-            <div class="charts-grid">
-                <div class="chart-container slide-up">
-                    <div class="chart-header">
-                        <h3 class="chart-title">
-                            <i class="fas fa-timeline"></i>
-                            Sacred Plans Timeline
-                        </h3>
-                        <div class="chart-controls">
-                            <button class="btn chart-export-btn" onclick="exportChart('sacredPlansChart')">
-                                <i class="fas fa-image"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <canvas id="sacredPlansChart"></canvas>
-                </div>
-
-                <div class="chart-container slide-up">
-                    <div class="chart-header">
-                        <h3 class="chart-title">
-                            <i class="fas fa-chart-pie"></i>
-                            Project Health Status
-                        </h3>
-                        <div class="chart-controls">
-                            <button class="btn chart-export-btn" onclick="exportChart('projectHealthChart')">
-                                <i class="fas fa-image"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <canvas id="projectHealthChart"></canvas>
-                </div>
-
-                <div class="chart-container slide-up">
-                    <div class="chart-header">
-                        <h3 class="chart-title">
-                            <i class="fas fa-chart-line"></i>
-                            Drift Detection Trends
-                        </h3>
-                        <div class="chart-controls">
-                            <button class="btn chart-export-btn" onclick="exportChart('driftTrendsChart')">
-                                <i class="fas fa-image"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <canvas id="driftTrendsChart"></canvas>
-                </div>
-
-                <div class="chart-container slide-up">
-                    <div class="chart-header">
-                        <h3 class="chart-title">
-                            <i class="fas fa-chart-bar"></i>
-                            Query Activity
-                        </h3>
-                        <div class="chart-controls">
-                            <button class="btn chart-export-btn" onclick="exportChart('queryActivityChart')">
-                                <i class="fas fa-image"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <canvas id="queryActivityChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Sacred Plans Timeline -->
-            <div class="timeline-container slide-up">
-                <div class="chart-header">
-                    <h3 class="chart-title">
-                        <i class="fas fa-history"></i>
-                        Recent Sacred Plans Activity
-                    </h3>
-                </div>
-                <div class="timeline" id="sacred-timeline">
-                    <!-- Timeline items will be populated here -->
-                </div>
-            </div>
-
-            <!-- Project Cards -->
-            <div class="chart-header slide-up">
-                <h3 class="chart-title">
-                    <i class="fas fa-th-large"></i>
-                    Project Details
-                </h3>
-            </div>
-            <div class="projects-container" id="projects-container">
-                <!-- Project cards will be populated here -->
-            </div>
-        </div>
-
-        <!-- Error State -->
-        <div id="error" class="error" style="display: none;">
-            <i class="fas fa-exclamation-circle error-icon"></i>
+    <!-- Create Project Modal -->
+    <div id="createProjectModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-md m-4">
+            <h3 class="text-2xl font-bold text-white mb-4">Create a New Project</h3>
+            <p class="text-slate-400 mb-6">Enter a name for your new project to get started.</p>
             <div>
-                <strong>Connection Error:</strong> Unable to connect to ContextKeeper API. Please ensure the service is running on port 5556.
-                <br>
-                <button class="btn btn-primary" onclick="retryConnection()" style="margin-top: 10px;">
-                    <i class="fas fa-redo"></i> Retry Connection
+                <label for="projectName" class="block text-sm font-medium text-slate-300 mb-2">Project Name</label>
+                <input type="text" id="projectName" name="projectName" class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none" placeholder="e.g., 'My Awesome App'">
+            </div>
+            <div class="mt-8 flex justify-end gap-4">
+                <button type="button" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-5 rounded-lg transition-colors" onclick="closeCreateProjectModal()">
+                    Cancel
+                </button>
+                <button type="button" class="bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2 px-5 rounded-lg transition-colors" onclick="handleCreateProject()">
+                    Create Project
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Export Modal -->
-    <div id="exportModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">Export Dashboard</h2>
-                <span class="close" onclick="closeExportModal()">&times;</span>
-            </div>
-            <div class="export-options">
-                <div class="export-option" onclick="exportDashboard('pdf')">
-                    <i class="fas fa-file-pdf export-icon"></i>
-                    <div class="export-info">
-                        <h4>PDF Report</h4>
-                        <p>Complete dashboard as PDF document</p>
-                    </div>
-                </div>
-                <div class="export-option" onclick="exportDashboard('png')">
-                    <i class="fas fa-image export-icon"></i>
-                    <div class="export-info">
-                        <h4>PNG Image</h4>
-                        <p>Dashboard screenshot as high-quality image</p>
-                    </div>
-                </div>
-                <div class="export-option" onclick="exportDashboard('json')">
-                    <i class="fas fa-code export-icon"></i>
-                    <div class="export-info">
-                        <h4>JSON Data</h4>
-                        <p>Raw analytics data in JSON format</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
+    <!-- three.js and app logic scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/lights/RectAreaLightUniformsLib.js"></script>
+    
     <script>
-        // Global variables
-        let charts = {};
-        let isDarkMode = false;
-        let autoRefreshEnabled = true;
-        let autoRefreshInterval;
-        let dashboardData = {};
-        let filteredProjects = [];
+        // === DASHBOARD LOGIC ===
+        const API_BASE = window.location.origin;
+        let refreshInterval;
 
-        // API endpoints
-        const API_BASE = 'http://localhost:5556';
-        const ENDPOINTS = {
-            health: `${API_BASE}/health`,
-            projects: `${API_BASE}/projects`,
-            sacred: `${API_BASE}/sacred/plans`,
-            drift: `${API_BASE}/sacred/drift`,
-            analytics: `${API_BASE}/analytics`
-        };
+        // Initialize dashboard on content load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Dashboard loaded, starting data fetch...');
+            loadDashboard();
+            // Refresh data every 30 seconds
+            refreshInterval = setInterval(loadDashboard, 30000);
+        });
 
-        // Chart.js default configuration
-        Chart.defaults.responsive = true;
-        Chart.defaults.maintainAspectRatio = false;
-        Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-        Chart.defaults.plugins.tooltip.titleColor = '#ffffff';
-        Chart.defaults.plugins.tooltip.bodyColor = '#ffffff';
-        Chart.defaults.plugins.tooltip.borderColor = '#374151';
-        Chart.defaults.plugins.tooltip.borderWidth = 1;
-
-        // Initialize dashboard
-        async function initDashboard() {
+        async function loadDashboard() {
             try {
-                await loadDashboardData();
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('dashboard').style.display = 'block';
-                
-                // Start auto-refresh
-                startAutoRefresh();
-                
-                // Initialize theme
-                const savedTheme = localStorage.getItem('dashboard-theme');
-                if (savedTheme === 'dark') {
-                    toggleTheme();
-                }
+                console.log('Loading dashboard data...');
+                await Promise.all([
+                    loadStats(),
+                    loadProjects()
+                ]);
+                console.log('Dashboard data loaded successfully');
             } catch (error) {
-                console.error('Failed to initialize dashboard:', error);
-                showError('Failed to initialize dashboard. Please check the connection and try again.');
+                console.error('Error loading dashboard:', error);
+                showError('Failed to load dashboard data: ' + error.message);
             }
         }
 
-        // Load all dashboard data
-        async function loadDashboardData() {
+        async function loadStats() {
             try {
-                const [health, projects, sacred, drift] = await Promise.all([
-                    fetchData(ENDPOINTS.health).catch(() => ({ status: 'unhealthy' })),
-                    fetchData(ENDPOINTS.projects).catch(() => ({ projects: [] })),
-                    fetchData(ENDPOINTS.sacred).catch(() => ({ plans: [] })),
-                    fetchData(ENDPOINTS.drift).catch(() => ({ drift_detected: [] }))
+                console.log('Loading stats...');
+                // In a real scenario, you might have separate endpoints.
+                // For this example, we derive some stats from the projects endpoint.
+                const [projectsResponse, healthResponse] = await Promise.all([
+                    fetch(`${API_BASE}/projects`).catch(e => ({ ok: false, status: 'Fetch Error', error: e })),
+                    fetch(`${API_BASE}/health`).catch(e => ({ ok: false, status: 'Fetch Error', error: e }))
                 ]);
 
-                dashboardData = { health, projects, sacred, drift };
-                filteredProjects = projects.projects || [];
-                
-                updateStatusCards(health, projects, sacred, drift);
-                updateCharts(projects, sacred, drift);
-                updateTimeline(sacred);
-                updateProjectCards(filteredProjects);
-                
-                hideError();
+                if (!projectsResponse.ok) {
+                    // Mock data for demonstration if API fails
+                    console.warn('Projects API failed or is unavailable. Using mock stats.');
+                    updateStatsUI({ total_projects: 3, focused_project: 'ContextKeeper', total_decisions: 12 }, { status: 'healthy' });
+                    return;
+                }
+                 if (!healthResponse.ok) {
+                    console.warn('Health API failed or is unavailable. Using mock health.');
+                    updateStatsUI(await projectsResponse.json(), { status: 'healthy' });
+                    return;
+                }
+
+                const projectsData = await projectsResponse.json();
+                const healthData = await healthResponse.json();
+                console.log('Stats data:', { projectsData, healthData });
+                updateStatsUI(projectsData, healthData);
+
             } catch (error) {
-                console.error('Error loading dashboard data:', error);
-                showError('Unable to load dashboard data. Please check the API connection.');
-                throw error;
+                console.error('Error loading stats:', error);
+                // Display error state in UI
+                document.getElementById('totalProjects').textContent = 'Error';
+                document.getElementById('focusedProject').textContent = 'Error';
+                document.getElementById('totalDecisions').textContent = 'Error';
+                document.getElementById('systemHealth').textContent = '❌';
             }
         }
+        
+        function updateStatsUI(projectsData, healthData) {
+            document.getElementById('totalProjects').textContent = projectsData.total_projects || 0;
+            document.getElementById('focusedProject').textContent = projectsData.focused_project ? 'Active' : 'None';
+            document.getElementById('totalDecisions').textContent = projectsData.total_decisions || 0;
+            document.getElementById('systemHealth').textContent = healthData.status === 'healthy' ? '✅ Healthy' : '❌ Unhealthy';
+        }
 
-        // Fetch data from API with better error handling
-        async function fetchData(url) {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-            
+
+        async function loadProjects() {
+            const projectsGrid = document.getElementById('projectsGrid');
             try {
-                const response = await fetch(url, {
-                    signal: controller.signal,
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                clearTimeout(timeoutId);
+                console.log('Loading projects...');
+                const response = await fetch(`${API_BASE}/projects`);
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    // Mock data for demonstration if API fails
+                    console.warn(`Projects API error: ${response.status}. Displaying mock projects.`);
+                    const mockData = {
+                        projects: [
+                            { id: 'proj_1', name: 'ContextKeeper v3', status: 'active', last_active: new Date().toISOString(), total_decisions: 12 },
+                            { id: 'proj_2', name: 'AI Core Engine', status: 'active', last_active: new Date(Date.now() - 86400000).toISOString(), total_decisions: 45 },
+                            { id: 'proj_3', name: 'Frontend UI Library', status: 'paused', last_active: new Date(Date.now() - 86400000 * 5).toISOString(), total_decisions: 8 },
+                            { id: 'proj_4', name: 'Legacy API', status: 'archived', last_active: new Date(Date.now() - 86400000 * 30).toISOString(), total_decisions: 150 },
+                        ]
+                    };
+                    renderProjects(mockData);
+                    return;
                 }
                 
                 const data = await response.json();
-                return data;
+                console.log('Projects data:', data);
+                renderProjects(data);
+
             } catch (error) {
-                clearTimeout(timeoutId);
-                if (error.name === 'AbortError') {
-                    throw new Error('Request timeout - API took too long to respond');
-                }
-                throw error;
-            }
-        }
-
-        // Update status cards with animations
-        function updateStatusCards(health, projects, sacred, drift) {
-            const projectCount = projects.projects?.length || 0;
-            const sacredCount = sacred.plans?.length || 0;
-            const driftCount = drift.drift_detected?.length || 0;
-            const isHealthy = health.status === 'healthy';
-            
-            animateValue('total-projects', projectCount);
-            animateValue('sacred-plans', sacredCount);
-            animateValue('drift-count', driftCount);
-            
-            // Update system health with colour coding
-            const healthCard = document.querySelector('#system-health').closest('.status-card');
-            const healthElement = document.getElementById('system-health');
-            
-            if (isHealthy) {
-                healthElement.innerHTML = '<span>✅</span><i class="fas fa-heart"></i>';
-                healthCard.className = 'status-card healthy slide-up';
-            } else {
-                healthElement.innerHTML = '<span>⚠️</span><i class="fas fa-exclamation-triangle"></i>';
-                healthCard.className = 'status-card warning slide-up';
-            }
-            
-            // Update drift card colour based on count
-            const driftCard = document.querySelector('#drift-count').closest('.status-card');
-            if (driftCount === 0) {
-                driftCard.className = 'status-card healthy slide-up';
-            } else if (driftCount <= 5) {
-                driftCard.className = 'status-card warning slide-up';
-            } else {
-                driftCard.className = 'status-card danger slide-up';
-            }
-        }
-
-        // Animate number values
-        function animateValue(elementId, endValue, duration = 1000) {
-            const element = document.getElementById(elementId).querySelector('span');
-            const startValue = parseInt(element.textContent) || 0;
-            const range = endValue - startValue;
-            const increment = range > 0 ? Math.ceil(range / 50) : Math.floor(range / 50);
-            
-            let current = startValue;
-            const timer = setInterval(() => {
-                current += increment;
-                if ((increment > 0 && current >= endValue) || (increment < 0 && current <= endValue)) {
-                    current = endValue;
-                    clearInterval(timer);
-                }
-                element.textContent = current;
-            }, duration / 50);
-        }
-
-        // Update all charts with enhanced interactivity
-        function updateCharts(projects, sacred, drift) {
-            updateSacredPlansChart(sacred);
-            updateProjectHealthChart(projects);
-            updateDriftTrendsChart(drift);
-            updateQueryActivityChart();
-        }
-
-        // Enhanced Sacred Plans Timeline Chart
-        function updateSacredPlansChart(sacred) {
-            const ctx = document.getElementById('sacredPlansChart').getContext('2d');
-            
-            if (charts.sacredPlans) {
-                charts.sacredPlans.destroy();
-            }
-
-            const plans = sacred.plans || [];
-            const timelineData = plans.map((plan, index) => ({
-                x: new Date(plan.created_at || Date.now() - (index * 86400000)),
-                y: index + 1,
-                r: 8,
-                plan: plan
-            }));
-
-            charts.sacredPlans = new Chart(ctx, {
-                type: 'scatter',
-                data: {
-                    datasets: [{
-                        label: 'Sacred Plans',
-                        data: timelineData,
-                        backgroundColor: 'rgba(99, 102, 241, 0.8)',
-                        borderColor: '#6366f1',
-                        borderWidth: 2,
-                        pointHoverRadius: 12,
-                        pointHoverBorderWidth: 3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: {
-                        duration: 2000,
-                        easing: 'easeInOutQuart'
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const plan = context.raw.plan;
-                                    return [
-                                        `Plan: ${plan.plan_id || 'Unknown'}`,
-                                        `Project: ${plan.project_id || 'Unknown'}`,
-                                        `Status: ${plan.status || 'Unknown'}`,
-                                        `Created: ${new Date(context.raw.x).toLocaleDateString()}`
-                                    ];
-                                }
-                            }
-                        },
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'day',
-                                displayFormats: {
-                                    day: 'MMM dd'
-                                }
-                            },
-                            title: {
-                                display: true,
-                                text: 'Timeline'
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Plan Sequence'
-                            },
-                            beginAtZero: true
-                        }
-                    },
-                    onClick: (event, elements) => {
-                        if (elements.length > 0) {
-                            const plan = elements[0].element.$context.raw.plan;
-                            showPlanDetails(plan);
-                        }
-                    }
-                }
-            });
-        }
-
-        // Enhanced Project Health Chart
-        function updateProjectHealthChart(projects) {
-            const ctx = document.getElementById('projectHealthChart').getContext('2d');
-            
-            if (charts.projectHealth) {
-                charts.projectHealth.destroy();
-            }
-
-            const projectList = projects.projects || [];
-            const healthCounts = { healthy: 0, warning: 0, critical: 0 };
-            
-            projectList.forEach(project => {
-                const status = project.health_status || 'healthy';
-                healthCounts[status] = (healthCounts[status] || 0) + 1;
-            });
-
-            const total = Object.values(healthCounts).reduce((a, b) => a + b, 0);
-
-            charts.projectHealth = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Healthy', 'Warning', 'Critical'],
-                    datasets: [{
-                        data: [healthCounts.healthy, healthCounts.warning, healthCounts.critical],
-                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-                        borderWidth: 0,
-                        hoverOffset: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: {
-                        animateRotate: true,
-                        duration: 2000
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const value = context.parsed;
-                                    const percentage = ((value / total) * 100).toFixed(1);
-                                    return `${context.label}: ${value} projects (${percentage}%)`;
-                                }
-                            }
-                        },
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 20,
-                                usePointStyle: true
-                            }
-                        }
-                    },
-                    onClick: (event, elements) => {
-                        if (elements.length > 0) {
-                            const status = ['healthy', 'warning', 'critical'][elements[0].index];
-                            filterProjectsByHealth(status);
-                        }
-                    }
-                }
-            });
-        }
-
-        // Enhanced Drift Trends Chart
-        function updateDriftTrendsChart(drift) {
-            const ctx = document.getElementById('driftTrendsChart').getContext('2d');
-            
-            if (charts.driftTrends) {
-                charts.driftTrends.destroy();
-            }
-
-            const driftData = drift.drift_detected || [];
-            const timeRange = document.getElementById('timeRangeFilter').value || '7d';
-            const days = timeRange === '24h' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
-            
-            const trendData = [];
-            const now = new Date();
-            
-            for (let i = days - 1; i >= 0; i--) {
-                const date = new Date(now);
-                date.setDate(date.getDate() - i);
-                const dayDrift = driftData.filter(d => {
-                    const driftDate = new Date(d.detected_at || Date.now());
-                    return driftDate.toDateString() === date.toDateString();
-                }).length;
-                
-                trendData.push({
-                    date: date.toLocaleDateString(),
-                    count: dayDrift,
-                    fullDate: date
-                });
-            }
-
-            charts.driftTrends = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: trendData.map(d => d.date),
-                    datasets: [{
-                        label: 'Drift Detections',
-                        data: trendData.map(d => d.count),
-                        borderColor: '#ec4899',
-                        backgroundColor: 'rgba(236, 72, 153, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        pointBackgroundColor: '#ec4899',
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointRadius: 5,
-                        pointHoverRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: {
-                        duration: 2000,
-                        easing: 'easeInOutQuart'
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `${context.parsed.y} drift detection${context.parsed.y !== 1 ? 's' : ''} on ${context.label}`;
-                                }
-                            }
-                        },
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 1
-                            },
-                            title: {
-                                display: true,
-                                text: 'Drift Count'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Date'
-                            }
-                        }
-                    },
-                    onClick: (event, elements) => {
-                        if (elements.length > 0) {
-                            const date = trendData[elements[0].index].fullDate;
-                            showDriftDetails(date);
-                        }
-                    }
-                }
-            });
-        }
-
-        // Enhanced Query Activity Chart
-        function updateQueryActivityChart() {
-            const ctx = document.getElementById('queryActivityChart').getContext('2d');
-            
-            if (charts.queryActivity) {
-                charts.queryActivity.destroy();
-            }
-
-            // Generate more realistic query activity data
-            const hours = [];
-            const queries = [];
-            const currentHour = new Date().getHours();
-            
-            for (let i = 23; i >= 0; i--) {
-                const hour = (currentHour - i + 24) % 24;
-                hours.push(hour.toString().padStart(2, '0') + ':00');
-                
-                // Simulate realistic query patterns (higher during work hours)
-                let queryCount;
-                if (hour >= 9 && hour <= 17) {
-                    queryCount = Math.floor(Math.random() * 25) + 15; // Work hours: 15-40 queries
-                } else if (hour >= 18 && hour <= 22) {
-                    queryCount = Math.floor(Math.random() * 15) + 8; // Evening: 8-23 queries
-                } else {
-                    queryCount = Math.floor(Math.random() * 8) + 2; // Night: 2-10 queries
-                }
-                queries.push(queryCount);
-            }
-
-            charts.queryActivity = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: hours,
-                    datasets: [{
-                        label: 'Queries',
-                        data: queries,
-                        backgroundColor: (ctx) => {
-                            const value = ctx.parsed.y;
-                            if (value > 30) return '#10b981'; // High activity - green
-                            if (value > 15) return '#6366f1'; // Medium activity - blue
-                            return '#94a3b8'; // Low activity - grey
-                        },
-                        borderRadius: 4,
-                        borderSkipped: false
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: {
-                        duration: 2000,
-                        delay: (context) => context.dataIndex * 50
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const hour = context.label;
-                                    const count = context.parsed.y;
-                                    return `${count} queries at ${hour}`;
-                                }
-                            }
-                        },
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Query Count'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Hour'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Update Sacred Plans Timeline
-        function updateTimeline(sacred) {
-            const timeline = document.getElementById('sacred-timeline');
-            const plans = sacred.plans || [];
-            
-            if (plans.length === 0) {
-                timeline.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 40px;">No sacred plans found</p>';
-                return;
-            }
-            
-            // Sort plans by creation date (most recent first)
-            const sortedPlans = plans.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-            
-            timeline.innerHTML = sortedPlans.slice(0, 10).map(plan => `
-                <div class="timeline-item">
-                    <div class="timeline-content">
-                        <div class="timeline-date">${new Date(plan.created_at || Date.now()).toLocaleDateString()}</div>
-                        <div class="timeline-title">${plan.plan_id || 'Sacred Plan'}</div>
-                        <div class="timeline-description">
-                            Project: ${plan.project_id || 'Unknown'} | 
-                            Status: <span style="color: var(--${plan.status === 'approved' ? 'success' : 'warning'}-color)">${plan.status || 'Pending'}</span>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Update Project Cards
-        function updateProjectCards(projects) {
-            const container = document.getElementById('projects-container');
-            
-            if (projects.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 40px; grid-column: 1 / -1;">No projects found matching current filters</p>';
-                return;
-            }
-            
-            container.innerHTML = projects.map(project => {
-                const health = project.health_status || 'healthy';
-                const healthIcon = health === 'healthy' ? 'fa-heart' : health === 'warning' ? 'fa-exclamation-triangle' : 'fa-times-circle';
-                const sacredPlans = Math.floor(Math.random() * 5) + 1; // Simulated data
-                const driftCount = Math.floor(Math.random() * 3); // Simulated data
-                const lastActivity = new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toLocaleDateString();
-                
-                return `
-                    <div class="project-card fade-in" onclick="showProjectDetails('${project.project_id}')">
-                        <div class="project-header">
-                            <div class="project-title">${project.project_id || 'Unknown Project'}</div>
-                            <div class="project-meta">Last activity: ${lastActivity}</div>
-                            <div class="project-health ${health}">
-                                <i class="fas ${healthIcon}"></i>
-                                ${health.charAt(0).toUpperCase() + health.slice(1)}
-                            </div>
-                        </div>
-                        <div class="project-stats">
-                            <div class="project-stat">
-                                <div class="project-stat-value">${sacredPlans}</div>
-                                <div class="project-stat-label">Sacred Plans</div>
-                            </div>
-                            <div class="project-stat">
-                                <div class="project-stat-value">${driftCount}</div>
-                                <div class="project-stat-label">Drift Issues</div>
-                            </div>
-                            <div class="project-stat">
-                                <div class="project-stat-value">${Math.floor(Math.random() * 100) + 50}</div>
-                                <div class="project-stat-label">Queries</div>
-                            </div>
-                        </div>
+                console.error('Error loading projects:', error);
+                projectsGrid.innerHTML = `
+                    <div class="col-span-full text-center py-10 bg-red-900/20 border border-red-500/30 rounded-lg">
+                        <p class="text-red-300">Error loading projects: ${error.message}</p>
+                        <button class="mt-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg" onclick="loadProjects()">Retry</button>
                     </div>
                 `;
-            }).join('');
+            }
         }
-
-        // Search functionality
-        function handleSearch() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const allProjects = dashboardData.projects?.projects || [];
-            
-            filteredProjects = allProjects.filter(project => {
-                const projectId = (project.project_id || '').toLowerCase();
-                const description = (project.description || '').toLowerCase();
-                return projectId.includes(searchTerm) || description.includes(searchTerm);
-            });
-            
-            updateProjectCards(filteredProjects);
-        }
-
-        // Filter functionality
-        function handleFilter() {
-            const healthFilter = document.getElementById('healthFilter').value;
-            const allProjects = dashboardData.projects?.projects || [];
-            
-            if (healthFilter) {
-                filteredProjects = allProjects.filter(project => 
-                    (project.health_status || 'healthy') === healthFilter
-                );
+        
+        function renderProjects(data) {
+            const projectsGrid = document.getElementById('projectsGrid');
+            if (data.projects && data.projects.length > 0) {
+                projectsGrid.innerHTML = data.projects.map(project => {
+                    const statusClasses = {
+                        active: 'bg-green-500/20 text-green-300',
+                        paused: 'bg-yellow-500/20 text-yellow-300',
+                        archived: 'bg-slate-600/30 text-slate-400'
+                    };
+                    return `
+                        <div class="project-card bg-slate-800/50 p-5 rounded-lg border border-slate-700 transition-all duration-300 hover:border-violet-500 hover:-translate-y-1 cursor-pointer" onclick="focusProject('${project.id}')">
+                            <div class="flex justify-between items-start mb-3">
+                                <h3 class="font-bold text-white text-lg">${project.name}</h3>
+                                <span class="text-xs font-medium uppercase tracking-wider px-3 py-1 rounded-full ${statusClasses[project.status] || statusClasses.archived}">
+                                    ${project.status}
+                                </span>
+                            </div>
+                            <div class="text-sm text-slate-400 space-y-1">
+                                <div><i class="fas fa-clock fa-fw mr-2"></i>Last Active: ${formatDate(project.last_active)}</div>
+                                <div><i class="fas fa-lightbulb fa-fw mr-2"></i>Decisions: ${project.total_decisions || 0}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
             } else {
-                filteredProjects = allProjects;
-            }
-            
-            // Apply search filter as well
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            if (searchTerm) {
-                filteredProjects = filteredProjects.filter(project => {
-                    const projectId = (project.project_id || '').toLowerCase();
-                    const description = (project.description || '').toLowerCase();
-                    return projectId.includes(searchTerm) || description.includes(searchTerm);
-                });
-            }
-            
-            updateProjectCards(filteredProjects);
-        }
-
-        // Time range filter
-        function handleTimeFilter() {
-            if (dashboardData.drift) {
-                updateDriftTrendsChart(dashboardData.drift);
+                projectsGrid.innerHTML = `
+                    <div class="col-span-full text-center py-10 text-slate-400">
+                        <i class="fas fa-folder-open text-4xl mb-4"></i>
+                        <p>No projects yet. Create your first one to get started!</p>
+                    </div>
+                `;
             }
         }
 
-        // Filter projects by health status (from chart click)
-        function filterProjectsByHealth(status) {
-            document.getElementById('healthFilter').value = status;
-            handleFilter();
-        }
-
-        // Theme toggle
-        function toggleTheme() {
-            isDarkMode = !isDarkMode;
-            document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
-            
-            const toggle = document.querySelector('.theme-toggle');
-            const sunIcon = toggle.querySelector('.fa-sun');
-            const moonIcon = toggle.querySelector('.fa-moon');
-            
-            if (isDarkMode) {
-                toggle.classList.add('active');
-                sunIcon.style.display = 'none';
-                moonIcon.style.display = 'inline';
-            } else {
-                toggle.classList.remove('active');
-                sunIcon.style.display = 'inline';
-                moonIcon.style.display = 'none';
-            }
-            
-            localStorage.setItem('dashboard-theme', isDarkMode ? 'dark' : 'light');
-            
-            // Update chart colours for dark mode
-            updateChartsForTheme();
-        }
-
-        // Update charts for theme change
-        function updateChartsForTheme() {
-            Object.values(charts).forEach(chart => {
-                if (chart && chart.options) {
-                    chart.options.plugins.tooltip.backgroundColor = isDarkMode ? 'rgba(31, 41, 55, 0.95)' : 'rgba(0, 0, 0, 0.8)';
-                    chart.update();
-                }
-            });
-        }
-
-        // Auto-refresh functionality
-        function toggleAutoRefresh() {
-            autoRefreshEnabled = !autoRefreshEnabled;
-            const icon = document.getElementById('auto-refresh-icon');
-            const text = document.getElementById('auto-refresh-text');
-            
-            if (autoRefreshEnabled) {
-                icon.className = 'fas fa-pause';
-                text.textContent = 'Auto Refresh';
-                startAutoRefresh();
-            } else {
-                icon.className = 'fas fa-play';
-                text.textContent = 'Manual Mode';
-                stopAutoRefresh();
-            }
-        }
-
-        function startAutoRefresh() {
-            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
-            if (autoRefreshEnabled) {
-                autoRefreshInterval = setInterval(loadDashboardData, 30000); // 30 seconds
-            }
-        }
-
-        function stopAutoRefresh() {
-            if (autoRefreshInterval) {
-                clearInterval(autoRefreshInterval);
-                autoRefreshInterval = null;
-            }
-        }
-
-        // Manual refresh
-        async function refreshDashboard() {
-            const button = document.querySelector('button[onclick="refreshDashboard()"]');
-            const icon = button.querySelector('i');
-            
-            icon.style.animation = 'spin 1s linear infinite';
-            button.disabled = true;
-            
+        function formatDate(dateString) {
+            if (!dateString) return 'Never';
             try {
-                await loadDashboardData();
-            } finally {
-                icon.style.animation = '';
-                button.disabled = false;
-            }
-        }
-
-        // Export functionality
-        function openExportModal() {
-            document.getElementById('exportModal').style.display = 'block';
-        }
-
-        function closeExportModal() {
-            document.getElementById('exportModal').style.display = 'none';
-        }
-
-        async function exportDashboard(format) {
-            closeExportModal();
-            
-            try {
-                switch (format) {
-                    case 'pdf':
-                        await exportToPDF();
-                        break;
-                    case 'png':
-                        await exportToPNG();
-                        break;
-                    case 'json':
-                        exportToJSON();
-                        break;
-                }
+                const date = new Date(dateString);
+                return date.toLocaleDateString('en-AU', { year: 'numeric', month: 'short', day: 'numeric' });
             } catch (error) {
-                console.error('Export failed:', error);
-                alert('Export failed. Please try again.');
+                return 'Invalid Date';
             }
         }
 
-        async function exportToPDF() {
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('l', 'mm', 'a4');
-            
-            const dashboard = document.getElementById('dashboard');
-            const canvas = await html2canvas(dashboard, {
-                scale: 2,
-                useCORS: true,
-                backgroundColor: isDarkMode ? '#111827' : '#ffffff'
+        function refreshData() {
+            console.log('Manual refresh triggered');
+            // Add a visual cue for refreshing
+            const refreshButton = document.querySelector('.fa-sync-alt');
+            refreshButton.classList.add('animate-spin');
+            loadDashboard().finally(() => {
+                setTimeout(() => refreshButton.classList.remove('animate-spin'), 500);
             });
-            
-            const imgData = canvas.toDataURL('image/png');
-            const imgWidth = 297; // A4 landscape width
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            
-            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-            pdf.save(`contextkeeper-dashboard-${new Date().toISOString().split('T')[0]}.pdf`);
         }
 
-        async function exportToPNG() {
-            const dashboard = document.getElementById('dashboard');
-            const canvas = await html2canvas(dashboard, {
-                scale: 2,
-                useCORS: true,
-                backgroundColor: isDarkMode ? '#111827' : '#ffffff'
+        function focusProject(projectId) {
+            console.log('Focusing project:', projectId);
+            // This is a mock interaction. In a real app, you would make an API call.
+            showNotification(`Project '${projectId}' is now focused.`);
+            // fetch(`${API_BASE}/projects/${projectId}/focus`, { method: 'POST' })
+            // .then(() => loadDashboard())
+            // .catch(error => console.error('Error focusing project:', error));
+        }
+        
+        function showNotification(message) {
+            const notif = document.createElement('div');
+            notif.className = 'fixed top-5 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg z-50 animate-pulse';
+            notif.textContent = message;
+            document.body.appendChild(notif);
+            setTimeout(() => {
+                notif.remove();
+            }, 3000);
+        }
+
+        // Modal Controls
+        function openCreateProjectModal() {
+            document.getElementById('createProjectModal').classList.remove('hidden');
+        }
+
+        function closeCreateProjectModal() {
+            document.getElementById('createProjectModal').classList.add('hidden');
+        }
+
+        function handleCreateProject() {
+            const projectName = document.getElementById('projectName').value;
+            if (projectName) {
+                console.log('Creating project:', projectName);
+                closeCreateProjectModal();
+                showNotification(`Project '${projectName}' created successfully!`);
+                // In a real app, you would make an API call:
+                // fetch(`${API_BASE}/projects`, {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify({ name: projectName, /* other data */ })
+                // }).then(() => loadDashboard()).catch(err => console.error(err));
+            }
+        }
+        
+        // External Links
+        function openAnalytics() { window.open(`${API_BASE}/analytics_dashboard_live.html`, '_blank'); }
+        function openAPI() { window.open('https://github.com/lostmind008/contextkeeper-v3', '_blank'); }
+        function openGitHub() { window.open('https://github.com/lostmind008/contextkeeper-v3', '_blank'); }
+
+        // Cleanup and error handling
+        window.addEventListener('beforeunload', () => clearInterval(refreshInterval));
+        window.addEventListener('unhandledrejection', event => console.error('Unhandled promise rejection:', event.reason));
+
+
+        // === THREE.JS SCENE SETUP (from template) ===
+        let scene, camera, renderer;
+        let points, group;
+        let mouse = new THREE.Vector2(-100, -100);
+        let raycaster = new THREE.Raycaster();
+        let intersectionPoint = new THREE.Vector3();
+        let isHovering = false;
+
+        const SPHERE_RADIUS = 3.5;
+        const PARTICLE_COUNT = 4000;
+        const HOVER_DISTANCE_EFFECT = 2.5;
+        const DISINTEGRATION_STRENGTH = 0.5;
+
+        function initThreeJS() {
+            const container = document.getElementById('three-canvas-container');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+            camera.position.set(0, 0, 18);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setAnimationLoop(animate);
+            container.appendChild(renderer.domElement);
+            
+            THREE.RectAreaLightUniformsLib.init();
+            const rectLight1 = new THREE.RectAreaLight(0xff0000, 5, 4, 10);
+            rectLight1.position.set(-5, 5, 5);
+            scene.add(rectLight1);
+            const rectLight2 = new THREE.RectAreaLight(0x00ff00, 5, 4, 10);
+            rectLight2.position.set(0, 5, 5);
+            scene.add(rectLight2);
+            const rectLight3 = new THREE.RectAreaLight(0x0000ff, 5, 4, 10);
+            rectLight3.position.set(5, 5, 5);
+            scene.add(rectLight3);
+
+            group = new THREE.Group();
+            scene.add(group);
+
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            const initialPositions = [];
+            const colors = [];
+            const colorTop = new THREE.Color(0xffffff);
+            const colorBottom = new THREE.Color(0xFFD700);
+            const phi = Math.PI * (3.0 - Math.sqrt(5.0));
+
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const y = 1 - (i / (PARTICLE_COUNT - 1)) * 2;
+                const radiusAtY = Math.sqrt(1 - y * y);
+                const theta = phi * i;
+                const x = Math.cos(theta) * radiusAtY * SPHERE_RADIUS;
+                const z = Math.sin(theta) * radiusAtY * SPHERE_RADIUS;
+                const yPos = y * SPHERE_RADIUS;
+                positions.push(x, yPos, z);
+                initialPositions.push(x, yPos, z);
+                const color = new THREE.Color();
+                color.lerpColors(colorBottom, colorTop, (y + 1) / 2);
+                colors.push(color.r, color.g, color.b);
+            }
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('initialPosition', new THREE.Float32BufferAttribute(initialPositions, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 0.05,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending,
             });
-            
-            const link = document.createElement('a');
-            link.download = `contextkeeper-dashboard-${new Date().toISOString().split('T')[0]}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
+
+            points = new THREE.Points(geometry, material);
+            group.add(points);
+
+            window.addEventListener('resize', onWindowResize, false);
+            document.addEventListener('mousemove', onDocumentMouseMove, false);
+            document.addEventListener('touchstart', onDocumentTouch, { passive: false });
+            document.addEventListener('touchmove', onDocumentTouch, { passive: false });
+            document.addEventListener('touchend', () => { isHovering = false; });
         }
 
-        function exportToJSON() {
-            const exportData = {
-                timestamp: new Date().toISOString(),
-                dashboard_data: dashboardData,
-                theme: isDarkMode ? 'dark' : 'light',
-                filters: {
-                    search: document.getElementById('searchInput').value,
-                    health: document.getElementById('healthFilter').value,
-                    timeRange: document.getElementById('timeRangeFilter').value
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function updateMouseAndRaycaster(clientX, clientY) {
+            mouse.x = (clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const invisibleSphere = new THREE.Mesh(new THREE.SphereGeometry(SPHERE_RADIUS, 32, 32));
+            group.add(invisibleSphere);
+            invisibleSphere.updateMatrixWorld();
+            const intersects = raycaster.intersectObject(invisibleSphere);
+            group.remove(invisibleSphere);
+            if (intersects.length > 0) {
+                intersectionPoint.copy(intersects[0].point).applyMatrix4(group.matrixWorld.clone().invert());
+                isHovering = true;
+            } else {
+                isHovering = false;
+            }
+        }
+
+        function onDocumentMouseMove(event) { updateMouseAndRaycaster(event.clientX, event.clientY); }
+        function onDocumentTouch(event) {
+            if (event.touches.length === 1) {
+                updateMouseAndRaycaster(event.touches[0].clientX, event.touches[0].clientY);
+            }
+        }
+
+        function animate() {
+            group.rotation.y += 0.0005;
+            group.rotation.x += 0.0002;
+            
+            const positions = points.geometry.attributes.position;
+            const initialPositions = points.geometry.attributes.initialPosition;
+            const currentPos = new THREE.Vector3();
+            const initialPos = new THREE.Vector3();
+            const targetPos = new THREE.Vector3();
+
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                currentPos.fromBufferAttribute(positions, i);
+                initialPos.fromBufferAttribute(initialPositions, i);
+                let targetPosCalculated = false;
+                if (isHovering) {
+                    const dist = initialPos.distanceTo(intersectionPoint);
+                    if (dist < HOVER_DISTANCE_EFFECT) {
+                        const pushFactor = (1 - dist / HOVER_DISTANCE_EFFECT);
+                        targetPos.copy(initialPos).multiplyScalar(1 + pushFactor * DISINTEGRATION_STRENGTH);
+                        targetPosCalculated = true;
+                    }
                 }
-            };
-            
-            const dataStr = JSON.stringify(exportData, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            
-            const link = document.createElement('a');
-            link.download = `contextkeeper-data-${new Date().toISOString().split('T')[0]}.json`;
-            link.href = URL.createObjectURL(dataBlob);
-            link.click();
-        }
-
-        // Export individual charts
-        async function exportChart(chartId) {
-            const canvas = document.getElementById(chartId);
-            const link = document.createElement('a');
-            link.download = `${chartId}-${new Date().toISOString().split('T')[0]}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
-        }
-
-        // Error handling
-        function showError(message) {
-            const errorDiv = document.getElementById('error');
-            errorDiv.querySelector('div').innerHTML = `
-                <strong>Error:</strong> ${message}
-                <br>
-                <button class="btn btn-primary" onclick="retryConnection()" style="margin-top: 10px;">
-                    <i class="fas fa-redo"></i> Retry Connection
-                </button>
-            `;
-            errorDiv.style.display = 'flex';
-            document.getElementById('dashboard').style.display = 'none';
-        }
-
-        function hideError() {
-            document.getElementById('error').style.display = 'none';
-        }
-
-        async function retryConnection() {
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('error').style.display = 'none';
-            
-            try {
-                await initDashboard();
-            } catch (error) {
-                document.getElementById('loading').style.display = 'none';
-                showError('Connection retry failed. Please check if the ContextKeeper service is running.');
-            }
-        }
-
-        // Detail modals (placeholders for future implementation)
-        function showPlanDetails(plan) {
-            alert(`Sacred Plan Details:\nID: ${plan.plan_id}\nProject: ${plan.project_id}\nStatus: ${plan.status}`);
-        }
-
-        function showDriftDetails(date) {
-            alert(`Drift details for ${date.toLocaleDateString()} - Feature coming soon!`);
-        }
-
-        function showProjectDetails(projectId) {
-            alert(`Project details for ${projectId} - Feature coming soon!`);
-        }
-
-        // Initialize when page loads
-        document.addEventListener('DOMContentLoaded', initDashboard);
-
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('exportModal');
-            if (event.target === modal) {
-                closeExportModal();
-            }
-        };
-
-        // Keyboard navigation
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closeExportModal();
-            }
-            if (event.ctrlKey || event.metaKey) {
-                switch (event.key) {
-                    case 'r':
-                        event.preventDefault();
-                        refreshDashboard();
-                        break;
-                    case 'e':
-                        event.preventDefault();
-                        openExportModal();
-                        break;
-                    case 'd':
-                        event.preventDefault();
-                        toggleTheme();
-                        break;
+                if (!targetPosCalculated) {
+                    targetPos.copy(initialPos);
                 }
+                currentPos.lerp(targetPos, 0.05);
+                positions.setXYZ(i, currentPos.x, currentPos.y, currentPos.z);
             }
-        });
+            positions.needsUpdate = true;
+            renderer.render(scene, camera);
+        }
+
+        // Start the three.js visualization
+        initThreeJS();
     </script>
 </body>
 </html>
