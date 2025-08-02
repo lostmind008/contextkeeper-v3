@@ -1,29 +1,26 @@
-# ContextKeeper v3.0 Sacred Layer
+# LostMind AI - ContextKeeper v3.0
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://python.org)
 [![Node.js](https://img.shields.io/badge/Node.js-16%2B-green.svg)](https://nodejs.org)
 
-**ContextKeeper** is a production-ready RAG-powered development context management system that prevents AI agents from derailing from approved architectural plans through the revolutionary **Sacred Layer** - an immutable plan storage system with 2-layer verification.
+**ContextKeeper** is a revolutionary AI-powered development context management system by **LostMindAI**. It provides intelligent context tracking, architectural decision management, and AI-driven insights to maintain clarity and consistency across your development projects.
 
-> **✅ CURRENT STATUS (August 2025)**: v3.0.0 - Production Ready! All critical fixes complete, LLM integration working, sacred layer tests passing, analytics dashboard live with real-time metrics.
+> **✅ CURRENT STATUS (August 2025)**: v3.0.0 - Production Ready! Beautiful Three.js dashboard, real-time analytics, multi-project support, and comprehensive API integration.
 
 ## 🌟 What's New in v3.0
 
-ContextKeeper v3.0 introduces groundbreaking features that ensure AI agents adhere to approved architectural plans:
+ContextKeeper v3.0 introduces groundbreaking features that transform how you manage development context:
 
-- **🛡️ Sacred Layer**: Create immutable architectural plans with 2-layer verification that protects core architecture from unintended AI changes
-- **🔄 Git-Based Tracking**: Robust file change tracking using Git for reliable knowledge base updates  
-- **📊 Enhanced Drift Detection**: AI-powered drift analysis with automated recommendations and sacred plan alignment
-- **🤖 Enhanced MCP Integration**: 8 MCP tools for seamless Claude Code integration with Sacred Layer awareness
-- **📈 Live Analytics Dashboard**: Professional dashboard with real-time metrics, dark mode, export functionality, and mobile support
-- **🎯 Complete Project Isolation**: Secure multi-project management with zero cross-contamination
-- **💬 LLM-Enhanced Queries**: Natural language responses powered by Google Gemini 2.5 Flash
+- **🎨 Beautiful Three.js Dashboard**: Interactive particle animation with modern dark theme and responsive design
+- **📊 Real-time Analytics**: Live metrics, project health monitoring, and performance insights
+- **🎯 Multi-Project Support**: Complete project isolation with zero cross-contamination
+- **🤖 LLM Integration**: Natural language responses powered by Google Gemini 2.5 Flash
 - **📝 Decision & Objective Tracking**: Record architectural decisions and track development objectives
 - **🔍 Semantic Search**: Search entire codebase using natural language with context-aware results
 - **🔐 Auto Security**: Automatically redacts API keys and sensitive data
-- **📊 Sacred Metrics API**: Comprehensive analytics endpoint for sacred plan adherence and governance
 - **⚡ Performance**: Async Flask endpoints, optimized embeddings, and intelligent caching
+- **📱 Mobile Support**: Fully responsive design that works on all devices
 
 ## 🚀 Quick Start (5 minutes)
 
@@ -40,9 +37,6 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
-
-# Initialize the database (if needed)
-python rag_agent.py init
 ```
 
 ### 2. Configure Environment
@@ -72,14 +66,28 @@ export FLASK_ASYNC_MODE=True         # Enable async endpoints (default: True)
 source venv/bin/activate
 
 # Start the agent (runs on port 5556)
-python rag_agent.py start
+python rag_agent.py server
 
 # Verify it's working
 curl http://localhost:5556/health
 # Expected response: {"status":"healthy"}
 ```
 
-### 4. Create Your First Project
+### 4. Access the Beautiful Dashboard
+
+Open your browser and navigate to:
+```
+http://localhost:5556/analytics_dashboard_live.html
+```
+
+Experience the stunning Three.js particle animation with:
+- Interactive particle sphere with 4000 animated particles
+- Mouse-responsive disintegration effects
+- Modern dark theme with glass morphism
+- Real-time project statistics
+- Responsive design for all devices
+
+### 5. Create Your First Project
 
 ```bash
 # Create a new project with automatic file filtering
@@ -94,11 +102,12 @@ curl http://localhost:5556/health
 
 ## ✨ Key Features
 
-### 🛡️ Sacred Layer Protection
-- **Immutable Plans**: Architectural constraints that cannot be modified once approved
-- **2-Layer Verification**: Hash-based codes + environment key security  
-- **AI Guardrails**: Prevent AI agents from suggesting non-compliant changes
-- **Drift Monitoring**: Real-time alignment checking with automated alerts
+### 🎨 Beautiful User Interface
+- **Three.js Background**: Interactive particle sphere with mouse interaction
+- **Modern Design**: Tailwind CSS with dark theme and glass morphism
+- **Responsive Layout**: Works perfectly on desktop, tablet, and mobile
+- **Real-time Updates**: Live data refresh with smooth animations
+- **Interactive Elements**: Hover effects, modals, and toast notifications
 
 ### 🎯 Intelligent Context Management
 - **Multi-Project Support**: Isolated contexts for different projects with no cross-contamination
@@ -107,11 +116,12 @@ curl http://localhost:5556/health
 - **Git Integration**: Track development activity through git commits and file changes
 - **Path Intelligence**: Sophisticated filtering prevents database pollution
 
-### 🔗 Claude Code Integration
-- **8 MCP Tools**: Sacred-aware tools for seamless AI collaboration
-- **Natural Language**: LLM-enhanced responses for technical queries  
-- **Real-time Context**: Automatic architectural constraint provision
-- **Session Awareness**: Maintains context across Claude sessions
+### 📊 Real-time Analytics
+- **Live Metrics**: Active projects, focused project, total decisions, system health
+- **Project Health**: Status monitoring with color-coded indicators
+- **Performance Insights**: Load times, API response times, and system metrics
+- **Export Options**: PDF, PNG, and JSON export functionality
+- **Mobile Support**: Fully responsive analytics dashboard
 
 ## 🔧 Core Workflows
 
@@ -181,6 +191,10 @@ Content-Type: application/json
 {
   "query": "architectural constraints for database"
 }
+
+# Analytics dashboard
+GET http://localhost:5556/analytics_dashboard_live.html
+# Returns: Beautiful Three.js dashboard
 ```
 
 ## 🏗️ Architecture
@@ -200,7 +214,37 @@ Content-Type: application/json
 │  • gemini-embedding-001 with v1beta API               │
 │  • Smart path filtering (no venv/node_modules)        │
 └─────────────────────────────────────────────────────────┘
+          │
+          ▼
+┌─────────────────────────────────────────────────────────┐
+│              Beautiful Three.js Dashboard               │
+│  • Interactive particle animation                      │
+│  • Real-time analytics and metrics                     │
+│  • Responsive design for all devices                   │
+│  • Modern UI with glass morphism effects               │
+└─────────────────────────────────────────────────────────┘
 ```
+
+## 🎨 Dashboard Features
+
+### Visual Design
+- **4000 Particles**: Distributed in a Fibonacci sphere pattern
+- **Mouse Interaction**: Particles respond to cursor with disintegration effects
+- **Color Gradient**: Gold to white particles with smooth transitions
+- **Smooth Rotation**: Continuous gentle rotation for dynamic feel
+
+### UI Components
+- **Glass Morphism**: Semi-transparent cards with backdrop blur effects
+- **Color Coding**: Violet, pink, cyan, and green accent colors
+- **Hover Effects**: Transform animations and shadow effects
+- **Status Indicators**: Color-coded project status badges
+
+### Interactive Features
+- **Real-time Stats**: Live project metrics and system health
+- **Project Management**: Create, view, and focus projects
+- **Modal System**: Beautiful create project modal with form validation
+- **Toast Notifications**: Real-time user feedback for actions
+- **Auto-refresh**: Updates every 30 seconds with visual feedback
 
 ## 🔗 Claude Code Integration
 
@@ -231,20 +275,25 @@ Add ContextKeeper to your Claude Code MCP configuration:
 
 ### Common Issues & Solutions (All Fixed as of August 2025)
 
-#### ✅ CLI Not Working / Merge Conflicts
-**Issue**: CLI commands failing with merge conflict errors  
-**Solution**: Fixed in rag_cli_v2.sh - all merge conflicts resolved
+#### ✅ Server Not Starting
+**Issue**: Server fails to start with segmentation fault  
+**Solution**: Use server-only mode to bypass file watcher issues
 ```bash
-# Use the updated CLI script
-./scripts/rag_cli_v2.sh projects list
+# Use server-only mode (recommended)
+python rag_agent.py server
+
+# Instead of full start mode
+# python rag_agent.py start  # May cause segmentation fault
 ```
 
-#### ✅ Sacred Layer 500 Errors  
-**Issue**: Sacred endpoints returning Internal Server Error  
-**Solution**: Fixed ChromaDB filter formatting
+#### ✅ Dashboard Not Loading
+**Issue**: Dashboard shows blank page or 404 errors  
+**Solution**: Ensure proper route configuration
 ```bash
-# Before (broken): {"type": "sacred_plan", "status": "approved"}
-# After (working): {"$and": [{"type": "sacred_plan"}, {"status": "approved"}]}
+# Verify dashboard is accessible
+curl -I http://localhost:5556/analytics_dashboard_live.html
+
+# Should return: HTTP/1.1 200 OK
 ```
 
 #### ✅ API Version Compatibility
@@ -262,16 +311,7 @@ Add ContextKeeper to your Claude Code MCP configuration:
 ```bash
 # If you encounter similar issues:
 rm -rf rag_knowledge_db/chroma.sqlite3
-python rag_agent.py start  # Will recreate with correct settings
-```
-
-#### ✅ Path Filtering Not Working
-**Issue**: venv/node_modules files being indexed  
-**Solution**: Confirmed working - smart filtering active
-```bash
-# Verify filtering with:
-./scripts/rag_cli_v2.sh projects create test /path/to/project
-# Check logs show filtered paths being excluded
+python rag_agent.py server  # Will recreate with correct settings
 ```
 
 ### Getting Help
@@ -307,7 +347,7 @@ contextkeeper/
 │   ├── package.json             # Node.js dependencies
 │   └── README.md                # MCP-specific documentation
 ├── scripts/                       # CLI and automation scripts
-│   ├── rag_cli_v2.sh            # Fixed CLI (use this one)
+│   ├── rag_cli_v2.sh            # Enhanced CLI (use this one)
 │   ├── sacred_cli_integration.sh # Sacred Layer CLI tools
 │   └── setup.sh                 # Automated setup script
 ├── tests/                         # Comprehensive test suite
@@ -320,6 +360,7 @@ contextkeeper/
 ├── git_activity_tracker.py       # Git integration
 ├── enhanced_drift_sacred.py      # Drift detection engine
 ├── project_manager.py            # Multi-project management
+├── analytics_dashboard_live.html # Beautiful Three.js dashboard
 └── requirements.txt              # Python dependencies
 ```
 
@@ -356,7 +397,7 @@ pytest tests/ --cov=. --cov-report=html
 ./setup.sh
 
 # Start in development mode (with debug logging)
-DEBUG=1 python rag_agent.py start
+DEBUG=1 python rag_agent.py server
 
 # Run integration tests
 python test_comprehensive_fix.py
@@ -396,8 +437,8 @@ curl -X POST http://localhost:5556/sacred/query \
 ## 🔄 v3.0.0 Release (August 2025)
 
 ### ✅ Major Features Completed
-- **Sacred Layer**: Full implementation with 2-layer verification and immutable plans
-- **Analytics Dashboard**: Live dashboard with real-time metrics, dark mode, and export functionality
+- **Beautiful Dashboard**: Three.js particle animation with modern UI design
+- **Real-time Analytics**: Live metrics and performance monitoring
 - **LLM Integration**: Natural language query responses using Google Gemini 2.5 Flash
 - **Project Isolation**: Complete isolation with zero cross-contamination verified
 - **Git Integration**: Comprehensive development activity tracking
@@ -405,7 +446,8 @@ curl -X POST http://localhost:5556/sacred/query \
 - **Sacred Metrics API**: Comprehensive analytics endpoint for governance metrics
 
 ### 🐛 Critical Fixes Applied
-- **Sacred Query Endpoint**: Fixed 500 errors with proper error handling
+- **Server Stability**: Fixed segmentation fault issues with server-only mode
+- **Dashboard Rendering**: Resolved blank page issues with proper route configuration
 - **CLI JSON Parsing**: Resolved merge conflicts and added proper validation
 - **LLM Client Integration**: Added missing client attribute to ProjectKnowledgeAgent
 - **Test Suite Updates**: All sacred layer tests updated to match implementation
@@ -427,6 +469,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 - Built with [ChromaDB](https://github.com/chroma-core/chroma) for vector storage
 - Powered by [Google GenAI](https://ai.google.dev/) embedding models
 - Integrated with [Claude Code](https://claude.ai/code) via MCP protocol
+- Beautiful UI with [Three.js](https://threejs.org/) and [Tailwind CSS](https://tailwindcss.com/)
 - Git integration using native Python git libraries
 
 ## 📚 Documentation
@@ -435,13 +478,13 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 - **📖 User Guide**: [USER_GUIDE.md](USER_GUIDE.md) - Comprehensive user manual
 - **🚀 Deployment Guide**: [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) - Production deployment steps
 - **📊 Analytics Guide**: Access dashboard at `http://localhost:5556/analytics_dashboard_live.html`
-- **🔧 API Reference**: [API_REFERENCE.md](API_REFERENCE.md) - Complete endpoint documentation
+- **🔧 API Reference**: [docs/api/API_REFERENCE.md](docs/api/API_REFERENCE.md) - Complete endpoint documentation
 
 ### Technical References
-- **🏗️ Architecture**: [ARCHITECTURE.md](ARCHITECTURE.md) - System design and components
+- **🏗️ Architecture**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - System design and components
 - **🤖 MCP Tools**: 8 tools available in Claude Code (see MCP integration above)
 - **📝 Test Report**: [TEST_REPORT_2025-07-31.md](TEST_REPORT_2025-07-31.md) - Comprehensive test analysis
-- **🔍 Troubleshooting**: [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues and solutions
+- **🔍 Troubleshooting**: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) - Common issues and solutions
 
 ### Support
 - **🐛 Issues**: [GitHub Issues](https://github.com/lostmind008/contextkeeper-v3/issues)
@@ -449,4 +492,4 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ---
 
-**✨ Made with care by [LostMindAI](https://github.com/lostmind008) | Ready for production use with full Sacred Layer protection**
+**✨ Made with care by [LostMindAI](https://github.com/lostmind008) | Ready for production use with beautiful Three.js dashboard**

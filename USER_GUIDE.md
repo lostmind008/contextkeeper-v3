@@ -1,258 +1,404 @@
-# 🚀 LostMind AI - ContextKeeper User Guide
+# LostMind AI - ContextKeeper v3.0 User Guide
 
-## 🎯 **What is ContextKeeper?**
+## Welcome to ContextKeeper! 🎉
 
-**LostMind AI - ContextKeeper** is a revolutionary AI-powered development context management system that helps developers maintain clarity, consistency, and control over their projects. It's designed to transform your development workflow with intelligent context tracking, architectural decision management, and AI-driven insights.
+ContextKeeper is a revolutionary AI-powered development context management system that helps you maintain clarity, consistency, and control over your development projects. With its beautiful Three.js dashboard, real-time analytics, and intelligent context tracking, ContextKeeper transforms how you manage development knowledge.
 
-### ✨ **Key Features**
-- **🤖 AI-Powered Context Tracking** - Automatically tracks and understands your codebase
-- **📊 Real-time Analytics** - Monitor project health and performance
-- **🎯 Sacred Layer Protection** - Protect architectural decisions from drift
-- **🔍 Intelligent Search** - Find relevant code and decisions instantly
-- **📈 Project Insights** - Get AI-driven recommendations and patterns
+## 🎨 Getting Started with the Beautiful Dashboard
 
-## 🚀 **Getting Started**
+### First Steps
+1. **Start ContextKeeper**: `python rag_agent.py server`
+2. **Open Dashboard**: Navigate to `http://localhost:5556/analytics_dashboard_live.html`
+3. **Experience the Magic**: Enjoy the interactive Three.js particle animation!
 
-### **1. Access the Dashboard**
-- **URL**: `http://localhost:5556/analytics_dashboard_live.html`
-- **Status**: The dashboard shows real-time project statistics and health
+### Dashboard Features
+- **Interactive Background**: 4000 animated particles that respond to your mouse
+- **Real-time Stats**: Live project metrics and system health
+- **Project Management**: Create, view, and focus projects with beautiful UI
+- **Responsive Design**: Works perfectly on desktop, tablet, and mobile
+- **Modern Dark Theme**: Glass morphism effects with color-coded indicators
 
-### **2. Current Status**
-- ✅ **Server**: Running on port 5556
-- ✅ **Health**: All systems operational
-- ✅ **Projects**: Currently 0 projects (fresh start)
-- ✅ **Analytics**: Live dashboard accessible
+## 🚀 Core Workflows
 
-## 📋 **How to Use ContextKeeper**
+### 1. Project Management
 
-### **Creating Your First Project**
-
-1. **Via Dashboard**:
-   - Click "Create New Project" button
-   - Enter project name
-   - Project will be automatically configured
-
-2. **Via CLI**:
-   ```bash
-   ./scripts/rag_cli_v2.sh projects create "My Project" "/path/to/project"
-   ```
-
-3. **Via API**:
-   ```bash
-   curl -X POST http://localhost:5556/projects \
-     -H "Content-Type: application/json" \
-     -d '{
-       "name": "My Project",
-       "root_path": "/path/to/project",
-       "description": "My awesome project"
-     }'
-   ```
-
-### **Managing Projects**
-
-#### **List All Projects**
+#### Creating Your First Project
 ```bash
+# Create a new project
+./scripts/rag_cli_v2.sh projects create "My Awesome App" /path/to/your/project
+
+# The system will automatically:
+# - Filter out irrelevant files (venv, node_modules, etc.)
+# - Index your codebase for semantic search
+# - Set up isolated project context
+```
+
+#### Managing Projects
+```bash
+# List all projects
 ./scripts/rag_cli_v2.sh projects list
+
+# Focus on a specific project
+./scripts/rag_cli_v2.sh projects focus proj_abc123
+
+# Pause a project (temporarily stop tracking)
+./scripts/rag_cli_v2.sh projects pause proj_abc123
+
+# Resume a project
+./scripts/rag_cli_v2.sh projects resume proj_abc123
+
+# Archive a project (long-term storage)
+./scripts/rag_cli_v2.sh projects archive proj_abc123
 ```
 
-#### **Focus on a Project**
+### 2. Asking Questions with LLM
+
+#### Natural Language Queries
 ```bash
-./scripts/rag_cli_v2.sh projects focus <project_id>
+# Ask about your codebase
+./scripts/rag_cli_v2.sh ask "What authentication system are we using?"
+
+# Get architectural insights
+./scripts/rag_cli_v2.sh ask "How is the database structured?"
+
+# Understand specific features
+./scripts/rag_cli_v2.sh ask "How does the user registration work?"
 ```
 
-#### **Get Project Status**
+#### What You'll Get
+- **Natural Language Responses**: Instead of raw code chunks, you get explanations
+- **Context-Aware Answers**: Responses consider your project's architecture
+- **Relevant Examples**: Code snippets that actually apply to your project
+- **Architectural Insights**: Understanding of how different parts connect
+
+### 3. Decision Tracking
+
+#### Recording Architectural Decisions
 ```bash
-./scripts/rag_cli_v2.sh projects status <project_id>
+# Add a decision with reasoning
+./scripts/rag_cli_v2.sh decisions add "Using Redis for caching" "Performance reasons" "performance,caching"
+
+# Interactive mode (if no arguments provided)
+./scripts/rag_cli_v2.sh decisions add
+# Then follow the prompts
 ```
 
-### **Querying Your Codebase**
+#### Why Track Decisions?
+- **Knowledge Preservation**: Never lose important architectural reasoning
+- **Team Alignment**: Share context with new team members
+- **Future Reference**: Understand why certain choices were made
+- **AI Context**: Help AI assistants understand your architectural decisions
 
-#### **Ask Questions About Your Code**
+### 4. Objective Management
+
+#### Setting Development Objectives
 ```bash
-curl -X POST http://localhost:5556/query \
-  -H "Content-Type: application/json" \
-  -d '{
-    "question": "How is authentication implemented?",
-    "project_id": "your_project_id"
-  }'
+# Add an objective
+./scripts/rag_cli_v2.sh objectives add proj_abc123 "Implement user authentication" "Add JWT-based auth" high
+
+# List objectives
+./scripts/rag_cli_v2.sh objectives list proj_abc123
+
+# Complete an objective
+./scripts/rag_cli_v2.sh objectives complete proj_abc123 obj_123
 ```
 
-#### **Get Code Context**
+#### Objective Benefits
+- **Progress Tracking**: Monitor development milestones
+- **Team Coordination**: Align team efforts
+- **AI Assistance**: Help AI understand your current priorities
+- **Project Health**: Visual indicators of project progress
+
+### 5. Sacred Plan Management
+
+#### Creating Architectural Plans
 ```bash
-curl -X POST http://localhost:5556/code-context \
-  -H "Content-Type: application/json" \
-  -d '{
-    "feature_description": "user authentication",
-    "project_id": "your_project_id"
-  }'
+# Create a sacred plan
+./scripts/rag_cli_v2.sh sacred create proj_abc123 "Database Architecture" database_plan.md
+
+# The system will:
+# - Generate a verification code
+# - Store the plan securely
+# - Make it available for drift detection
 ```
 
-### **Managing Sacred Plans**
-
-#### **Create a Sacred Plan**
+#### Approving Sacred Plans
 ```bash
-curl -X POST http://localhost:5556/sacred/plans \
-  -H "Content-Type: application/json" \
-  -d '{
-    "project_id": "your_project_id",
-    "plan_content": "We will use JWT for authentication",
-    "approval_key": "your-approval-key"
-  }'
+# Approve a plan (2-layer verification)
+./scripts/rag_cli_v2.sh sacred approve plan_def456
+
+# This requires:
+# 1. Verification code (from plan creation)
+# 2. Sacred approval key (from environment)
+# 3. Approver name (for audit trail)
 ```
 
-#### **List Sacred Plans**
+#### Checking Alignment
 ```bash
-curl -X GET http://localhost:5556/sacred/plans
+# Check if code aligns with sacred plans
+./scripts/rag_cli_v2.sh sacred drift proj_abc123
+
+# Query sacred context
+./scripts/rag_cli_v2.sh sacred query proj_abc123 "authentication approach"
 ```
 
-## 🎨 **Dashboard Features**
+## 📊 Dashboard Deep Dive
 
-### **Real-time Statistics**
-- **Active Projects**: Number of currently active projects
-- **Focused Project**: Currently selected project
-- **Total Decisions**: Architectural decisions tracked
-- **System Health**: Overall system status
+### Understanding the Dashboard
 
-### **Project Management**
-- **Project Cards**: Click to focus on a project
-- **Status Indicators**: Active, Paused, Archived
-- **Quick Actions**: Create, focus, and manage projects
+#### Stats Cards
+- **Active Projects**: Number of currently tracked projects
+- **Focused Project**: Currently active project (if any)
+- **Total Decisions**: Number of architectural decisions recorded
+- **System Health**: Overall system status and performance
 
-### **Analytics & Insights**
-- **Performance Metrics**: Real-time project health
-- **Trend Analysis**: Historical data and patterns
-- **AI Recommendations**: Intelligent suggestions
+#### Project Grid
+- **Project Cards**: Visual representation of each project
+- **Status Indicators**: Color-coded project status (active, paused, archived)
+- **Quick Actions**: Click to focus, view details, or manage projects
+- **Real-time Updates**: Live data refresh every 30 seconds
 
-## 🔧 **Advanced Features**
+#### Interactive Features
+- **Particle Animation**: Move your mouse to interact with the background
+- **Hover Effects**: Beautiful animations on cards and buttons
+- **Modal System**: Create new projects with elegant forms
+- **Toast Notifications**: Real-time feedback for your actions
 
-### **File Ingestion**
-ContextKeeper automatically tracks changes in your project files:
+### Dashboard Controls
+- **Refresh**: Manually update dashboard data
+- **Analytics**: Access detailed analytics (same as dashboard)
+- **API Docs**: Quick access to API documentation
+- **GitHub**: Link to project repository
 
+## 🔗 Claude Code Integration
+
+### Setting Up MCP Integration
+
+1. **Configure Claude Code**:
+   ```json
+   {
+     "contextkeeper-sacred": {
+       "type": "stdio",
+       "command": "node",
+       "args": ["/path/to/contextkeeper/mcp-server/enhanced_mcp_server.js"],
+       "env": {"RAG_AGENT_URL": "http://localhost:5556"}
+     }
+   }
+   ```
+
+2. **Available MCP Tools**:
+   - `get_development_context` - Get comprehensive project context
+   - `intelligent_search` - Search code, decisions, and plans
+   - `analyze_git_activity` - Analyze recent changes
+   - `check_development_drift` - Check alignment with sacred plans
+   - `manage_objectives` - Manage development objectives
+   - `track_decision` - Record architectural decisions
+   - `suggest_next_action` - Get AI-powered suggestions
+   - `get_code_context` - Get relevant code examples
+
+### Using MCP Tools in Claude Code
+
+#### Getting Context
+```
+/mcp get_development_context contextkeeper-sacred project_id=proj_abc123
+```
+
+#### Searching Code
+```
+/mcp intelligent_search contextkeeper-sacred query="user authentication"
+```
+
+#### Checking Drift
+```
+/mcp check_development_drift contextkeeper-sacred project_id=proj_abc123
+```
+
+#### Recording Decisions
+```
+/mcp track_decision contextkeeper-sacred decision="Using Redis for caching" reasoning="Performance reasons"
+```
+
+## 📈 Analytics and Insights
+
+### Daily Briefing
 ```bash
-# Ingest a specific file
-curl -X POST http://localhost:5556/ingest \
-  -H "Content-Type: application/json" \
-  -d '{
-    "file_path": "/path/to/file.py",
-    "project_id": "your_project_id"
-  }'
+# Get a comprehensive project overview
+./scripts/rag_cli_v2.sh briefing
+
+# Shows:
+# - Total projects and their status
+# - Pending objectives
+# - Recent decisions
+# - System health
 ```
 
-### **Git Integration**
-- Automatic git activity tracking
-- Commit analysis and context preservation
-- Branch-specific context management
-
-### **API Integration**
-All features are available via RESTful API:
-- **Base URL**: `http://localhost:5556`
-- **Authentication**: API key based
-- **Documentation**: Available at `/docs`
-
-## 🛠️ **Configuration**
-
-### **Environment Variables**
+### Context Export
 ```bash
-export GOOGLE_API_KEY="your-google-api-key"
-export SACRED_APPROVAL_KEY="your-approval-key"
-export ANALYTICS_CACHE_DURATION=300
-export FLASK_ASYNC_MODE=True
-export DEBUG=0
+# Export full project context
+./scripts/rag_cli_v2.sh context export proj_abc123
+
+# Returns comprehensive project data:
+# - Project metadata
+# - Recent decisions
+# - Pending objectives
+# - Sacred plans
+# - Git activity
 ```
 
-### **Project Configuration**
-Projects are stored in `~/.rag_projects/` with JSON configuration files.
+### API Access
+```bash
+# Health check
+curl http://localhost:5556/health
 
-## 📊 **Analytics & Monitoring**
+# Project list
+curl http://localhost:5556/projects
 
-### **Dashboard Metrics**
-- **Project Health**: Real-time status monitoring
-- **Query Activity**: Usage patterns and trends
-- **Drift Detection**: Architectural compliance monitoring
-- **Performance**: Response times and system metrics
+# Analytics summary
+curl http://localhost:5556/analytics/summary
 
-### **Export Options**
-- **PDF Reports**: Complete project analytics
-- **JSON Data**: Raw analytics data
-- **PNG Screenshots**: Dashboard visualizations
+# Daily briefing
+curl http://localhost:5556/daily-briefing
+```
 
-## 🚀 **Best Practices**
+## 🛠️ Troubleshooting
 
-### **Project Organization**
-1. **Clear Naming**: Use descriptive project names
-2. **Regular Updates**: Keep project context current
-3. **Sacred Plans**: Document important architectural decisions
-4. **Monitoring**: Regularly check project health
+### Common Issues
 
-### **Query Optimization**
-1. **Specific Questions**: Ask targeted questions
-2. **Context Awareness**: Include relevant project context
-3. **Iterative Refinement**: Build on previous queries
-4. **Pattern Recognition**: Look for recurring patterns
+#### Server Not Starting
+```bash
+# Use server-only mode (recommended)
+python rag_agent.py server
 
-### **Team Collaboration**
-1. **Shared Context**: Use common project configurations
-2. **Decision Tracking**: Document team decisions
-3. **Knowledge Sharing**: Leverage AI insights across team
-4. **Continuous Learning**: Adapt based on AI recommendations
+# Check logs
+tail -f rag_agent.out
 
-## 🔍 **Troubleshooting**
+# Verify port availability
+netstat -an | grep 5556
+```
 
-### **Common Issues**
+#### Dashboard Not Loading
+```bash
+# Verify server is running
+curl http://localhost:5556/health
 
-#### **Dashboard Not Loading**
-- Check if server is running: `curl http://localhost:5556/health`
-- Verify port 5556 is not blocked
-- Check browser console for errors
+# Check dashboard route
+curl -I http://localhost:5556/analytics_dashboard_live.html
 
-#### **API Connection Issues**
-- Verify environment variables are set
-- Check API key validity
-- Ensure proper JSON formatting
+# Check browser console for JavaScript errors
+# Press F12 and check Console tab
+```
 
-#### **Project Not Found**
-- Verify project ID is correct
-- Check project configuration files
-- Ensure project is active
+#### CLI Commands Not Working
+```bash
+# Ensure script is executable
+chmod +x scripts/rag_cli_v2.sh
 
-### **Performance Optimization**
-- **Large Codebases**: Use selective file ingestion
-- **Frequent Queries**: Implement caching strategies
-- **Memory Usage**: Monitor system resources
-- **Response Times**: Optimize query complexity
+# Check server is running
+curl http://localhost:5556/health
 
-## 🎯 **Getting Involved**
+# Use correct script name
+./scripts/rag_cli_v2.sh projects list  # Not rag_cli.sh
+```
 
-### **Contribute to ContextKeeper**
-- **GitHub**: [https://github.com/lostmind008/contextkeeper-v3](https://github.com/lostmind008/contextkeeper-v3)
-- **Issues**: Report bugs and feature requests
-- **Pull Requests**: Contribute code improvements
-- **Documentation**: Help improve guides and docs
+#### API Key Issues
+```bash
+# Check environment variables
+echo $GOOGLE_API_KEY
+echo $GEMINI_API_KEY
 
-### **Community**
-- **Discussions**: Join GitHub discussions
-- **Feedback**: Share your experience
-- **Ideas**: Suggest new features
-- **Showcase**: Share your use cases
+# Test API access
+curl -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $GOOGLE_API_KEY" \
+  https://generativelanguage.googleapis.com/v1beta/models
+```
 
-## 📞 **Support**
+### Performance Optimization
 
-### **Getting Help**
-1. **Documentation**: Check this guide and GitHub README
-2. **Issues**: Create GitHub issues for bugs
-3. **Discussions**: Use GitHub discussions for questions
-4. **Community**: Engage with other users
+#### Database Issues
+```bash
+# Clear corrupted database
+rm -rf rag_knowledge_db
+mkdir rag_knowledge_db
 
-### **Resources**
-- **API Reference**: Available in GitHub repository
-- **Examples**: Check `/examples` directory
-- **Tutorials**: Follow step-by-step guides
-- **Videos**: Watch demonstration videos
+# Restart server
+python rag_agent.py server
+```
+
+#### Memory Usage
+```bash
+# Monitor memory usage
+ps aux | grep python
+
+# Check disk space
+df -h
+
+# Monitor API response times
+curl -w "@curl-format.txt" http://localhost:5556/health
+```
+
+## 🎯 Best Practices
+
+### Project Management
+1. **Start Small**: Create one project first to understand the workflow
+2. **Use Descriptive Names**: Clear project names help with organization
+3. **Regular Updates**: Keep project context current with regular updates
+4. **Archive Old Projects**: Archive completed projects to reduce clutter
+
+### Decision Tracking
+1. **Be Specific**: Include concrete technical decisions, not vague principles
+2. **Add Reasoning**: Always explain why decisions were made
+3. **Use Tags**: Tag decisions for easy categorization and search
+4. **Regular Reviews**: Periodically review and update decisions
+
+### Sacred Plans
+1. **Be Comprehensive**: Include all relevant architectural constraints
+2. **Version Control**: Keep sacred plans in git alongside code
+3. **Team Review**: Have team review before approval
+4. **Living Documents**: Update plans when architecture evolves
+
+### AI Collaboration
+1. **Context First**: Always provide context before asking for code
+2. **Check Alignment**: Use drift detection before implementing suggestions
+3. **Document Decisions**: Record architectural choices in sacred plans
+4. **Regular Monitoring**: Check alignment during development sprints
+
+### Dashboard Usage
+1. **Daily Check**: Review dashboard daily for project health
+2. **Mobile Access**: Use responsive design on mobile devices
+3. **Interactive Features**: Use hover effects and click interactions
+4. **Real-time Updates**: Dashboard refreshes automatically every 30 seconds
+
+## 🔮 Advanced Features
+
+### Git Integration
+- **Activity Tracking**: Monitor git commits and file changes
+- **Context Sync**: Keep project context synchronized with code changes
+- **Drift Detection**: Identify when code diverges from sacred plans
+
+### Multi-Project Support
+- **Complete Isolation**: Zero cross-contamination between projects
+- **Independent Context**: Each project maintains its own knowledge base
+- **Flexible Management**: Pause, resume, and archive projects as needed
+
+### Security Features
+- **Local-First**: All data stored locally, no external dependencies
+- **Auto-Redaction**: Automatically detects and redacts sensitive data
+- **Path Security**: Smart filtering prevents access to sensitive directories
+- **Audit Trail**: Complete logging of all operations
+
+## 📚 Additional Resources
+
+### Documentation
+- **API Reference**: [docs/api/API_REFERENCE.md](docs/api/API_REFERENCE.md)
+- **Installation Guide**: [docs/INSTALLATION.md](docs/INSTALLATION.md)
+- **Architecture**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **Troubleshooting**: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
+
+### Support
+- **GitHub Issues**: [Report bugs and request features](https://github.com/lostmind008/contextkeeper-v3/issues)
+- **Discussions**: [Community discussions](https://github.com/lostmind008/contextkeeper-v3/discussions)
+- **Documentation**: [Comprehensive guides and examples](https://github.com/lostmind008/contextkeeper-v3/tree/main/docs)
 
 ---
 
-## 🎉 **Ready to Transform Your Development Workflow?**
-
-ContextKeeper is designed to make your development process more intelligent, efficient, and maintainable. Start with a simple project, explore the features, and discover how AI-powered context management can revolutionize your workflow.
-
-**Happy coding with LostMind AI - ContextKeeper! 🚀** 
+**✨ Made with care by [LostMindAI](https://github.com/lostmind008) | Ready to transform your development workflow!** 
