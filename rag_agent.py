@@ -738,9 +738,20 @@ class ProjectKnowledgeAgent:
         if not raw_results['results']:
             return {
                 'question': question,
-                'answer': f"I couldn't find relevant information in project {project_id}.",
+                'answer': f"""I couldn't find any indexed content for project {project_id}.
+
+This usually means:
+• The project hasn't been indexed yet, or
+• The project has no compatible files, or  
+• The indexing process failed
+
+To fix this, please index your project with content:
+./scripts/rag_cli_v2.sh projects ingest {project_id} /path/to/your/project
+
+After indexing, try your question again.""",
                 'sources': [],
-                'project_id': project_id
+                'project_id': project_id,
+                'suggestion': 'index_project'
             }
 
         # Prepare context for LLM
