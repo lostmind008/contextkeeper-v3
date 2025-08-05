@@ -7,6 +7,46 @@ Each entry follows: `[YYYY-MM-DD HH:MM AEST] - [Component] - [Action] - [Details
 
 ---
 
+## 2025-08-05
+
+### [2025-08-05 17:49 AEST] - [Scripts] - Created ContextKeeper Manager Automation Scripts
+- Created contextkeeper_manager.sh - comprehensive automation script
+- Created quick_start.sh - simple wrapper for ease of use
+- Problem: Manual process was error-prone (create → focus → index → query)
+- Solution: Single-command automation with interactive chat
+- Features: Server health checks, auto-start, background indexing, chat interface
+- Files: contextkeeper_manager.sh, quick_start.sh
+- Agent: Main Assistant
+
+### [2025-08-05 17:45 AEST] - [Scripts] - Created Database Cleanup Script
+- Created cleanup_all.sh to safely remove all databases and logs
+- Includes confirmation prompt before deletion
+- Removes: rag_knowledge_db/, *.log, projects/, *.db, test_db/, .chromadb/
+- Purpose: Allow fresh start when configuration issues occur
+- Agent: Main Assistant
+
+### [2025-08-05 17:40 AEST] - [Database] - Complete Database Reset
+- Deleted all ChromaDB collections and project configurations
+- Removed all log files for clean slate
+- Action taken due to persistent indexing failures
+- Agent: Main Assistant
+
+### [2025-08-05 17:35 AEST] - [MCP] - Updated CLAUDE.md with Project-Scanner Analysis
+- Used project-scanner subagent to analyze codebase
+- Improved CLAUDE.md from 300 to 175 lines (more focused)
+- Added visual architecture diagram
+- Streamlined commands section to only essential ones
+- Removed outdated phase completion notes
+- Agent: Main Assistant (with project-scanner subagent)
+
+### [2025-08-05 16:15 AEST] - [Debugging] - ChromaDB Collection Creation Failure
+- Issue: ContextKeeper project (proj_a05769194278) indexing failed
+- Error: "Collection expecting embedding with dimension of 3072, got 768"
+- ChromaDB collection never created despite server logs showing attempt
+- API queries returned "Project not found" errors
+- Decision: Complete cleanup required due to embedding dimension mismatch
+- Agent: Main Assistant
+
 ## 2025-08-04
 
 ### [2025-08-04 06:56 AEST] - [Git] - Git Repository Cleanup Completed
@@ -130,3 +170,6 @@ Each entry follows: `[YYYY-MM-DD HH:MM AEST] - [Component] - [Action] - [Details
 - [Sacred] - Sacred layer changes
 - [MCP] - Claude Code integration
 - [Git] - Version control activities
+- [Scripts] - Automation scripts and tools
+- [Fixes] - Bug fixes and issue resolutions
+- [Cleanup] - Code/database cleanup activities

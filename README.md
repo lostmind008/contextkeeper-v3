@@ -22,9 +22,38 @@ ContextKeeper v3.0 introduces groundbreaking features that transform how you man
 - **⚡ Performance**: Async Flask endpoints, optimized embeddings, and intelligent caching
 - **📱 Mobile Support**: Fully responsive design that works on all devices
 
-## 🚀 Quick Start (5 minutes)
+## 🚀 Quick Start (2 minutes with automation!)
 
-### 1. Clone and Setup
+### Option 1: Super Quick Start (Recommended) 🎯
+
+```bash
+# Clone and enter the repository
+git clone https://github.com/lostmind008/contextkeeper-v3.git
+cd contextkeeper
+
+# Run the automated setup and start script
+./quick_start.sh /path/to/your/project
+
+# That's it! The script will:
+# ✅ Check/install dependencies
+# ✅ Start the server if needed
+# ✅ Create and index your project
+# ✅ Open an interactive chat interface
+```
+
+### Option 2: Using the Manager Script
+
+```bash
+# More control with the manager script
+./contextkeeper_manager.sh /path/to/your/project
+
+# Or run without arguments to be prompted
+./contextkeeper_manager.sh
+```
+
+### Option 3: Manual Setup (Traditional)
+
+#### 1. Clone and Setup
 
 ```bash
 # Clone the repository
@@ -39,7 +68,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment
+#### 2. Configure Environment
 
 Create your `.env` file with Google Cloud credentials:
 
@@ -59,7 +88,7 @@ export ANALYTICS_CACHE_DURATION=300  # Cache duration in seconds (default: 300)
 export FLASK_ASYNC_MODE=True         # Enable async endpoints (default: True)
 ```
 
-### 3. Start ContextKeeper
+#### 3. Start ContextKeeper
 
 ```bash
 # Activate virtual environment
@@ -73,7 +102,7 @@ curl http://localhost:5556/health
 # Expected response: {"status":"healthy"}
 ```
 
-### 4. Access the Beautiful Dashboard
+#### 4. Access the Beautiful Dashboard
 
 Open your browser and navigate to:
 ```
@@ -87,7 +116,7 @@ Experience the stunning Three.js particle animation with:
 - Real-time project statistics
 - Responsive design for all devices
 
-### 5. Create Your First Project
+#### 5. Create Your First Project
 
 ```bash
 # Step 1: Create a new project
@@ -294,6 +323,51 @@ Add ContextKeeper to your Claude Code MCP configuration:
 - `suggest_next_action` - AI-powered suggestions
 - `get_code_context` - Relevant code examples
 
+## 🔧 Utility Scripts
+
+### Automation Scripts (NEW!)
+
+ContextKeeper now includes powerful automation scripts to simplify your workflow:
+
+#### 🚀 quick_start.sh
+The fastest way to get started:
+```bash
+./quick_start.sh /path/to/your/project
+```
+- Automatically checks dependencies
+- Starts the server if needed
+- Creates and indexes your project
+- Opens interactive chat interface
+
+#### 🎯 contextkeeper_manager.sh
+Advanced manager with full control:
+```bash
+./contextkeeper_manager.sh /path/to/project
+```
+Features:
+- Server health checks and auto-start
+- Automatic project ID generation
+- Background indexing with progress tracking
+- Interactive chat with commands (/status, /help, /quit)
+- Colored output for better visibility
+
+#### 🧹 cleanup_all.sh
+Start fresh when needed:
+```bash
+./cleanup_all.sh
+```
+- Safely removes all databases and logs
+- Confirmation prompt before deletion
+- Clears ChromaDB, project configs, and cache
+
+### Chat Interface Commands
+
+While using the interactive chat:
+- `/status` - Check indexing progress
+- `/projects` - List all projects
+- `/help` - Show available commands
+- `/quit` - Exit chat interface
+
 ## 🛠️ Troubleshooting
 
 ### Common Issues & Solutions (All Fixed as of August 2025)
@@ -387,6 +461,9 @@ contextkeeper/
 │   ├── rag_cli_v2.sh            # Enhanced CLI (use this one)
 │   ├── sacred_cli_integration.sh # Sacred Layer CLI tools
 │   └── setup.sh                 # Automated setup script
+├── quick_start.sh                ✨ # One-command project setup
+├── contextkeeper_manager.sh      ✨ # Advanced automation script
+├── cleanup_all.sh                ✨ # Database cleanup utility
 ├── tests/                         # Comprehensive test suite
 │   ├── api/                     # API endpoint tests
 │   ├── sacred/                  # Sacred Layer tests
