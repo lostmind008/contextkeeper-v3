@@ -193,9 +193,16 @@ interactive_chat() {
                 echo -ne "${GREEN}AI:${NC} "
                 response=$(curl -s -X POST http://localhost:$PORT/query_llm \
                     -H "Content-Type: application/json" \
-                    -d "{\"question\": \"$question\", \"k\": 5, \"project_id\": \"$project_id\"}" | \
-                    jq -r '.answer // .error // "No response"')
-                echo -e "$response\n"
+                    -d "{\"question\": \"$question\", \"k\": 5, \"project_id\": \"$project_id\"}")
+                
+                # Parse response safely
+                if echo "$response" | jq -e . >/dev/null 2>&1; then
+                    answer=$(echo "$response" | jq -r '.answer // .error // "No response"')
+                    echo -e "$answer\n"
+                else
+                    echo -e "Error: Invalid response from server\n"
+                    echo -e "Raw response: $response\n"
+                fi
                 ;;
         esac
     done
@@ -220,7 +227,7 @@ main() {
     
     # Check dependencies
     print_status "Checking dependencies..."
-    python -c "import flask, chromadb, google.generativeai" 2>/dev/null
+    python -c "import flask, chromadb, google.genai" 2>/dev/null
     if [ $? -ne 0 ]; then
         print_error "Missing dependencies. Please run: pip install -r requirements.txt"
         exit 1

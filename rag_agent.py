@@ -1,5 +1,43 @@
 #!/usr/bin/env python3
 """
+File: /Users/sumitm1/contextkeeper-pro-v3/contextkeeper/rag_agent.py
+Project: ContextKeeper v3.0
+Purpose: Main orchestrator - Flask API server, ChromaDB management, multi-project RAG system
+Dependencies: ChromaDB, Flask, Sacred Layer, Project Manager, Analytics
+Dependents: MCP Server, CLI scripts, Dashboard, All system components
+Created: 2025-07-XX
+Modified: 2025-08-05
+
+PLANNING CONTEXT:
+Core RAG agent implementing multi-project context management with sacred architectural
+principles. Serves as the central orchestrator for all ContextKeeper operations including:
+- Multi-project isolation with ChromaDB collections
+- Sacred layer architectural decision management
+- Real-time analytics and event tracking
+- Flask API endpoints for all system interactions
+- Git integration and development activity monitoring
+
+ARCHITECTURAL DECISIONS:
+- Each project gets isolated ChromaDB collection for content separation
+- Sacred layer provides immutable architectural decision storage
+- Event-driven architecture for real-time development tracking
+- Australian English spelling throughout (colour, behaviour, realise)
+- Conversational comment style for maintainability
+
+TODO FROM PLANNING:
+- [ ] Implement automatic project indexing after creation
+- [ ] Add visual indicators for indexed vs non-indexed projects
+- [ ] Enhance file browser integration for project paths
+- [ ] Optimise ChromaDB query performance for large codebases
+- [ ] Add project archival and cleanup mechanisms
+"""
+
+# === NAVIGATION ===
+# Previous: N/A - This is the main orchestrator
+# Next: mcp-server/enhanced_mcp_server.js - Exposes tools to Claude Code
+# Children: project_manager.py, sacred_layer_implementation.py, analytics components
+# Dashboard: analytics_dashboard_live.html - Consumes this API
+"""
 ContextKeeper - Multi-Project RAG Knowledge Agent v2.0
 
 Copyright 2025 LostMindAI
@@ -44,12 +82,12 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 
 # Import ProjectManager for multi-project support
-from project_manager import ProjectManager, ProjectStatus
+from src.core.project_manager import ProjectManager, ProjectStatus
 
 # Import v3.0 Sacred Layer components
-from sacred_layer_implementation import SacredLayerManager, SacredIntegratedRAGAgent
-from git_activity_tracker import GitActivityTracker, GitIntegratedRAGAgent
-from enhanced_drift_sacred import SacredDriftDetector, add_sacred_drift_endpoint
+from src.sacred.sacred_layer_implementation import SacredLayerManager, SacredIntegratedRAGAgent
+from src.tracking.git_activity_tracker import GitActivityTracker, GitIntegratedRAGAgent
+from src.sacred.enhanced_drift_sacred import SacredDriftDetector, add_sacred_drift_endpoint
 
 # ChromaDB embedding function for Google GenAI
 class GoogleGenAIEmbeddingFunction:

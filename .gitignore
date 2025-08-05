@@ -218,3 +218,4 @@ htmlcov/
 *.orig
 *.rej
 *.patch
+rag_knowledge_db.old/

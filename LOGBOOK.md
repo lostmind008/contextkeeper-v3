@@ -9,6 +9,27 @@ Each entry follows: `[YYYY-MM-DD HH:MM AEST] - [Component] - [Action] - [Details
 
 ## 2025-08-05
 
+### [2025-08-05 23:58 AEST] - [Governance] - Completed Full Python Restructuring
+- Moved 48 Python files from root to src/ subdirectories
+- Created src/ structure: core/, sacred/, analytics/, tracking/, scripts/, utils/
+- Added governance headers to 5 core files with embedded planning context
+- Created CLAUDE.md files for all 5 new src/ subdirectories
+- Updated rag_agent.py imports to use new src/ paths
+- Moved test files (25) to tests/ directory
+- Moved fix/patch scripts (38) to src/scripts/
+- Updated PROJECT_MAP.md with complete new structure
+- Achieved full governance compliance for code organization
+- Agent: Main Assistant
+
+### [2025-08-05 18:15 AEST] - [Scripts] - Fixed Critical Bugs in contextkeeper.sh for macOS Compatibility
+- Fixed subshell counter bug in list_projects() and list_projects_compact() functions using process substitution (< <(...))
+- Added comprehensive dependency checks for jq and curl at startup with helpful installation instructions
+- Added JSON validation for all API responses to prevent script failures from malformed server responses
+- Improved error handling with detailed error messages and raw response display for debugging
+- Addressed all 4 critical bugs identified: counter increment, process substitution, dependencies, JSON validation
+- Files: contextkeeper.sh (lines 102-109, 130-137, 523-540, multiple validation additions)
+- Agent: Maintenance Engineer
+
 ### [2025-08-05 17:49 AEST] - [Scripts] - Created ContextKeeper Manager Automation Scripts
 - Created contextkeeper_manager.sh - comprehensive automation script
 - Created quick_start.sh - simple wrapper for ease of use
@@ -38,6 +59,23 @@ Each entry follows: `[YYYY-MM-DD HH:MM AEST] - [Component] - [Action] - [Details
 - Streamlined commands section to only essential ones
 - Removed outdated phase completion notes
 - Agent: Main Assistant (with project-scanner subagent)
+
+### [2025-08-05 23:45 AEST] - [Governance] - Applied Governance Protocol to ContextKeeper
+- Identified critical violations: 44 docs in root, missing CLAUDE.md files
+- Created CLAUDE.md files for: /mcp-server, /tests, /scripts, /docs
+- Added governance header to rag_agent.py (2022 lines)
+- Archived 38 documentation files to /docs/archive/
+- Reduced root markdown files from 44 to 6 essential
+- Updated PROJECT_MAP.md with compliance status
+- Agent: Main Assistant (with project-scanner, scaffolder, housekeeper)
+
+### [2025-08-05 23:40 AEST] - [Governance] - Improved CLAUDE.md with /init Analysis
+- Analyzed codebase structure and patterns
+- Updated CLAUDE.md to 168 lines (more actionable)
+- Added critical implementation details and code examples
+- Included common issues with specific solutions
+- Added performance metrics and testing guidelines
+- Agent: Main Assistant (/init command)
 
 ### [2025-08-05 16:15 AEST] - [Debugging] - ChromaDB Collection Creation Failure
 - Issue: ContextKeeper project (proj_a05769194278) indexing failed
