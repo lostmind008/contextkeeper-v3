@@ -1,299 +1,216 @@
-# CLAUDE.md - AI Assistant Context
+# CLAUDE.md
 
-## 🎯 CURRENT DEVELOPMENT STATE
-**Project**: ContextKeeper v3.0
-**Branch**: main
-**Status**: ✅ v3.0 Upgrade Complete with Chat Interface
-**Priority**: UI Enhancement & Documentation
-**Last Updated**: 2025-08-04 (Added chat interface, fixed Create Project, added LOGBOOK.md)
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## 🚀 QUICK START (Get Running in 2 Minutes)
+## Project Overview
+**ContextKeeper v3.0** - AI-powered development context management system with multi-project support, sacred architectural principles, and real-time analytics. Built as a hybrid Python/Node.js system with Flask backend and MCP integration.
+
+## 🤖 SUBAGENT DELEGATION PROTOCOL (MANDATORY)
+
+**CRITICAL**: Never attempt heavy lifting directly. Always delegate to specialized subagents first.
+
+### Governance First (ALWAYS START HERE)
 ```bash
-# 1. Activate environment
+> use architecture-enforcer to assess project governance
+> use project-scanner to analyze unknown codebases
+> use chaos-manager for extremely messy projects
+```
+
+### Development Workflow Delegation
+```bash
+# Planning & Architecture
+> use planner to break down complex features
+> use solution-architect for system design
+> use product-strategist for feature prioritization
+
+# Implementation & Quality
+> use code-implementer to build within skeleton structure
+> use debugger to diagnose complex issues
+> use maintainer to refactor legacy code
+> use performance-optimiser to analyze bottlenecks
+
+# Security & Compliance
+> use security-guardian for comprehensive audits
+> use code-reviewer for quality assurance
+> use qa-engineer for testing strategies
+
+# Documentation & Recovery
+> use documentation-writer for technical docs
+> use project-scanner for unknown projects
+> use examples to create usage patterns
+```
+
+### Task-Specific Delegation Rules
+- **Unknown codebase**: project-scanner → architecture-enforcer → solution-architect
+- **Feature development**: planner → solution-architect → code-implementer → qa-engineer
+- **Bug fixing**: debugger → maintainer → security-guardian
+- **Documentation**: documentation-writer → examples → ui-ux-designer
+- **Performance issues**: performance-optimiser → code-reviewer → maintainer
+
+### Integration Priority
+1. **ALWAYS** start with governance agents (architecture-enforcer/project-scanner)
+2. **DELEGATE** complex tasks to specialized agents
+3. **ORCHESTRATE** multi-agent workflows for complex problems
+4. **DOCUMENT** all decisions via contextkeeper integration
+
+## Essential Commands
+
+### Daily Development
+```bash
+# Start development environment
 source venv/bin/activate
+python rag_agent.py server  # MUST use 'server', not 'start'
 
-# 2. Start the agent (use 'server' to avoid segmentation fault)
-python rag_agent.py server
+# Quick project management
+./contextkeeper_simple.sh   # Interactive menu for chat/create/index
+./quick_start.sh /path/to/project  # One-command setup
 
-# 3. Test working endpoints  
-curl http://localhost:5556/health       # Should return {"status":"healthy"}
-curl http://localhost:5556/projects     # Should return projects data
-./scripts/rag_cli_v2.sh projects list   # CLI interface
+# Run tests
+pytest tests/ -v --tb=short
+pytest tests/sacred/ -v      # Sacred layer tests only
+pytest tests/api/ -v -k "test_query"  # Specific API tests
 
-# 4. Access the dashboard with chat interface
-open http://localhost:5556/analytics_dashboard_live.html
-
-# 5. Check MCP server is connected (optional)
-# Verify in Claude Code that contextkeeper-sacred tools are available
+# Check code style (Australian English)
+python -m flake8 --extend-ignore=E501 *.py
 ```
 
-## 🆕 CRITICAL: Development Logging
-**ALWAYS update LOGBOOK.md after making changes!**
+### Project Indexing Workflow
 ```bash
-# Use time MCP for accurate timestamps:
-mcp__time__get_current_time --timezone "Australia/Sydney"
-
-# Add entry to LOGBOOK.md with format:
-[YYYY-MM-DD HH:MM AEST] - [Component] - [Action] - [Details]
-```
-
-## 🎯 ESSENTIAL WORKFLOW: Creating & Tracking New Projects
-
-**CRITICAL**: Always follow this exact sequence when adding a new project:
-
-```bash
-# 1. Create the project with its path
-./scripts/rag_cli_v2.sh projects create <project_name> <project_path>
-# Example: ./scripts/rag_cli_v2.sh projects create veo3app /Users/sumitm1/Documents/myproject/veo3-video-application
-
-# 2. Focus on the project (make it active)
+# CRITICAL: Must follow this exact sequence
+./scripts/rag_cli_v2.sh projects create "Name" /absolute/path
 ./scripts/rag_cli_v2.sh projects focus <project_id>
-# The project_id is returned from step 1 (e.g., proj_736df3fd80a4)
+python rag_agent.py ingest --path /absolute/path  # OFTEN FORGOTTEN!
 
-# 3. Index the project files (ESSENTIAL - often missed!)
-python rag_agent.py ingest --path <project_path>
-# This will process all files and may take 2-3 minutes for large projects
-
-# 4. Verify it's working
-./scripts/rag_cli_v2.sh ask "How does this project work?" --project <project_id>
-# OR use the API:
-curl -X POST http://localhost:5556/query_llm \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Explain the project architecture", "k": 5, "project_id": "<project_id>"}'
+# Verify indexing worked
+curl http://localhost:5556/projects | jq '.projects[] | select(.id=="<project_id>")'
 ```
 
-**Common Pitfalls to Avoid**:
-- ❌ Forgetting to index files after project creation
-- ❌ Using old CLI (rag_cli.sh) instead of v2 (rag_cli_v2.sh)
-- ❌ Not focusing on a project before querying
-- ❌ Expecting immediate results without indexing
+### MCP Server Development
+```bash
+cd mcp-server
+npm install
+npm start  # Runs enhanced_mcp_server.js
+```
 
-## 🌟 CURRENT FEATURES (August 2025)
+## Architecture Overview
 
-### ✅ What's Working
-1. **Chat Interface** - Beautiful glass morphism UI in dashboard
-   - Send queries directly from the dashboard
-   - Chat history with localStorage persistence
-   - Quick action buttons for common queries
-   - Markdown rendering for code blocks
+### System Flow
+```
+User Request → Claude Code → MCP Server → RAG Agent → ChromaDB/LLM
+                    ↓             ↓             ↓
+                Dashboard   Sacred Layer   Project Manager
+```
 
-2. **Create Project** (Fixed 2025-08-04)
-   - Now asks for both name AND path
-   - Actually creates projects (API call was broken)
-   - Shows proper error messages
-   - Dashboard refreshes after creation
+### Core Components
+1. **RAG Agent** (`rag_agent.py`): Flask API server, handles all operations
+   - Async endpoints for performance
+   - Project isolation via ChromaDB collections
+   - Security filtering for sensitive data
 
-3. **Event Tracking** - Real-time development intelligence
-   - Track errors, deployments, decisions
-   - Query recent events via API
-   - Severity levels (INFO, WARNING, ERROR, CRITICAL)
+2. **Project Manager** (`project_manager.py`): Multi-project state management
+   - Each project gets isolated ChromaDB collection
+   - Tracks decisions, objectives, and events
+   - Persists to `projects/` directory
 
-### ⚠️ What Needs Enhancement
-1. **Create Project Modal**
-   - Currently uses text input for path (needs file browser)
-   - No automatic indexing after creation
-   - Must manually run indexing command
+3. **Sacred Layer** (`sacred_layer_implementation.py`): Architectural governance
+   - Immutable architectural decisions
+   - 2-layer approval system
+   - Drift detection between plans and implementation
 
-2. **Project Status**
-   - No visual indicators for indexed vs not indexed
-   - Can't re-index from UI
-   - No progress tracking during indexing
+4. **MCP Integration** (`mcp-server/enhanced_mcp_server.js`): Claude Code bridge
+   - Provides tools for context retrieval
+   - Handles sacred drift checking
+   - Manages LLM queries
 
-3. **Chat Responses**
-   - Poor quality if project not properly indexed
-   - Need meaningful content in knowledge base
-   - Base64/binary files provide no searchable context
+5. **Dashboard** (`analytics_dashboard_live.html`): Three.js visualization
+   - Real-time project metrics
+   - Interactive chat interface
+   - 4000 animated particles (performance consideration)
 
-## 🔥 CURRENT STATUS - Sacred Layer COMPLETE ✅
+## Critical Implementation Details
 
-### ✅ LATEST UPDATE: All Infrastructure Fixes & Documentation Completed
-**Date**: 2025-07-29  
-**Status**: All major infrastructure issues resolved and fully operational  
-**Fixes Completed**:
-- ✅ Flask Async Compatibility: All async endpoints now return 200 OK (was 500 errors)
-- ✅ Path Filtering: Fixed venv/site-packages indexing pollution 
-- ✅ API Model Updates: Updated to latest Google GenAI models (gemini-embedding-001, gemini-2.5-flash)
-- ✅ CLI Port Fix: Sacred CLI now connects to correct port 5556 (was 5555)
-- ✅ Sacred Layer Testing: Comprehensive testing completed, all endpoints functional
-- ✅ CLI Merge Conflicts: All merge conflicts in rag_cli_v2.sh resolved
-- ✅ ChromaDB Compatibility: Database reset and embedding function conflicts resolved
-- ✅ Documentation Update: README, API_REFERENCE, TROUBLESHOOTING, and CLAUDE.md all updated
+### ChromaDB Collections
+- Collection naming: `project_{project_id}`
+- Metadata constraints: Only str, int, float, bool, None
+- Arrays must be comma-separated strings: `'tags': ', '.join(tags)`
+- Embedding model: Google's text-embedding-004 (768 dimensions)
 
-**Current State**: All Sacred Layer endpoints, CLI commands, and core RAG functionality operational
-**What I've completed:**
-
-1. **COMPLETE**: ✅ Phase 2 Sacred Layer Implementation 
-2. **COMPLETE**: ✅ Phase 2.5 - LLM-Enhanced Query Responses 
-3. **COMPLETE**: ✅ Phase 3 - MCP Server for Claude Code Integration
-4. **COMPLETE**: ✅ Sacred plan creation and approval workflow tested
-
-**Available Enhancement Options:**
-- Phase 4: Analytics Dashboard (infrastructure ready)
-- Advanced monitoring and metrics
-- Additional MCP tools and integrations
-
-**Key files completed:**
-- `rag_agent.py` ✅ Phase 2.5 LLM enhancement integrated and operational
-- `sacred_layer_implementation.py` ✅ Core methods implemented and tested
-- `git_activity_tracker.py` ✅ Methods implemented and integrated
-- `enhanced_drift_sacred.py` ✅ Methods implemented and operational
-- `mcp-server/enhanced_mcp_server.js` ✅ 8 tools implemented and tested
-
-## 🛠️ DEVELOPMENT PATTERNS
-
-### Code Style (Follow User's Preferences)
+### API Authentication
+All endpoints require project_id for isolation:
 ```python
-# Use Australian English spelling
-colour = "blue"  # not color
-behaviour = "expected"  # not behavior
+# WRONG - security risk
+@app.route('/query', methods=['POST'])
+def query():
+    return self.agent.query(request.json['question'])
 
-# Conversational comments (user's signature style)
-# alright, so the idea here is to...
-# basically, we need to do this because...
-# fair warning - this might seem unconventional, but...
+# CORRECT - enforces isolation
+@app.route('/query', methods=['POST'])
+def query():
+    project_id = request.json.get('project_id')
+    if not project_id:
+        return {'error': 'project_id required'}, 400
+    return self.agent.query(request.json['question'], project_id=project_id)
 ```
 
-### Architecture Patterns to Follow
-- **Sacred Layer**: Immutable storage, 2-layer verification, isolated ChromaDB
-- **Project Isolation**: Each project gets own ChromaDB collection
-- **Git Integration**: Track commits, not file changes
-- **Fail-Safe Design**: Sacred plans act as guardrails for AI agents
+### Error Handling Patterns
+```python
+# Always use this pattern for ChromaDB operations
+try:
+    collection = self.db.get_collection(f"project_{project_id}")
+except:
+    # Collection doesn't exist - create it
+    collection = self.db.create_collection(
+        name=f"project_{project_id}",
+        embedding_function=self.embedding_function,
+        metadata={"hnsw:space": "cosine"}
+    )
+```
 
-### Testing Approach
+## Common Issues & Solutions
+
+### Issue: "Project not found" after creation
+**Cause**: Server's `self.collections` dict not updated
+**Fix**: Restart server or call `self.agent._init_project_collections()`
+
+### Issue: Poor query results
+**Cause**: Project not indexed or focused
+**Fix**: 
 ```bash
-# Always test after changes
-pytest tests/sacred -v          # Sacred layer
-pytest tests/git -v             # Git integration  
-pytest tests/drift -v           # Drift detection
-python test_multiproject.py     # End-to-end
+./scripts/rag_cli_v2.sh projects focus <project_id>
+python rag_agent.py ingest --path /project/path
 ```
 
-## 📁 FILE NAVIGATION MAP
+### Issue: Embedding dimension mismatch
+**Cause**: Using wrong Google API model
+**Fix**: Ensure using `text-embedding-004` not `gemini-embedding-001`
 
-**Core Sacred Files** (what you'll work with most):
-```
-rag_agent.py                 # Main orchestrator - ADD sacred integration here
-sacred_layer_implementation.py  # Sacred core - USE as-is
-git_activity_tracker.py     # Git tracking - USE as-is
-enhanced_drift_sacred.py    # Drift detection - USE as-is
-sacred_cli_integration.sh   # CLI commands - SOURCE this
-```
+### Issue: Server segmentation fault
+**Cause**: Using `python rag_agent.py start`
+**Fix**: Always use `python rag_agent.py server`
 
-**Reference Implementations** (approved patterns):
-```
-v3 Approved Plan for AI Agent/
-├── sacred_layer_implementation.py    # Reference if needed
-├── enhanced_mcp_server.js           # MCP server for later
-├── analytics_dashboard.html         # Dashboard for later
-└── revised_implementation_roadmap.md # Complete vision
-```
+## Testing Guidelines
+- Run tests with `pytest -v --tb=short` for cleaner output
+- Sacred layer tests require `SACRED_APPROVAL_KEY` in .env
+- API tests use real ChromaDB - ensure clean state
+- Use `./cleanup_all.sh` for fresh test environment
 
-## ⚡ COMMON WORKFLOWS
+## Code Style Requirements
+- Australian English spelling (colour, behaviour, realise)
+- Conversational comments ("alright, so here's the thing...")
+- Update LOGBOOK.md after significant changes
+- Format: `[YYYY-MM-DD HH:MM AEST] - [Component] - [Action] - [Details]`
 
-### Sacred Plan Workflow
+## Environment Variables
 ```bash
-# 1. Create a sacred plan
-./scripts/rag_cli_v2.sh sacred create proj_123 "API Authentication" api_auth_plan.md
-
-# 2. Approve the plan with 2-layer verification
-./scripts/rag_cli_v2.sh sacred approve plan_abc123
-
-# 3. Check for drift
-./scripts/rag_cli_v2.sh sacred drift proj_123
+GOOGLE_API_KEY=        # Required: Gemini API access
+SACRED_APPROVAL_KEY=   # Required: Sacred layer approvals
+FLASK_ASYNC_MODE=True  # Performance: Async endpoints
+DEBUG=0               # Production: Disable debug mode
 ```
 
-### Querying the Knowledge Base
-```bash
-# Ask a question via CLI
-./scripts/rag_cli_v2.sh ask "What is the approved method for API authentication?"
-
-# Test natural language responses via API
-curl -X POST http://localhost:5556/query_llm \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What is the sacred layer?", "k": 5}'
-
-# Compare with raw query  
-curl -X POST http://localhost:5556/query \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What is the sacred layer?", "k": 5}'
-```
-
-### LLM-Enhanced Query
-```bash
-# Get a natural language response
-curl -X POST http://localhost:5556/query_llm \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Explain the sacred layer.", "k": 5}'
-```
-
-## 🚨 CURRENT STATUS & KNOWN ISSUES
-
-### ✅ Currently Working
-- **Service Running**: ContextKeeper runs on port 5556
-- **Health Check**: `/health` endpoint returns {"status":"healthy"}
-- **Projects API**: `/projects` endpoint returns project data
-- **MCP Integration**: MCP server configured and connects to Claude Code
-
-### ✅ System Status: Fully Operational
-- ✅ **Database Connectivity**: ChromaDB connections working correctly
-- ✅ **Query Endpoints**: All query endpoints functional (raw and LLM-enhanced)
-- ✅ **Sacred Integration**: All sacred layer endpoints tested and operational
-- ✅ **CLI Commands**: Sacred CLI commands working with proper port connectivity
-- ✅ **API Endpoints**: All Flask async endpoints returning proper responses
-- ✅ **Path Filtering**: No more venv/site-packages pollution in knowledge base
-
-## 🧭 CONTEXT HIERARCHY
-
-When you need more info, check in this order:
-1. `USER_GUIDE.md` - Comprehensive user guide and workflows
-2. `docs/guides/QUICK_REFERENCE.md` - All CLI commands and API endpoints
-3. `README.md` - Project overview and quick start guide
-4. `LOGBOOK.md` - Recent development activity and changes
-5. `v3 Approved Plan for AI Agent/revised_implementation_roadmap.md` - Complete technical vision
-
-## 🎯 MCP Server Tools
-
-The MCP server provides the following tools for AI assistants:
-
-- **`get_sacred_context`**: Get approved sacred plans for a project.
-- **`check_sacred_drift`**: Check if current development aligns with sacred plans.
-- **`query_with_llm`**: Query the knowledge base with natural language responses.
-- **`export_development_context`**: Export complete development context including sacred plans.
-- **`get_development_context`**: Get comprehensive development context including project status, git activity, objectives, decisions, and sacred layer analysis.
-- **`intelligent_search`**: Search with semantic understanding across code, decisions, objectives, and sacred plans.
-- **`create_sacred_plan`**: Create a new sacred architectural plan.
-- **`health_check`**: Check the health status of the sacred layer and RAG agent.
-
-## ⚙️ ENVIRONMENT CHECK
-
-Required for sacred layer:
-```bash
-# Check these exist
-echo $SACRED_APPROVAL_KEY        # Should be set
-ls sacred_layer_implementation.py # Should exist
-ls tests/sacred/                 # Should exist
-./upgrade_to_v3_sacred.sh --check # Should pass
-```
-
-## 📝 DOCUMENTATION MAINTENANCE PROTOCOL
-
-### Critical Learning: Avoid Misleading Legacy Documentation
-**Issue Discovered**: Comments and documentation left behind during development can mislead future readers who might assume outdated status represents current state rather than checking latest enhancements.
-
-**Mandatory Practice for AI Coding Agents:**
-1. **Clean Up As You Go**: Remove outdated comments, TODOs, and status indicators immediately when completing work
-2. **Update Status Consistently**: Ensure all documentation files reflect current implementation state
-3. **Remove Placeholder Content**: Delete template comments, example code, and "TODO" markers when functionality is complete
-4. **Verify Cross-References**: Check that all file references, command examples, and technical details match actual implementation
-5. **Document Completion**: Mark phases/tasks as complete in ALL relevant files, not just primary documentation
-
-**Example**: After completing Phase 3, ALL files should show "Phase 3 COMPLETE" status, not mixed states like "Phase 1 Ready" in some files and "Phase 3 Complete" in others.
-
-**Why This Matters**: Future developers (including AI agents) rely on documentation accuracy. Inconsistent or outdated documentation creates confusion and can lead to incorrect assumptions about project state.
-
----
-**For detailed setup, API docs, or architecture deep-dive, see:**
-- `SETUP.md` - Environment setup
-- `API_REFERENCE.md` - All endpoints  
-- `ARCHITECTURE.md` - System design
-- `QUICK_REFERENCE.md` - All commands
+## Performance Considerations
+- Each project uses ~100MB for ChromaDB collection
+- Dashboard animation may lag on older devices
+- Indexing speed: ~1000 files/minute
+- Query latency: <500ms for most operations
+- Use path filtering to exclude system files
