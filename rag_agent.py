@@ -69,6 +69,7 @@ from pathlib import Path
 from typing import List, Dict, Optional, Any
 import hashlib
 import argparse
+import uuid
 
 # Core dependencies
 import chromadb
@@ -80,6 +81,7 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+from flask_socketio import SocketIO
 
 # Import ProjectManager for multi-project support
 from src.core.project_manager import ProjectManager, ProjectStatus
@@ -673,10 +675,21 @@ class ProjectKnowledgeAgent:
             logger.error(f"Error ingesting {file_path}: {e}")
             return 0
     
-    async def ingest_directory(self, directory: str, project_id: str = None) -> int:
+    async def ingest_directory(self, directory: str, project_id: str = None, progress_callback: callable = None) -> int:
         """Recursively ingest all files in a directory"""
         total_chunks = 0
         
+        # First, count the total number of files to process for progress tracking
+        total_files = 0
+        for root, dirs, files in os.walk(directory):
+            dirs[:] = [d for d in dirs if not self.path_filter.should_ignore_directory(d)]
+            for file in files:
+                if any(file.endswith(ext) for ext in self.config['default_file_extensions']):
+                    file_path = os.path.join(root, file)
+                    if not self.path_filter.should_ignore_path(file_path):
+                        total_files += 1
+
+        processed_files = 0
         for root, dirs, files in os.walk(directory):
             # Filter out directories that should be ignored
             dirs[:] = [d for d in dirs if not self.path_filter.should_ignore_directory(d)]
@@ -689,9 +702,14 @@ class ProjectKnowledgeAgent:
                     if self.path_filter.should_ignore_path(file_path):
                         continue
                     
-                    chunks = await self.ingest_file(file_path, project_id)  # FIXED: Pass project_id
+                    chunks = await self.ingest_file(file_path, project_id)
                     total_chunks += chunks
-        
+                    processed_files += 1
+
+                    if progress_callback and total_files > 0:
+                        progress = int((processed_files / total_files) * 100)
+                        await progress_callback(progress)
+
         return total_chunks
     
     async def query(self, question: str, k: int = None, project_id: str = None) -> Dict[str, Any]:
@@ -991,6 +1009,8 @@ class RAGServer:
         self.app = Flask(__name__)
         CORS(self.app)
         self.port = port
+        self.tasks = {}
+        self.socketio = SocketIO(self.app, cors_allowed_origins="*")
         self._setup_routes()
         add_sacred_drift_endpoint(
             self.app,
@@ -1235,10 +1255,54 @@ class RAGServer:
                 'project_id': project.project_id,
                 'name': project.name
             })
+
+        @self.app.route('/projects/create-and-index', methods=['POST'])
+        def create_and_index():
+            data = request.json
+            name = data.get('name')
+            root_path = data.get('root_path')
+
+            if not name or not root_path:
+                return jsonify({'error': 'name and root_path are required'}), 400
+
+            project = self.agent.project_manager.create_project(name, root_path)
+            task_id = f"task_{uuid.uuid4().hex[:8]}"
+
+            async def background_ingest():
+                self.tasks[task_id] = {'status': 'indexing', 'progress': 0, 'project_id': project.project_id}
+
+                async def progress_callback(progress):
+                    self.tasks[task_id]['progress'] = progress
+                    self.socketio.emit('indexing_progress', {'project_id': project.project_id, 'progress': progress})
+
+                try:
+                    await self.agent.ingest_directory(project.root_path, project.project_id, progress_callback)
+                    self.tasks[task_id]['status'] = 'complete'
+                    self.tasks[task_id]['progress'] = 100
+                    self.socketio.emit('indexing_complete', {'project_id': project.project_id})
+                except Exception as e:
+                    logger.error(f"Background ingestion failed for task {task_id}: {e}")
+                    self.tasks[task_id]['status'] = 'failed'
+                    self.tasks[task_id]['error'] = str(e)
+                    self.socketio.emit('indexing_failed', {'project_id': project.project_id, 'error': str(e)})
+
+
+            # Run the async background task in the event loop of the RAGServer
+            self._run_async(background_ingest())
+
+            return jsonify({'task_id': task_id, 'project_id': project.project_id}), 202
+
+        @self.app.route('/tasks/<task_id>', methods=['GET'])
+        def get_task_status(task_id):
+            task = self.tasks.get(task_id)
+            if not task:
+                return jsonify({'error': 'Task not found'}), 404
+            return jsonify(task)
         
         @self.app.route('/projects/<project_id>/focus', methods=['POST'])
         def focus_project(project_id):
             if self.agent.project_manager.set_focus(project_id):
+                self.socketio.emit('focus_changed', {'project_id': project_id})
                 return jsonify({'status': 'Project focused', 'project_id': project_id})
             return jsonify({'error': 'Project not found'}), 404
         
@@ -1312,6 +1376,37 @@ class RAGServer:
             if context:
                 return jsonify(context)
             return jsonify({'error': 'Project not found'}), 404
+
+        @self.app.route('/search', methods=['GET'])
+        def search():
+            query = request.args.get('q', '').lower()
+            if not query:
+                return jsonify({'projects': [], 'plans': [], 'decisions': []})
+
+            # Search projects
+            projects = [
+                p.to_dict() for p in self.agent.project_manager.projects.values()
+                if query in p.name.lower()
+            ]
+
+            # Search plans (this is a simplified search)
+            plans = [
+                plan for plan in self.agent.sacred_integration.sacred_manager.plans_registry.values()
+                if query in plan['title'].lower()
+            ]
+
+            # Search decisions (this is a simplified search)
+            decisions = []
+            for project in self.agent.project_manager.projects.values():
+                for decision in project.decisions:
+                    if query in decision.decision.lower():
+                        decisions.append(decision.to_dict())
+
+            return jsonify({
+                'projects': projects[:5],
+                'plans': plans[:5],
+                'decisions': decisions[:5]
+            })
         
         # Sacred Layer v3.0 endpoints
         @self.app.route('/sacred/plans', methods=['POST'])
@@ -1896,7 +1991,7 @@ class RAGServer:
     
     def run(self):
         logger.info(f"Starting RAG server on port {self.port}")
-        self.app.run(host='0.0.0.0', port=self.port, debug=False)
+        self.socketio.run(self.app, host='0.0.0.0', port=self.port, debug=False)
 
 class RAGCLI:
     """Command-line interface for RAG agent"""

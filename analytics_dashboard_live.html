@@ -392,24 +392,33 @@
                 </div>
             </section>
 
-            <!-- Controls -->
-            <section class="flex flex-wrap gap-4 justify-center mb-12">
-                <button class="bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2 px-5 rounded-lg inline-flex items-center gap-2 transition-all duration-200 transform hover:scale-105" onclick="refreshData()">
-                    <i class="fas fa-sync-alt"></i> Refresh
-                </button>
-                <button class="bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2 px-5 rounded-lg inline-flex items-center gap-2 transition-all duration-200 transform hover:scale-105" onclick="openAnalytics()">
-                    <i class="fas fa-chart-line"></i> Analytics
-                </button>
-                <button class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-5 rounded-lg inline-flex items-center gap-2 transition-all duration-200 transform hover:scale-105" onclick="openAPI()">
-                    <i class="fas fa-code"></i> API Docs
-                </button>
-                <button class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-5 rounded-lg inline-flex items-center gap-2 transition-all duration-200 transform hover:scale-105" onclick="openGitHub()">
-                    <i class="fab fa-github"></i> GitHub
-                </button>
+            <!-- Controls & Search -->
+            <section class="mb-12">
+                <div class="max-w-2xl mx-auto mb-6">
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="search" id="globalSearch" class="w-full bg-slate-800 border border-slate-700 text-white rounded-full px-12 py-3 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none" placeholder="Search projects, plans, decisions...">
+                        <div id="searchResults" class="absolute top-full left-0 right-0 bg-slate-800 border border-slate-700 rounded-lg mt-2 z-20 hidden"></div>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-4 justify-center">
+                    <button class="bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2 px-5 rounded-lg inline-flex items-center gap-2 transition-all duration-200 transform hover:scale-105" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                    <button class="bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2 px-5 rounded-lg inline-flex items-center gap-2 transition-all duration-200 transform hover:scale-105" onclick="openAnalytics()">
+                        <i class="fas fa-chart-line"></i> Analytics
+                    </button>
+                    <button class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-5 rounded-lg inline-flex items-center gap-2 transition-all duration-200 transform hover:scale-105" onclick="openAPI()">
+                        <i class="fas fa-code"></i> API Docs
+                    </button>
+                    <button class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-5 rounded-lg inline-flex items-center gap-2 transition-all duration-200 transform hover:scale-105" onclick="openGitHub()">
+                        <i class="fab fa-github"></i> GitHub
+                    </button>
+                </div>
             </section>
 
             <!-- Projects Section -->
-            <section class="bg-slate-900/50 border border-slate-800 rounded-lg overflow-hidden">
+            <section class="bg-slate-900/50 border border-slate-800 rounded-lg overflow-hidden mb-8">
                 <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center flex-wrap gap-4">
                     <h2 class="text-xl font-bold text-white flex items-center gap-3">
                         <i class="fas fa-folder"></i> Your Projects
@@ -424,6 +433,18 @@
                         <div class="spinner"></div>
                         <p>Loading projects...</p>
                     </div>
+                </div>
+            </section>
+
+            <!-- Governance Section -->
+            <section id="governanceSection" class="bg-slate-900/50 border border-slate-800 rounded-lg overflow-hidden hidden">
+                <div class="px-6 py-4 border-b border-slate-800">
+                    <h2 class="text-xl font-bold text-white flex items-center gap-3">
+                        <i class="fas fa-shield-alt"></i> Sacred Plans Governance
+                    </h2>
+                </div>
+                <div class="p-6" id="sacredPlansContainer">
+                    <p class="text-slate-400 text-center">Select a project to view its Sacred Plans.</p>
                 </div>
             </section>
         </div>
@@ -455,10 +476,48 @@
         </div>
     </div>
 
+    <!-- Sacred Plan Modals -->
+    <div id="viewPlanModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-2xl m-4">
+            <h3 class="text-2xl font-bold text-white mb-4" id="viewPlanTitle"></h3>
+            <div class="text-slate-300 bg-slate-800 p-4 rounded-lg max-h-96 overflow-y-auto" id="viewPlanContent"></div>
+            <div class="mt-8 flex justify-end">
+                <button type="button" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-5 rounded-lg transition-colors" onclick="closeViewPlanModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="approvePlanModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-md m-4">
+            <h3 class="text-2xl font-bold text-white mb-4">Approve Sacred Plan</h3>
+            <p class="text-slate-400 mb-6">You are about to approve a Sacred Plan. This is a high-security action.</p>
+            <div class="space-y-4">
+                <div>
+                    <label for="approverName" class="block text-sm font-medium text-slate-300 mb-2">Your Name/ID</label>
+                    <input type="text" id="approverName" class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2" placeholder="e.g., 'Chief Architect'">
+                </div>
+                <div>
+                    <label for="verificationCode" class="block text-sm font-medium text-slate-300 mb-2">Verification Code</label>
+                    <input type="text" id="verificationCode" class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2" placeholder="Code from plan file">
+                </div>
+                <div>
+                    <label for="approvalKey" class="block text-sm font-medium text-slate-300 mb-2">Approval Key</label>
+                    <input type="password" id="approvalKey" class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2" placeholder="Enter SACRED_APPROVAL_KEY">
+                    <p class="text-red-400 text-xs mt-2 font-bold"><i class="fas fa-exclamation-triangle"></i> Security Risk: You are entering a secret key into a browser. Ensure you trust this environment.</p>
+                </div>
+            </div>
+            <div class="mt-8 flex justify-end gap-4">
+                <button type="button" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-5 rounded-lg" onclick="closeApprovePlanModal()">Cancel</button>
+                <button type="button" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-5 rounded-lg" id="confirmApproveButton">Approve</button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- three.js and app logic scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/lights/RectAreaLightUniformsLib.js"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     
     <script>
         // === DASHBOARD LOGIC ===
@@ -467,11 +526,58 @@
 
         // Initialize dashboard on content load
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Dashboard loaded, starting data fetch...');
+            console.log('Dashboard loaded, starting data fetch and WebSocket connection...');
             loadDashboard();
-            // Refresh data every 30 seconds
+            setupWebSocket();
+            // Refresh data every 30 seconds as a fallback
             refreshInterval = setInterval(loadDashboard, 30000);
         });
+
+        function setupWebSocket() {
+            const socket = io(API_BASE);
+
+            socket.on('connect', () => {
+                console.log('WebSocket connected!');
+            });
+
+            socket.on('disconnect', () => {
+                console.log('WebSocket disconnected.');
+            });
+
+            socket.on('indexing_progress', (data) => {
+                console.log('Indexing progress:', data);
+                const progressBar = document.getElementById(`progress-bar-${data.project_id}`);
+                const progressText = document.getElementById(`progress-text-${data.project_id}`);
+                if (progressBar) progressBar.style.width = `${data.progress}%`;
+                if (progressText) progressText.textContent = `Indexing... (${data.progress}%)`;
+            });
+
+            socket.on('indexing_complete', (data) => {
+                console.log('Indexing complete:', data);
+                showNotification('Project indexing complete!', 'success');
+                setTimeout(() => loadProjects(), 1000);
+            });
+
+            socket.on('indexing_failed', (data) => {
+                console.error('Indexing failed:', data);
+                showNotification(`Indexing failed for ${data.project_id}: ${data.error}`, 'error');
+                updateProjectCardStatus(data.project_id, `Failed: ${data.error}`, 'error');
+            });
+
+            socket.on('focus_changed', (data) => {
+                console.log('Focus changed:', data);
+                // Highlight the new focused project
+                document.querySelectorAll('.project-card').forEach(card => {
+                    card.classList.remove('ring-2', 'ring-pink-500');
+                });
+                const focusedCard = document.getElementById(`project-card-${data.project_id}`);
+                if (focusedCard) {
+                    focusedCard.classList.add('ring-2', 'ring-pink-500');
+                }
+                // Update stats
+                loadStats();
+            });
+        }
 
         async function loadDashboard() {
             try {
@@ -622,13 +728,124 @@
             });
         }
 
-        function focusProject(projectId) {
+        async function focusProject(projectId) {
             console.log('Focusing project:', projectId);
-            // This is a mock interaction. In a real app, you would make an API call.
-            showNotification(`Project '${projectId}' is now focused.`);
-            // fetch(`${API_BASE}/projects/${projectId}/focus`, { method: 'POST' })
-            // .then(() => loadDashboard())
-            // .catch(error => console.error('Error focusing project:', error));
+            try {
+                const response = await fetch(`${API_BASE}/projects/${projectId}/focus`, { method: 'POST' });
+                if (!response.ok) throw new Error('Failed to focus project');
+
+                showNotification(`Project now focused. Loading governance data...`, 'success');
+
+                // Highlight focused project
+                document.querySelectorAll('.project-card').forEach(card => {
+                    card.classList.remove('ring-2', 'ring-pink-500');
+                });
+                document.getElementById(`project-card-${projectId}`).classList.add('ring-2', 'ring-pink-500');
+
+                // Show and load governance section
+                document.getElementById('governanceSection').classList.remove('hidden');
+                await loadSacredPlans(projectId);
+
+            } catch (error) {
+                console.error('Error focusing project:', error);
+                showNotification(error.message, 'error');
+            }
+        }
+
+        async function loadSacredPlans(projectId) {
+            const container = document.getElementById('sacredPlansContainer');
+            container.innerHTML = '<div class="spinner"></div><p class="text-center text-slate-400">Loading Sacred Plans...</p>';
+
+            try {
+                const response = await fetch(`${API_BASE}/sacred/plans?project_id=${projectId}`);
+                if (!response.ok) throw new Error('Failed to load Sacred Plans');
+                const plans = await response.json();
+
+                if (plans.length === 0) {
+                    container.innerHTML = '<p class="text-slate-400 text-center">No Sacred Plans found for this project.</p>';
+                    return;
+                }
+
+                container.innerHTML = plans.map(plan => `
+                    <div class="bg-slate-800 p-4 rounded-lg mb-4 flex justify-between items-center">
+                        <div>
+                            <h4 class="font-bold text-white">${plan.title}</h4>
+                            <p class="text-sm text-slate-400">Status: <span class="font-semibold">${plan.status}</span></p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="bg-slate-600 hover:bg-slate-500 text-white text-xs font-bold py-1 px-3 rounded-full" onclick="openViewPlanModal('${plan.plan_id}')">View</button>
+                            ${plan.status === 'draft' ? `<button class="bg-green-600 hover:bg-green-500 text-white text-xs font-bold py-1 px-3 rounded-full" onclick="openApprovePlanModal('${plan.plan_id}')">Approve</button>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                container.innerHTML = `<p class="text-red-400 text-center">Error: ${error.message}</p>`;
+            }
+        }
+
+        function openViewPlanModal(planId) {
+            // In a real app, you would fetch plan content here
+            document.getElementById('viewPlanTitle').textContent = `Plan: ${planId}`;
+            document.getElementById('viewPlanContent').textContent = 'Loading plan content...';
+            document.getElementById('viewPlanModal').classList.remove('hidden');
+            // Mock fetching content
+            setTimeout(() => {
+                 document.getElementById('viewPlanContent').textContent = `Content for plan ${planId} would be displayed here. This requires a new endpoint to fetch plan content by ID.`;
+            }, 500);
+        }
+        function closeViewPlanModal() { document.getElementById('viewPlanModal').classList.add('hidden'); }
+
+        function openApprovePlanModal(planId) {
+            document.getElementById('approvePlanModal').classList.remove('hidden');
+            document.getElementById('confirmApproveButton').onclick = () => handleApprovePlan(planId);
+        }
+        function closeApprovePlanModal() { document.getElementById('approvePlanModal').classList.add('hidden'); }
+
+        async function handleApprovePlan(planId) {
+            const approver = document.getElementById('approverName').value;
+            const verificationCode = document.getElementById('verificationCode').value;
+            const approvalKey = document.getElementById('approvalKey').value;
+
+            if (!approver || !verificationCode || !approvalKey) {
+                showNotification('All fields are required for approval.', 'error');
+                return;
+            }
+
+            const approveButton = document.getElementById('confirmApproveButton');
+            approveButton.disabled = true;
+            approveButton.textContent = 'Approving...';
+
+            try {
+                const response = await fetch(`${API_BASE}/sacred/plans/${planId}/approve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        approver: approver,
+                        verification_code: verificationCode,
+                        secondary_verification: approvalKey
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Approval failed');
+                }
+
+                showNotification('Plan approved successfully!', 'success');
+                closeApprovePlanModal();
+                // Refresh plans for the currently focused project
+                const focusedProjectId = document.querySelector('.project-card.ring-2').id.replace('project-card-', '');
+                if (focusedProjectId) {
+                    loadSacredPlans(focusedProjectId);
+                }
+
+            } catch (error) {
+                showNotification(`Error: ${error.message}`, 'error');
+            } finally {
+                approveButton.disabled = false;
+                approveButton.textContent = 'Approve';
+            }
         }
         
         function showNotification(message, type = 'success') {
@@ -661,62 +878,86 @@
             const projectName = document.getElementById('projectName').value.trim();
             const projectPath = document.getElementById('projectPath').value.trim();
             
-            // Validation
-            if (!projectName) {
-                showNotification('Please enter a project name', 'error');
+            if (!projectName || !projectPath) {
+                showNotification('Project name and path are required.', 'error');
                 return;
             }
-            
-            if (!projectPath) {
-                showNotification('Please enter a project path', 'error');
-                return;
-            }
-            
+
+            const createButton = document.querySelector('#createProjectModal button[onclick="handleCreateProject()"]');
+            createButton.textContent = 'Creating...';
+            createButton.disabled = true;
+
             try {
-                // Show loading state
-                const createButton = document.querySelector('#createProjectModal button[onclick="handleCreateProject()"]');
-                const originalText = createButton.textContent;
-                createButton.textContent = 'Creating...';
-                createButton.disabled = true;
-                
-                // Make API call
-                const response = await fetch(`${API_BASE}/projects`, {
+                const response = await fetch(`${API_BASE}/projects/create-and-index`, {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json' 
-                    },
-                    body: JSON.stringify({ 
-                        name: projectName, 
-                        root_path: projectPath,
-                        description: `Project created via dashboard on ${new Date().toLocaleDateString()}`
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: projectName, root_path: projectPath })
                 });
-                
-                if (!response.ok) {
+
+                if (response.status !== 202) {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                    throw new Error(errorData.error || 'Failed to start project creation');
                 }
+
+                const { task_id, project_id } = await response.json();
                 
-                const result = await response.json();
-                
-                // Success - close modal and refresh
                 closeCreateProjectModal();
-                clearCreateProjectForm();
-                showNotification(`Project '${projectName}' created successfully!`, 'success');
+                showNotification(`Project '${projectName}' created. Indexing started.`, 'success');
                 
-                // Reload the dashboard to show new project
-                setTimeout(() => {
-                    loadDashboard();
-                }, 1000);
+                // Add a placeholder card immediately
+                addProjectPlaceholder(project_id, projectName);
                 
+                // Poll for task status
+                pollTaskStatus(task_id, project_id);
+
             } catch (error) {
                 console.error('Error creating project:', error);
-                showNotification(`Failed to create project: ${error.message}`, 'error');
+                showNotification(`Error: ${error.message}`, 'error');
             } finally {
-                // Reset button state
-                const createButton = document.querySelector('#createProjectModal button[onclick="handleCreateProject()"]');
                 createButton.textContent = 'Create Project';
                 createButton.disabled = false;
+            }
+        }
+
+        function addProjectPlaceholder(projectId, projectName) {
+            const projectsGrid = document.getElementById('projectsGrid');
+            const placeholderCard = document.createElement('div');
+            placeholderCard.id = `project-card-${projectId}`;
+            placeholderCard.className = 'project-card bg-slate-800/50 p-5 rounded-lg border border-slate-700';
+            placeholderCard.innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <h3 class="font-bold text-white text-lg">${projectName}</h3>
+                    <span class="text-xs font-medium uppercase tracking-wider px-3 py-1 rounded-full bg-blue-500/20 text-blue-300">
+                        Indexing...
+                    </span>
+                </div>
+                <div class="text-sm text-slate-400 space-y-1">
+                    <div><i class="fas fa-spinner fa-spin fa-fw mr-2"></i>Status: <span id="progress-text-${projectId}">Starting...</span></div>
+                </div>
+                <div class="w-full bg-slate-700 rounded-full h-2.5 mt-4">
+                    <div id="progress-bar-${projectId}" class="bg-blue-400 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+            `;
+            // Prepend to the grid
+            projectsGrid.prepend(placeholderCard);
+        }
+
+        // This function is now replaced by WebSocket events
+        // async function pollTaskStatus(taskId, projectId) { ... }
+
+        function updateProjectCardStatus(projectId, statusText, statusType) {
+            const projectCard = document.getElementById(`project-card-${projectId}`);
+            if (projectCard) {
+                const statusBadge = projectCard.querySelector('span.rounded-full');
+                const statusLine = projectCard.querySelector(`#progress-text-${projectId}`);
+
+                if (statusBadge) {
+                    statusBadge.textContent = statusType === 'error' ? 'Error' : 'Warning';
+                    statusBadge.className = `text-xs font-medium uppercase tracking-wider px-3 py-1 rounded-full ${statusType === 'error' ? 'bg-red-500/20 text-red-300' : 'bg-yellow-500/20 text-yellow-300'}`;
+                }
+                if (statusLine) {
+                    statusLine.textContent = statusText;
+                }
             }
         }
         
@@ -728,6 +969,61 @@
         // Cleanup and error handling
         window.addEventListener('beforeunload', () => clearInterval(refreshInterval));
         window.addEventListener('unhandledrejection', event => console.error('Unhandled promise rejection:', event.reason));
+
+        // Global Search Logic
+        const searchInput = document.getElementById('globalSearch');
+        const searchResultsContainer = document.getElementById('searchResults');
+        let searchTimeout;
+
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const query = searchInput.value.trim();
+                if (query.length > 2) {
+                    performSearch(query);
+                } else {
+                    searchResultsContainer.classList.add('hidden');
+                }
+            }, 300);
+        });
+
+        async function performSearch(query) {
+            try {
+                const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}`);
+                if (!response.ok) return;
+                const results = await response.json();
+                renderSearchResults(results);
+            } catch (error) {
+                console.error('Search error:', error);
+            }
+        }
+
+        function renderSearchResults(results) {
+            if (!results.projects.length && !results.plans.length && !results.decisions.length) {
+                searchResultsContainer.classList.add('hidden');
+                return;
+            }
+
+            let html = '';
+            if (results.projects.length) {
+                html += '<h4 class="px-4 py-2 text-xs font-bold uppercase text-slate-400">Projects</h4>';
+                html += results.projects.map(p => `<a href="#" onclick="focusProject('${p.id}')" class="block px-4 py-2 hover:bg-slate-700">${p.name}</a>`).join('');
+            }
+            if (results.plans.length) {
+                html += '<h4 class="px-4 py-2 text-xs font-bold uppercase text-slate-400">Sacred Plans</h4>';
+                html += results.plans.map(p => `<a href="#" onclick="openViewPlanModal('${p.plan_id}')" class="block px-4 py-2 hover:bg-slate-700">${p.title}</a>`).join('');
+            }
+            // Decisions would need a dedicated view modal to be useful
+
+            searchResultsContainer.innerHTML = html;
+            searchResultsContainer.classList.remove('hidden');
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!searchResultsContainer.contains(e.target) && e.target !== searchInput) {
+                searchResultsContainer.classList.add('hidden');
+            }
+        });
 
 
         // === THREE.JS SCENE SETUP (from template) ===
