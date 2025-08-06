@@ -104,7 +104,8 @@ class GoogleGenAIEmbeddingFunction:
             try:
                 response = self.client.models.embed_content(
                     model=self.model,
-                    contents=text
+                    contents=text,
+                    task_type="RETRIEVAL_DOCUMENT" # This is the key addition
                 )
                 embeddings.append(response.embeddings[0].values)
             except Exception as e:
@@ -501,13 +502,14 @@ class ProjectKnowledgeAgent:
             raise
         
         # Initialize ChromaDB
-        self.db = chromadb.PersistentClient(
-            path=config['db_path'],
-            settings=Settings(
-                anonymized_telemetry=False,
-                allow_reset=True
-            )
-        )
+        # self.db = chromadb.PersistentClient(
+        #     path=config['db_path'],
+        #     settings=Settings(
+        #         anonymized_telemetry=False,
+        #         allow_reset=True
+        #     )
+        # )
+        self.db = chromadb.HttpClient(host='localhost', port=8000)
         
         # Collections will be created per project
         self.collections = {}
@@ -804,14 +806,26 @@ After indexing, try your question again.""",
 
         # Generate response using LLM
         try:
+            prompt = f"""You are an expert software architect AI, an assistant for the 'ContextKeeper v3' project. Your task is to answer questions based *exclusively* on the provided context from the project's codebase and documentation. Do not use any external knowledge.
+
+    **Context from Project '{project_id}':**
+    ---
+    {context}
+    ---
+
+    **User's Question:** "{question}"
+
+    **Instructions:**
+    1.  **Synthesize a Clear Answer:** Provide a direct, conversational, and well-structured response based *only* on the context above.
+    2.  **Ground Your Answer:** If you provide a code snippet, explain what it does in plain English. Every statement must be directly supported by the provided text.
+    3.  **Acknowledge Limits:** If the context does not contain the answer, you MUST state: "The provided context does not contain enough information to answer this question." Do not attempt to guess.
+    4.  **Format Your Output:** Structure your response in Markdown for clarity. Use bullet points and bold text to highlight key information.
+
+    **Expert Answer:**
+    """
             response = self.client.models.generate_content(
                 model="gemini-2.5-flash",
-                contents=f'''Based on the following context from the project "{project_id}", answer this question: {question}
-
-Context from the codebase:
-{context}
-
-Provide a helpful and accurate answer based solely on the given context. If the context doesn't contain enough information, say so.'''
+                contents=prompt
             )
 
             return {

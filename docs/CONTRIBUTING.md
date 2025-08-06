@@ -41,12 +41,34 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 4. Install dependencies: `pip install -r requirements.txt`
 5. Set up your `.env` file with Google Cloud credentials
 
-## Code Style
+## Code Style and Quality
 
-- Follow PEP 8 for Python code
-- Use meaningful variable and function names
-- Add comments for complex logic
-- Keep functions focused and small
+We use `pre-commit` hooks to enforce code style and quality automatically. This helps us maintain a clean and consistent codebase.
+
+### Activating Pre-Commit Hooks
+
+To get started, you need to install `pre-commit` and set up the hooks in your local repository. This only needs to be done once.
+
+1.  **Install pre-commit:**
+    ```bash
+    pip install pre-commit
+    ```
+
+2.  **Install the hooks:**
+    ```bash
+    pre-commit install
+    ```
+
+Now, every time you run `git commit`, the hooks will automatically check your changes for issues like formatting, trailing whitespace, and syntax errors. If any issues are found, the commit will be aborted, allowing you to fix them before committing again.
+
+### Style Guidelines
+
+- **Python:** We follow `black` for formatting and `flake8` for linting.
+- **YAML:** Basic syntax checking is enforced.
+- Follow PEP 8 for Python code where not covered by `black`.
+- Use meaningful variable and function names.
+- Add comments for complex logic.
+- Keep functions focused and small.
 
 ## Questions?
 
