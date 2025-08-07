@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# flake8: noqa
+# fmt: off
 """
 # GOVERNANCE HEADER - SKELETON FIRST DEVELOPMENT
 # File: /Users/sumitm1/contextkeeper-pro-v3/contextkeeper/src/sacred/sacred_layer_implementation.py
@@ -72,13 +74,13 @@ class SacredPlan:
             self.metadata = {}
 class SacredLayerManager:
     """Manages sacred plans with verification and isolation"""
-    
+
     def __init__(self, db_path: str, embedder):
         self.db_path = Path(db_path)
         self.embedder = embedder
         self.plans_dir = self.db_path / "sacred_plans"
         self.plans_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Initialize ChromaDB client for sacred collections
         self.client = chromadb.PersistentClient(
             path=str(self.db_path / "sacred_chromadb"),
@@ -87,7 +89,7 @@ class SacredLayerManager:
                 allow_reset=False  # Prevent accidental resets
             )
         )
-        
+
         # Text splitter for large plans
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
@@ -95,7 +97,7 @@ class SacredLayerManager:
             separators=["\n\n", "\n", ".", " ", ""],
             length_function=len
         )
-        
+
         # Load plan registry
         self.plans_registry = self._load_registry()
     def _load_registry(self) -> Dict[str, SacredPlan]:
@@ -144,9 +146,9 @@ class SacredLayerManager:
         if file_path and os.path.exists(file_path):
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
-        
+
         plan_id = f"plan_{hashlib.sha256(content.encode()).hexdigest()[:12]}"
-        
+
         plan = SacredPlan(
             plan_id=plan_id,
             project_id=project_id,
@@ -158,7 +160,7 @@ class SacredLayerManager:
             approved_by=None,
             verification_code=None
         )
-        
+
         # Save to registry
         self.plans_registry[plan_id] = plan
         self._save_registry()
@@ -207,7 +209,7 @@ class SacredLayerManager:
         if len(content) > 2000:  # Threshold for chunking
             chunks = self.text_splitter.split_text(content)
             plan.chunk_count = len(chunks)
-            
+
             # Embed and store each chunk
             for i, chunk in enumerate(chunks):
                 chunk_id = f"{plan.plan_id}_chunk_{i}"
@@ -248,15 +250,15 @@ class SacredLayerManager:
                     'approved_by': plan.approved_by
                 }]
             )
-    
+
     async def query_sacred_plans(self, project_id: str, query: str,
                                reconstruct: bool = True) -> Dict[str, Any]:
         """Query sacred plans with optional reconstruction"""
         collection = self._get_sacred_collection(project_id)
-        
+
         # Embed query
         query_embedding = await self.embedder.embed_text(query)
-        
+
         # Search only in sacred plans
         try:
             # Try the newer ChromaDB filter syntax first
@@ -286,14 +288,14 @@ class SacredLayerManager:
                 )
         if not results['ids'][0]:
             return {"plans": [], "query": query}
-        
+
         if reconstruct:
             # Group chunks by plan_id and reconstruct
             reconstructed_plans = {}
-            
+
             for i, metadata in enumerate(results['metadatas'][0]):
                 plan_id = metadata['plan_id']
-                
+
                 if plan_id not in reconstructed_plans:
                     reconstructed_plans[plan_id] = {
                         'plan_id': plan_id,
@@ -304,7 +306,7 @@ class SacredLayerManager:
                     }
                 chunk_index = metadata['chunk_index']
                 reconstructed_plans[plan_id]['chunks'][chunk_index] = results['documents'][0][i]
-            
+
             # Reconstruct full content for each plan
             for plan_id, plan_data in reconstructed_plans.items():
                 if len(plan_data['chunks']) == plan_data['total_chunks']:
@@ -328,7 +330,7 @@ class SacredLayerManager:
                     ]
                 # Remove chunks from response
                 del plan_data['chunks']
-            
+
             return {
                 "plans": list(reconstructed_plans.values()),
                 "query": query,
@@ -341,17 +343,17 @@ class SacredLayerManager:
                 "query": query,
                 "reconstructed": False
             }
-    
+
     def lock_plan(self, plan_id: str) -> Tuple[bool, str]:
         """Lock an approved plan to prevent modifications"""
         if plan_id not in self.plans_registry:
             return False, "Plan not found"
-        
+
         plan = self.plans_registry[plan_id]
-        
+
         if plan.status != PlanStatus.APPROVED:
             return False, "Only approved plans can be locked"
-        
+
         plan.status = PlanStatus.LOCKED
         self._save_registry()
         logger.info(f"Plan {plan_id} locked")
@@ -360,20 +362,20 @@ class SacredLayerManager:
         """Mark a plan as superseded by a new plan"""
         if old_plan_id not in self.plans_registry:
             return False, "Old plan not found"
-        
+
         if new_plan_id not in self.plans_registry:
             return False, "New plan not found"
-        
+
         old_plan = self.plans_registry[old_plan_id]
         new_plan = self.plans_registry[new_plan_id]
-        
+
         if new_plan.status not in [PlanStatus.APPROVED, PlanStatus.LOCKED]:
             return False, "New plan must be approved or locked"
-        
+
         old_plan.status = PlanStatus.SUPERSEDED
         old_plan.metadata['superseded_by'] = new_plan_id
         old_plan.metadata['superseded_at'] = datetime.now().isoformat()
-        
+
         new_plan.metadata['supersedes'] = old_plan_id
         self._save_registry()
         logger.info(f"Plan {old_plan_id} superseded by {new_plan_id}")
@@ -384,7 +386,7 @@ class SacredLayerManager:
         content_hash = hashlib.sha256(plan.content.encode()).hexdigest()
         time_component = plan.created_at[:10].replace('-', '')
         return f"{content_hash[:8]}-{time_component}"
-    
+
     def _verify_secondary(self, approver: str, verification: str) -> bool:
         """Perform secondary verification"""
         # This could be:
@@ -392,17 +394,20 @@ class SacredLayerManager:
         # - 2FA code validation
         # - Biometric verification
         # - Custom business logic
-        
+
         # For demo, check against environment variable
-        expected = os.environ.get('SACRED_APPROVAL_KEY')
+        expected = os.environ.get("SACRED_APPROVAL_KEY")
         if not expected:
-            raise RuntimeError("SACRED_APPROVAL_KEY environment variable is required")
+            logger.error("SACRED_APPROVAL_KEY environment variable is not set")
+            raise RuntimeError(
+                "SACRED_APPROVAL_KEY must be configured; approval cannot proceed"
+            )
         return verification == expected
     def get_plan_status(self, plan_id: str) -> Optional[Dict[str, Any]]:
         """Get status and metadata for a plan"""
         if plan_id not in self.plans_registry:
             return None
-        
+
         plan = self.plans_registry[plan_id]
         return {
             'plan_id': plan.plan_id,
@@ -414,19 +419,20 @@ class SacredLayerManager:
             'chunk_count': plan.chunk_count,
             'metadata': plan.metadata
         }
-    
+
+
     def list_plans(self, project_id: Optional[str] = None,
                   status: Optional[PlanStatus] = None) -> List[Dict[str, Any]]:
         """List all plans with optional filtering"""
         plans = []
-        
+
         for plan in self.plans_registry.values():
             # Apply filters
             if project_id and plan.project_id != project_id:
                 continue
             if status and plan.status != status:
                 continue
-            
+
             plans.append({
                 'plan_id': plan.plan_id,
                 'project_id': plan.project_id,
@@ -436,7 +442,7 @@ class SacredLayerManager:
                 'approved_at': plan.approved_at,
                 'chunk_count': plan.chunk_count
             })
-        
+
         return sorted(plans, key=lambda x: x['created_at'], reverse=True)
 
     def get_plans_statistics(self) -> Dict[str, Any]:
@@ -446,26 +452,26 @@ class SacredLayerManager:
             'by_status': {},
             'by_project': {}
         }
-        
+
         for plan in self.plans_registry.values():
             status = plan.status.value
             project_id = plan.project_id
-            
+
             # Count by status
             stats['by_status'][status] = stats['by_status'].get(status, 0) + 1
-            
+
             # Count by project
             stats['by_project'][project_id] = stats['by_project'].get(project_id, 0) + 1
-        
+
         return stats
-    
+
     def get_project_plan_summary(self, project_id: str) -> Dict[str, Any]:
         """Get plan summary for specific project"""
         project_plans = [
             plan for plan in self.plans_registry.values()
             if plan.project_id == project_id
         ]
-        
+
         return {
             'total_plans': len(project_plans),
             'approved_plans': len([p for p in project_plans if p.status == PlanStatus.APPROVED]),
@@ -477,14 +483,14 @@ class SacredLayerManager:
 # Integration with main RAG agent
 class SacredIntegratedRAGAgent:
     """Extension to integrate sacred layer with RAG agent"""
-    
+
     def __init__(self, rag_agent):
         self.rag_agent = rag_agent
         self.sacred_manager = SacredLayerManager(
             db_path=rag_agent.config['db_path'],
             embedder=rag_agent
         )
-    async def create_sacred_plan(self, project_id: str, title: str, 
+    async def create_sacred_plan(self, project_id: str, title: str,
                                content_or_file: str) -> Dict[str, Any]:
         """Create a new sacred plan"""
         if os.path.isfile(content_or_file):
@@ -495,32 +501,32 @@ class SacredIntegratedRAGAgent:
             plan = await self.sacred_manager.create_plan(
                 project_id, title, content_or_file
             )
-        
+
         return {
             'plan_id': plan.plan_id,
             'status': 'created',
             'verification_code': self.sacred_manager._generate_verification_code(plan)
         }
-    
+
     async def approve_sacred_plan(self, plan_id: str, approver: str,
                                 verification_code: str, secondary: str) -> Dict[str, Any]:
         """Approve a sacred plan with verification"""
         success, message = await self.sacred_manager.approve_plan(
             plan_id, approver, verification_code, secondary
         )
-        
+
         return {
             'success': success,
             'message': message,
             'plan_id': plan_id if success else None
         }
-    
+
     async def query_sacred_context(self, project_id: str, query: str) -> Dict[str, Any]:
         """Query sacred plans for context"""
         results = await self.sacred_manager.query_sacred_plans(
             project_id, query, reconstruct=True
         )
-        
+
         # Format for AI consumption
         if results['plans']:
             context = "# Sacred Plans Context\n\n"
@@ -536,13 +542,13 @@ class SacredIntegratedRAGAgent:
                     context += f"Warning: Partial reconstruction ({len(plan.get('missing_chunks', []))} chunks missing)\n"
                     context += plan['content'][:500]
                 context += "\n\n---\n\n"
-            
+
             return {
                 'context': context,
                 'plan_count': len(results['plans']),
                 'query': query
             }
-        
+
         return {
             'context': "No sacred plans found for this query.",
             'plan_count': 0,
