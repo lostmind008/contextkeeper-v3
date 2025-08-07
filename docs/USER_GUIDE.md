@@ -1,351 +1,152 @@
-# ContextKeeper v3.0 User Guide
+# ContextKeeper v3.0: The Ultimate User Guide
 
-Welcome to ContextKeeper! This guide will help you get up and running in minutes.
+Welcome to ContextKeeper! This guide provides everything you need to know to harness the full power of the system, from initial setup to advanced workflows.
 
-## 🚀 Quick Start
+## 1. 🚀 Getting Started: Your First 5 Minutes
 
-### Install & First Run (5 minutes)
+This section will get you up and running with a fully indexed project.
 
+### Step 1: Installation
 ```bash
 # 1. Clone the repository
 git clone https://github.com/lostmind008/contextkeeper-v3.git
-cd contextkeeper
+cd contextkeeper-v3
 
 # 2. Set up Python environment
 python3 -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+source venv/bin/activate  # On Windows, use: venv\Scripts\activate
 
 # 3. Install dependencies
 pip install -r requirements.txt
 
 # 4. Set up environment variables
 cp .env.template .env
-# Edit .env and add your Google API key:
-# GOOGLE_API_KEY=your-api-key-here
-# SACRED_APPROVAL_KEY=your-secret-key
-
-# 5. Start ContextKeeper
-python rag_agent.py start
+# Edit .env and add your keys:
+# GOOGLE_API_KEY=your-google-api-key
+# SACRED_APPROVAL_KEY=a-long-secret-key-you-create
 ```
 
-### Your First Project
+### Step 2: Start the ContextKeeper Service
+```bash
+# Start the main application
+python src/rag_agent.py server
+```
+This command starts the backend server on `http://localhost:5556`. Keep this terminal window running.
+
+### Step 3: Create and Index Your First Project (One-Step Onboarding)
+The new streamlined workflow makes adding a project effortless.
 
 ```bash
-# Create a project
-./scripts/rag_cli_v2.sh projects create myproject /path/to/your/code
-
-# List all projects
-./scripts/rag_cli_v2.sh projects list
-
-# Focus on your project (makes it the default)
-./scripts/rag_cli_v2.sh projects focus myproject
+# Open a NEW terminal window and run:
+./scripts/contextkeeper.sh project add "/path/to/your/code" "My Awesome Project"
 ```
+This single command will:
+1.  Create the project in ContextKeeper.
+2.  Start indexing all relevant files, showing you a real-time progress bar.
+3.  Notify you upon completion.
+
+### Step 4: Explore the Dashboard
+Open your browser and navigate to:
+`http://localhost:5556/analytics_dashboard_live.html`
+
+You will see your new project card, now "Active" and ready for interaction.
+
+## 2. 核心工作流程：日常使用 (Core Workflows: Day-to-Day Usage)
+
+### Interacting with Your Project
+Once your project is indexed, you can interact with it via the CLI or the real-time dashboard.
+
+#### Using the Interactive Dashboard
+The dashboard is the central hub for managing your projects.
+
+*   **Global Search:** Use the search bar at the top to instantly find projects, Sacred Plans, or decisions.
+*   **Focusing a Project:** Simply click on a project card. This will highlight it and load its specific governance data in the "Sacred Plans" section.
+*   **Real-Time Feedback:** The dashboard uses WebSockets for instant updates. When you add a new project or a colleague focuses on one, the UI updates automatically without needing a refresh. Indexing progress is also shown in real-time.
+
+#### Using the Command-Line Interface (CLI)
+The CLI is powerful for scripting and quick actions.
+
+*   **Focus on a Project:**
+    ```bash
+    # If you know the ID
+    ./scripts/contextkeeper.sh project focus <project_id>
+
+    # If you don't, a fuzzy finder will appear!
+    ./scripts/contextkeeper.sh project focus
+    ```
+*   **Ask a Question:**
+    ```bash
+    # Get a quick answer from the knowledge base
+    ./scripts/contextkeeper.sh query "How does the caching layer work?"
+
+    # Get a detailed explanation from the LLM
+    ./scripts/contextkeeper.sh query --llm "Explain our authentication strategy"
+    ```
+
+## 3. 🏛️ Governance with Sacred Plans
+
+Sacred Plans are the heart of ContextKeeper's governance features, allowing you to define and enforce architectural rules.
+
+### Managing Plans from the Dashboard
+This is the recommended and most intuitive way to manage Sacred Plans.
+
+1.  **Focus a Project:** Click on a project card in the dashboard.
+2.  **View Plans:** The "Sacred Plans Governance" section will appear, listing all plans for that project.
+3.  **Approve a Plan:**
+    *   Click the "Approve" button next to a "draft" plan.
+    *   A secure modal will appear.
+    *   Enter your name, the verification code from the plan file, and your `SACRED_APPROVAL_KEY`.
+    *   Acknowledge the security warning and confirm.
+    *   The plan's status will update to "Approved" in real-time.
+
+### Managing Plans from the CLI
+For scripting or terminal-native users.
+
+*   **Create a Plan:**
+    1.  Write your architectural rules in a Markdown file (e.g., `api_design.md`).
+    2.  Submit it to ContextKeeper:
+        ```bash
+        ./scripts/contextkeeper.sh sacred create <project_id> "API Design Guidelines" api_design.md
+        ```
+*   **Approve a Plan:**
+    ```bash
+    ./scripts/contextkeeper.sh sacred approve <plan_id>
+    # You will be prompted for your name, verification code, and approval key.
+    ```
+
+## 4. 📊 Analytics and Insights
+
+ContextKeeper now includes a powerful analytics service to provide insights into your project's governance health.
+
+*   **Accessing Metrics:** Use the `/analytics/sacred` endpoint to get detailed metrics.
+    ```bash
+    curl http://localhost:5556/analytics/sacred
+    ```
+*   **What it Tracks:** The service calculates the total number of sacred plans, their approval status, and provides an overall alignment score.
+*   **Data Flow:** The `AnalyticsService` uses a `SacredMetricsCalculator` to compute these metrics, which are then cached for 5 minutes to ensure high performance.
+
+## 5. 🔌 API and Integration
+
+### Key API Endpoints
+*   `POST /projects/create-and-index`: Creates and indexes a project asynchronously.
+*   `GET /tasks/{task_id}`: Checks the status of a background task (like indexing).
+*   `GET /search?q=...`: Powers the global search on the dashboard.
+*   `GET /analytics/sacred`: Provides governance metrics.
+*   `POST /sacred/plans/{id}/approve`: Approves a Sacred Plan.
+
+### Real-Time Events (WebSockets)
+Your client can listen for the following events from the Socket.IO server:
+*   `indexing_progress`: `{ "project_id": "...", "progress": 25 }`
+*   `indexing_complete`: `{ "project_id": "..." }`
+*   `indexing_failed`: `{ "project_id": "...", "error": "..." }`
+*   `focus_changed`: `{ "project_id": "..." }`
+
+## 6. 🔧 Troubleshooting
 
-### Your First Query
-
-```bash
-# Ask a question about your code
-./scripts/rag_cli_v2.sh ask "How does the authentication work?"
-
-# Get an AI-enhanced response
-./scripts/rag_cli_v2.sh ask --llm "Explain the database schema"
-```
-
-## 📋 Core Workflows
-
-### Managing Projects
-
-**Create a New Project**
-```bash
-./scripts/rag_cli_v2.sh projects create <name> <path>
-# Example: ./scripts/rag_cli_v2.sh projects create webapp /home/user/webapp
-```
-
-**Focus on a Project** (set as default)
-```bash
-./scripts/rag_cli_v2.sh projects focus <project_id>
-# Example: ./scripts/rag_cli_v2.sh projects focus proj_123abc
-```
-
-**List All Projects**
-```bash
-./scripts/rag_cli_v2.sh projects list
-```
-
-### Ingesting Code & Documents
-
-**Ingest a Single File**
-```bash
-./scripts/rag_cli_v2.sh ingest /path/to/file.py
-```
-
-**Ingest a Directory**
-```bash
-./scripts/rag_cli_v2.sh ingest /path/to/directory
-```
-
-**Note**: ContextKeeper automatically filters out `node_modules`, `venv`, `.git`, and other common directories.
-
-### Running Queries
-
-**CLI Query**
-```bash
-# Basic query
-./scripts/rag_cli_v2.sh ask "What does the UserService class do?"
-
-# With more results
-./scripts/rag_cli_v2.sh ask "Find all API endpoints" -k 10
-
-# With AI enhancement
-./scripts/rag_cli_v2.sh ask --llm "How can I add user authentication?"
-```
-
-**API Query**
-```bash
-# Basic query
-curl -X POST http://localhost:5556/query \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What is the database schema?", "project_id": "proj_123"}'
-
-# AI-enhanced query
-curl -X POST http://localhost:5556/query_llm \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Explain the authentication flow", "project_id": "proj_123"}'
-```
-
-### Sacred Plans (Architectural Governance)
-
-**Create a Sacred Plan**
-```bash
-# Create a plan file (example: auth_plan.md)
-cat > auth_plan.md << EOF
-# Authentication Architecture
-
-## Overview
-We will use OAuth2 with JWT tokens for authentication.
-
-## Components
-- AuthService: Handles login/logout
-- TokenManager: JWT creation/validation
-- UserStore: User data persistence
-
-## Constraints
-- Tokens expire after 1 hour
-- Refresh tokens valid for 7 days
-- No plaintext password storage
-EOF
-
-# Submit the plan
-./scripts/rag_cli_v2.sh sacred create proj_123 "OAuth2 Authentication" auth_plan.md
-```
-
-**Approve a Sacred Plan** (requires 2-layer verification)
-```bash
-# Get the plan ID from creation output, then:
-./scripts/rag_cli_v2.sh sacred approve plan_abc123
-# Enter verification code when prompted
-# Enter SACRED_APPROVAL_KEY from your .env
-```
-
-**Check for Drift**
-```bash
-./scripts/rag_cli_v2.sh sacred drift proj_123
-```
-
-### Using the Analytics Dashboard
-
-Open your browser to: `http://localhost:5556/analytics_dashboard_live.html`
-
-**Dashboard Features:**
-- **Real-time Metrics**: Project stats, query volume, sacred compliance
-- **Dark Mode**: Click the theme toggle (🌙/☀️)
-- **Export Reports**: Click Export → Choose PDF, PNG, or JSON
-- **Filter Projects**: Use the search bar or status dropdown
-- **Keyboard Shortcuts**:
-  - `Ctrl/Cmd + R`: Refresh data
-  - `Ctrl/Cmd + D`: Toggle dark mode
-  - `Ctrl/Cmd + E`: Open export menu
-
-## 📝 CLI Command Reference
-
-### Project Commands
-```bash
-# Create project
-./scripts/rag_cli_v2.sh projects create <name> <path>
-
-# List projects
-./scripts/rag_cli_v2.sh projects list
-
-# Focus project
-./scripts/rag_cli_v2.sh projects focus <project_id>
-
-# Show project details
-./scripts/rag_cli_v2.sh projects show <project_id>
-```
-
-### Query Commands
-```bash
-# Basic query
-./scripts/rag_cli_v2.sh ask "your question here"
-
-# Query with options
-./scripts/rag_cli_v2.sh ask "question" -k 10 --project proj_123
-
-# AI-enhanced query
-./scripts/rag_cli_v2.sh ask --llm "explain this concept"
-```
-
-### Sacred Layer Commands
-```bash
-# Create sacred plan
-./scripts/rag_cli_v2.sh sacred create <project_id> "Plan Title" plan.md
-
-# List sacred plans
-./scripts/rag_cli_v2.sh sacred list [project_id]
-
-# Approve plan
-./scripts/rag_cli_v2.sh sacred approve <plan_id>
-
-# Check drift
-./scripts/rag_cli_v2.sh sacred drift <project_id>
-
-# Query sacred plans
-./scripts/rag_cli_v2.sh sacred query "architecture question"
-```
-
-### Decision & Objective Commands
-```bash
-# Track decision
-./scripts/rag_cli_v2.sh decision "We chose PostgreSQL" "Better JSON support"
-
-# Add objective
-./scripts/rag_cli_v2.sh objective add "Implement user authentication"
-
-# List objectives
-./scripts/rag_cli_v2.sh objective list
-```
-
-## 🔌 API Quick Reference
-
-### Health Check
-```bash
-curl http://localhost:5556/health
-# Response: {"status":"healthy"}
-```
-
-### Projects
-```bash
-# List all projects
-curl http://localhost:5556/projects
-
-# Create project
-curl -X POST http://localhost:5556/projects \
-  -H "Content-Type: application/json" \
-  -d '{"name": "MyApp", "root_path": "/path/to/app"}'
-```
-
-### Queries
-```bash
-# Basic query
-curl -X POST http://localhost:5556/query \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Find the main function", "project_id": "proj_123"}'
-
-# AI-enhanced query
-curl -X POST http://localhost:5556/query_llm \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Explain the API structure", "project_id": "proj_123"}'
-```
-
-### Sacred Plans
-```bash
-# Query sacred plans
-curl -X POST http://localhost:5556/sacred/query \
-  -H "Content-Type: application/json" \
-  -d '{"query": "authentication plans", "project_id": "proj_123"}'
-
-# Get sacred metrics
-curl http://localhost:5556/analytics/sacred
-```
-
-## 🔧 Troubleshooting
-
-### Common Issues & Fixes
-
-**Server won't start**
-```bash
-# Check if port 5556 is in use
-lsof -i :5556
-# Kill the process if needed
-kill -9 <PID>
-```
-
-**"No module named 'google.genai'"**
-```bash
-# Ensure you're in the virtual environment
-source venv/bin/activate
-# Reinstall requirements
-pip install -r requirements.txt
-```
-
-**Sacred plan approval fails**
-- Check your `SACRED_APPROVAL_KEY` in `.env`
-- Ensure you're entering the correct verification code
-- Verification codes are case-sensitive
-
-**No results from queries**
-- Ensure you've ingested files: `./scripts/rag_cli_v2.sh ingest /your/project`
-- Check project is focused: `./scripts/rag_cli_v2.sh projects list`
-- Verify service is healthy: `curl http://localhost:5556/health`
-
-## 💡 Best Practices
-
-### Project Organisation
-- Use descriptive project names: `webapp-frontend`, not `proj1`
-- One project per repository/component
-- Focus the project you're actively working on
-
-### Sacred Plans
-- Keep plans concise and specific
-- Include clear constraints and boundaries
-- Update plans when architecture evolves (supersede, don't edit)
-- Review drift warnings promptly
-
-### Performance Tips
-- Ingest only necessary directories (exclude `build/`, `dist/`)
-- Use specific queries rather than broad ones
-- Clear old projects you're not using
-- Restart the service weekly for optimal performance
-
-### Query Tips
-- Be specific: "UserService authentication" > "auth"
-- Use code terminology: "class UserService" finds class definitions
-- Try AI queries for explanations: `--llm` flag
-- Increase results with `-k 20` for comprehensive searches
-
-## 📚 Next Steps & Getting Help
-
-### Explore Advanced Features
-- **MCP Integration**: Connect to Claude Code (see README.md)
-- **Git Integration**: Track commits and branches automatically
-- **Custom Embeddings**: Configure alternative embedding models
-
-### Getting Help
-- **Documentation**: Check `/docs` folder for detailed guides
-- **Troubleshooting**: See [TROUBLESHOOTING.md](../TROUBLESHOOTING.md)
-- **Issues**: Report bugs at [GitHub Issues](https://github.com/lostmind008/contextkeeper-v3/issues)
-- **Community**: Join discussions at [GitHub Discussions](https://github.com/lostmind008/contextkeeper-v3/discussions)
-
-### Quick Health Check
-```bash
-# Verify everything is working
-curl http://localhost:5556/health
-./scripts/rag_cli_v2.sh projects list
-./scripts/rag_cli_v2.sh ask "test query"
-```
+*   **Server won't start:** Check if port 5556 is already in use (`lsof -i :5556`).
+*   **No results from queries:** Ensure project indexing is complete. Check the project card on the dashboard for "Active" status.
+*   **Plan approval fails:** Double-check your `SACRED_APPROVAL_KEY` in the `.env` file and ensure you are entering the correct verification code.
 
 ---
 
 **Happy coding with ContextKeeper! 🚀**
-
-*Remember: ContextKeeper helps you maintain architectural context and prevent knowledge drift. Use sacred plans to protect your core architecture and let AI assistants work within your constraints.*
