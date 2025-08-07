@@ -37,7 +37,7 @@ vim .env
 
 You need to set these **required** variables:
 
-1. `GOOGLE_API_KEY` or `GEMINI_API_KEY` (or both - they can be the same value)
+1. `GEMINI_API_KEY`
 2. `SACRED_APPROVAL_KEY`
 
 ## Google AI API Key Setup
@@ -67,8 +67,6 @@ Go to: [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/
 Open your `.env` file and add:
 
 ```env
-# Use the same key for both variables
-GOOGLE_API_KEY=your-actual-api-key-here
 GEMINI_API_KEY=your-actual-api-key-here
 ```
 
@@ -94,7 +92,6 @@ Only use this if you need advanced Google Cloud features or have existing Google
 #### Step 3: Configure Environment
 
 ```env
-GOOGLE_API_KEY=your-google-cloud-api-key
 GEMINI_API_KEY=your-google-cloud-api-key
 
 # Optional: Google Cloud specific settings
@@ -178,7 +175,7 @@ CHROMADB_PERSIST_DIR=./custom_db_path
 source .env
 
 # Verify Google API key is set
-echo $GOOGLE_API_KEY
+echo $GEMINI_API_KEY
 
 # Verify Sacred key is set  
 echo $SACRED_APPROVAL_KEY
@@ -223,14 +220,14 @@ Expected response:
 
 **Solutions**:
 1. Verify `.env` file exists in the correct directory
-2. Check that variable names are correct (`GOOGLE_API_KEY` or `GEMINI_API_KEY`)
+2. Check that variable name is correct (`GEMINI_API_KEY`)
 3. Ensure no extra spaces around the `=` sign
 4. Verify the API key is valid (no extra characters, correct length)
 
 **Test your key**:
 ```bash
 # Should show your key (first few characters)
-head -c 20 <<< "$GOOGLE_API_KEY"
+head -c 20 <<< "$GEMINI_API_KEY"
 ```
 
 #### "Sacred approval key invalid" Error
@@ -356,7 +353,7 @@ For production deployments:
 1. **Use container secrets**
    ```dockerfile
    # In Docker
-   ENV GOOGLE_API_KEY_FILE=/run/secrets/google_api_key
+   ENV GEMINI_API_KEY_FILE=/run/secrets/gemini_api_key
    ENV SACRED_APPROVAL_KEY_FILE=/run/secrets/sacred_key
    ```
 

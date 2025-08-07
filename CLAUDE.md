@@ -79,7 +79,7 @@ pytest tests/ -v --tb=short
 
 ## Environment Variables
 ```bash
-GOOGLE_API_KEY=        # Required for Gemini API
+GEMINI_API_KEY=        # Required for Gemini API
 SACRED_APPROVAL_KEY=   # Required for approving Sacred Plans
 MCP_CACHE_TTL_SECONDS=300 # Optional: Cache duration for the MCP server
 ```

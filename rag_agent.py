@@ -487,11 +487,11 @@ class ProjectKnowledgeAgent:
         try:
             self.embedder = genai.Client(
                 http_options=HttpOptions(api_version="v1beta"),
-                api_key=os.environ.get("GOOGLE_API_KEY")
+                api_key=os.environ.get("GEMINI_API_KEY")
             )
             # Initialize content generation client for LLM responses
             self.client = genai.Client(
-                api_key=os.environ.get("GOOGLE_API_KEY")
+                api_key=os.environ.get("GEMINI_API_KEY")
             )
             # Create embedding function for ChromaDB
             self.embedding_function = GoogleGenAIEmbeddingFunction(
