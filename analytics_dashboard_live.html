@@ -784,15 +784,25 @@
             }
         }
 
-        function openViewPlanModal(planId) {
-            // In a real app, you would fetch plan content here
-            document.getElementById('viewPlanTitle').textContent = `Plan: ${planId}`;
-            document.getElementById('viewPlanContent').textContent = 'Loading plan content...';
-            document.getElementById('viewPlanModal').classList.remove('hidden');
-            // Mock fetching content
-            setTimeout(() => {
-                 document.getElementById('viewPlanContent').textContent = `Content for plan ${planId} would be displayed here. This requires a new endpoint to fetch plan content by ID.`;
-            }, 500);
+        async function openViewPlanModal(planId) {
+            const modal = document.getElementById('viewPlanModal');
+            const titleEl = document.getElementById('viewPlanTitle');
+            const contentEl = document.getElementById('viewPlanContent');
+
+            titleEl.textContent = `Plan: ${planId}`;
+            contentEl.innerHTML = '<p class="text-slate-300 animate-pulse">Loading plan content...</p>';
+            modal.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`${API_BASE}/sacred/plans/${planId}`);
+                if (!response.ok) throw new Error(`Failed to load plan (${response.status})`);
+                const plan = await response.json();
+                titleEl.textContent = plan.title || `Plan: ${planId}`;
+                contentEl.textContent = plan.content || 'No content available.';
+            } catch (error) {
+                console.error('Error loading plan:', error);
+                contentEl.innerHTML = `<p class="text-red-400 text-center">Error loading plan: ${error.message}</p>`;
+            }
         }
         function closeViewPlanModal() { document.getElementById('viewPlanModal').classList.add('hidden'); }
 

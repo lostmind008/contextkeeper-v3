@@ -1441,6 +1441,30 @@ class RAGServer:
                 logger.error(f"Error listing sacred plans: {str(e)}")
                 return jsonify({'error': str(e)}), 500
 
+        @self.app.route('/sacred/plans/<plan_id>', methods=['GET'])
+        def get_sacred_plan(plan_id):
+            """Retrieve full sacred plan content"""
+            try:
+                sacred_manager = self.agent.sacred_integration.sacred_manager
+
+                if plan_id not in sacred_manager.plans_registry:
+                    return jsonify({'error': 'Plan not found'}), 404
+
+                plan = sacred_manager.plans_registry[plan_id]
+                return jsonify({
+                    'plan_id': plan.plan_id,
+                    'project_id': plan.project_id,
+                    'title': plan.title,
+                    'content': plan.content,
+                    'status': plan.status.value,
+                    'created_at': plan.created_at,
+                    'approved_at': plan.approved_at,
+                    'approved_by': plan.approved_by
+                })
+            except Exception as e:
+                logger.error(f"Error getting sacred plan: {str(e)}")
+                return jsonify({'error': str(e)}), 500
+
         @self.app.route('/sacred/plans/<plan_id>/approve', methods=['POST'])
         def approve_sacred_plan(plan_id):
             data = request.json
