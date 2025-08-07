@@ -6,4 +6,4 @@ Provides comprehensive metrics and analytics for sacred plan governance
 from .sacred_metrics import SacredMetricsCalculator
 from .analytics_service import AnalyticsService
 
-__all__ = ['SacredMetricsCalculator', 'AnalyticsService']
+__all__ = ["SacredMetricsCalculator", "AnalyticsService"]

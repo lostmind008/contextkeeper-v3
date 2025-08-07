@@ -41,4 +41,4 @@ Contains modules for tracking development activities, git commits, and real-time
 ## Navigation
 - Parent: /Users/sumitm1/contextkeeper-pro-v3/contextkeeper/src/
 - Event Storage: ../core/project_manager.py
-- Analytics: ../analytics/analytics_integration.py
+  - Analytics: ../ck_analytics/analytics_integration.py

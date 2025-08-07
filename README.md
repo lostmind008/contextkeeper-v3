@@ -74,9 +74,9 @@ The v3 architecture is designed for scalability and real-time interaction.
 └─────────────────┘      └──────┬───────┘      └─────────┬────────┘
                                 │                       │
                                 ▼                       ▼
-┌─────────────────────────────┐  ┌──────────────────┐  ┌───────────────────┐
-│ src/core/project_manager.py ├──┤  src/sacred/...  ├──┤ src/analytics/... │
-└─────────────────────────────┘  └──────────────────┘  └───────────────────┘
+┌─────────────────────────────┐  ┌──────────────────┐  ┌──────────────────────┐
+│ src/core/project_manager.py ├──┤  src/sacred/...  ├──┤ src/ck_analytics/... │
+└─────────────────────────────┘  └──────────────────┘  └──────────────────────┘
               │                       │                       │
               └───────────────┐       │       ┌───────────────┘
                               ▼       ▼       ▼
@@ -85,7 +85,7 @@ The v3 architecture is designed for scalability and real-time interaction.
                        └───────────────────────────┘
 ```
 - **Real-Time Layer**: The dashboard communicates with the backend via WebSockets, allowing for instant UI updates.
-- **Analytics Service**: A new, dedicated service (`src/analytics/`) calculates and serves governance and project metrics.
+- **Analytics Service**: A new, dedicated service (`src/ck_analytics/`) calculates and serves governance and project metrics.
 - **Modular `src` Layout**: The codebase is now organized into a `src` directory for better maintainability.
 
 ## 📂 Project Structure
@@ -94,7 +94,7 @@ The project structure has been refactored for clarity.
 ```
 contextkeeper-v3/
 ├── src/
-│   ├── analytics/
+│   ├── ck_analytics/
 │   ├── core/
 │   ├── sacred/
 │   └── tracking/
