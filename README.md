@@ -39,11 +39,11 @@ pip install -r requirements.txt
 ```bash
 # Copy the template and edit the new .env file
 cp .env.template .env
-# Add your Google API key and define a SACRED_APPROVAL_KEY (required)
+# Add your Google API key and define a SACRED_APPROVAL_KEY (required; no default)
 ```
 
-The `SACRED_APPROVAL_KEY` environment variable must be set in your shell or `.env` file.
-Plan approval will fail if this key is missing.
+The `SACRED_APPROVAL_KEY` environment variable must be set in your shell or `.env` file. There is no default value and
+ContextKeeper will raise an error if this key is missing.
 
 ### 3. Start ContextKeeper
 ```bash
