@@ -183,7 +183,6 @@ complete_fix.py
 .gemini-clipboard/
 PERPLEXITY_RESEARCH_PACKAGE/
 image/
-src/
 *.pdf
 *_REPORT.md
 *_PROPOSAL.md
