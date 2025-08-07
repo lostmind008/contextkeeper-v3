@@ -70,6 +70,7 @@ from typing import List, Dict, Optional, Any
 import hashlib
 import argparse
 import uuid
+import concurrent.futures
 
 # Core dependencies
 import chromadb
@@ -983,8 +984,6 @@ class CodebaseWatcher(FileSystemEventHandler):
     def __init__(self, agent: ProjectKnowledgeAgent):
         self.agent = agent
         self.update_queue = asyncio.Queue()
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
     
     def on_modified(self, event):
         if event.is_directory:
@@ -996,7 +995,7 @@ class CodebaseWatcher(FileSystemEventHandler):
         
         if any(event.src_path.endswith(ext) for ext in self.agent.config['default_file_extensions']):
             logger.info(f"File modified: {event.src_path}")
-            self.loop.run_until_complete(self.agent.ingest_file(event.src_path))
+            asyncio.run(self.agent.ingest_file(event.src_path))
     
     def on_created(self, event):
         self.on_modified(event)
@@ -1011,6 +1010,7 @@ class RAGServer:
         self.port = port
         self.tasks = {}
         self.socketio = SocketIO(self.app, cors_allowed_origins="*")
+        self.executor = concurrent.futures.ThreadPoolExecutor()
         self._setup_routes()
         add_sacred_drift_endpoint(
             self.app,
@@ -1018,23 +1018,10 @@ class RAGServer:
             self.agent.project_manager,
             self.agent.sacred_integration.sacred_manager
         )
-    
+
     def _run_async(self, coro):
-        """Helper method to run async functions in sync Flask routes"""
-        import concurrent.futures
-        import threading
-        
-        def run_in_thread():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                return loop.run_until_complete(coro)
-            finally:
-                loop.close()
-        
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(run_in_thread)
-            return future.result()
+        """Execute coroutine using shared thread executor"""
+        return self.executor.submit(asyncio.run, coro).result()
     
     def _setup_routes(self):
         @self.app.route('/health', methods=['GET'])
