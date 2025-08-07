@@ -1,7 +1,7 @@
 import pytest
 import asyncio
 from rag_agent import ProjectKnowledgeAgent, RAGServer
-from project_manager import ProjectManager
+from src.core.project_manager import ProjectManager
 import os
 import json
 from unittest.mock import MagicMock, patch
