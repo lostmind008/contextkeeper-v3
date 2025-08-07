@@ -24,6 +24,11 @@
 
 set -e
 
+if [ -z "$SACRED_APPROVAL_KEY" ]; then
+    echo "Error: SACRED_APPROVAL_KEY environment variable is required"
+    exit 1
+fi
+
 RAG_AGENT_URL="http://localhost:5556"
 
 function usage() {

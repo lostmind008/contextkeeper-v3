@@ -28,8 +28,14 @@ if [ ! -f ".env" ]; then
     echo "Please edit .env with your Google Cloud credentials:"
     echo "  1. Set GOOGLE_CLOUD_PROJECT to your project ID"
     echo "  2. Set GOOGLE_APPLICATION_CREDENTIALS to your service account JSON path"
+    echo "  3. Set SACRED_APPROVAL_KEY to your secret approval key (required)"
     echo ""
     read -p "Press Enter to continue after editing .env..."
+fi
+
+# Warn if SACRED_APPROVAL_KEY is missing
+if [ -z "$SACRED_APPROVAL_KEY" ] && ! grep -q "SACRED_APPROVAL_KEY" .env 2>/dev/null; then
+    echo "⚠️  SACRED_APPROVAL_KEY is not set. Define it in your environment or .env before approving plans."
 fi
 
 # Make CLI executable
