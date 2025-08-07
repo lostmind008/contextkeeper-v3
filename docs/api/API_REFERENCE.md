@@ -1,183 +1,160 @@
 # API Reference
 
 **Base URL**: `http://localhost:5556`  
-**Status**: ✅ All endpoints operational and tested (July 2025)  
-**Version**: v3.0 Sacred Layer
+**Status**: ✅ All endpoints operational (August 2025)
+**Version**: 3.1.0
 
-## Core Endpoints
+## 1. Core Endpoints
 
 ### Project Management
 ```http
-GET    /projects              # List all projects
-POST   /projects              # Create new project
-PUT    /projects/<id>/focus    # Set active project
-PUT    /projects/<id>/pause    # Pause project
-PUT    /projects/<id>/resume   # Resume project
-PUT    /projects/<id>/archive  # Archive project
+# Unified project creation and indexing (asynchronous)
+POST   /projects/create-and-index
+# Body: { "name": "...", "root_path": "..." }
+# Returns 202 Accepted: { "task_id": "...", "project_id": "..." }
+
+# Check status of a background task (like indexing)
+GET    /tasks/<task_id>
+# Returns: { "status": "indexing", "progress": 25 }
+
+# List all projects
+GET    /projects
+
+# Set active project (emits 'focus_changed' WebSocket event)
+POST   /projects/<project_id>/focus
 ```
 
 ### Knowledge & Context
 ```http
-POST   /query                 # Query knowledge base (raw results)
-POST   /query_llm             # Query with natural language responses
-POST   /decisions             # Add decision
-POST   /objectives            # Add objective  
-POST   /context/export        # Export context for AI agents
-GET    /briefing              # Get project status
+# Global search across projects, plans, and decisions
+GET    /search?q=<query>
+
+# Query knowledge base with LLM enhancement
+POST   /query_llm
+# Body: { "question": "...", "project_id": "..." }
+
+# Add an architectural decision
+POST   /decision
+# Body: { "decision": "...", "reasoning": "...", "project_id": "..." }
 ```
 
-## Sacred Layer Endpoints
+## 2. Sacred Layer & Governance
 
 ### Sacred Plan Management
 ```http
-POST   /sacred/plans          # Create sacred plan
-POST   /sacred/plans/<id>/approve  # Approve plan (2-layer verification)
-GET    /sacred/plans          # List sacred plans
-POST   /sacred/query          # Query sacred plans
-GET    /sacred/drift/<project_id>  # Check drift status
+# Create a new sacred plan
+POST   /sacred/plans
+# Body: { "project_id": "...", "title": "...", "file_path": "..." }
+
+# Approve a sacred plan (2-layer verification)
+POST   /sacred/plans/<plan_id>/approve
+# Body: { "approver": "...", "verification_code": "...", "secondary_verification": "..." }
+
+# List sacred plans for a project
+GET    /sacred/plans?project_id=<project_id>
+
+# Query sacred plans
+POST   /sacred/query
+# Body: { "query": "...", "project_id": "..." }
+
+# Check for architectural drift
+GET    /sacred/drift/<project_id>
 ```
 
-### Git Integration
+### Analytics
 ```http
-GET    /projects/<id>/git/activity  # Get Git activity
-POST   /projects/<id>/git/sync      # Sync from Git
+# Get detailed governance and sacred metrics
+GET    /analytics/sacred
 ```
 
-### Health & Status
+## 3. Real-Time Events (WebSockets)
+
+Connect to the Socket.IO server at the base URL. The server emits the following events:
+
+### `indexing_progress`
+Fired periodically during project indexing.
+- **Payload**: `{ "project_id": string, "progress": int }`
+- **Example**: `{ "project_id": "proj_123", "progress": 45 }`
+
+### `indexing_complete`
+Fired when a project has been successfully indexed.
+- **Payload**: `{ "project_id": string }`
+- **Example**: `{ "project_id": "proj_123" }`
+
+### `indexing_failed`
+Fired if an error occurs during indexing.
+- **Payload**: `{ "project_id": string, "error": string }`
+- **Example**: `{ "project_id": "proj_123", "error": "Permission denied" }`
+
+### `focus_changed`
+Fired when a project's focus is changed via the API.
+- **Payload**: `{ "project_id": string }`
+- **Example**: `{ "project_id": "proj_456" }`
+
+
+## 4. Health & Status
 ```http
-GET    /health                      # System health check
-GET    /sacred/health               # Sacred layer health
+# System health check
+GET    /health
 ```
 
-## Request/Response Examples
+## 5. Request/Response Examples
 
-### Create Sacred Plan
+### Create & Index a Project
 ```bash
-curl -X POST http://localhost:5556/sacred/plans \
+curl -X POST http://localhost:5556/projects/create-and-index \
   -H "Content-Type: application/json" \
-  -d '{
-    "project_id": "proj_123",
-    "title": "Authentication Architecture", 
-    "file_path": "/path/to/plan.md"
-  }'
+  -d '{"name": "WebApp", "root_path": "/path/to/webapp"}'
+```
+**Response (202 Accepted)**:
+```json
+{
+  "task_id": "task_abc123",
+  "project_id": "proj_xyz789"
+}
 ```
 
-### Approve Sacred Plan (2-Layer Verification)
+### Check Task Status
 ```bash
-curl -X POST http://localhost:5556/sacred/plans/plan_abc123/approve \
-  -H "Content-Type: application/json" \
-  -d '{
-    "approver": "sumitm1",
-    "verification_code": "abc12345-20250724",
-    "secondary_verification": "your-secret-key"
-  }'
+curl http://localhost:5556/tasks/task_abc123
 ```
-
-### Check Drift Status
-```bash
-curl "http://localhost:5556/sacred/drift/proj_123?hours=24"
-```
-
-### Query with LLM Enhancement
-```bash
-curl -X POST http://localhost:5556/query_llm \
-  -H "Content-Type: application/json" \
-  -d '{
-    "question": "What is the sacred layer?",
-    "k": 5,
-    "project_id": "optional_project_id"
-  }'
-```
-
 **Response**:
 ```json
 {
-  "question": "What is the sacred layer?",
-  "answer": "The Sacred Layer is a system designed to ensure that approved plans cannot be modified...",
-  "sources": ["/path/to/source1.py", "/path/to/source2.py"],
-  "context_used": 5,
-  "timestamp": "2025-07-24T16:30:17.357805"
+  "status": "indexing",
+  "progress": 75
 }
 ```
 
-### Compare Raw vs Enhanced Query
+### Global Search
 ```bash
-# Raw query (returns JSON chunks)
-curl -X POST http://localhost:5556/query \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What is the sacred layer?", "k": 5}'
-
-# Enhanced query (returns natural language)
-curl -X POST http://localhost:5556/query_llm \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What is the sacred layer?", "k": 5}'
+curl "http://localhost:5556/search?q=auth"
 ```
-
-## MCP Server Integration (Phase 3)
-
-### MCP Tools Available
-The ContextKeeper MCP server provides 8 sacred-aware tools for Claude Code integration:
-
-1. **get_sacred_context** - Retrieve sacred architectural plans
-2. **check_sacred_drift** - Real-time violation detection
-3. **query_with_llm** - Natural language responses from knowledge base
-4. **export_development_context** - Complete project context
-5. **get_development_context** - Comprehensive project status
-6. **intelligent_search** - Semantic search across plans and code
-7. **create_sacred_plan** - Sacred plan creation workflow
-8. **health_check** - System status verification
-
-### MCP Server Configuration
-**Location**: `mcp-server/enhanced_mcp_server.js`  
-**Protocol**: STDIO for Claude Code compatibility  
-**Port**: Connected to Sacred Layer on port 5556  
-
-### Claude Code Integration Configuration
-Add this to your Claude Code MCP configuration:
+**Response**:
 ```json
-"contextkeeper-sacred": {
-  "type": "stdio",
-  "command": "node",
-  "args": [
-    "/Users/sumitm1/Documents/myproject/Ongoing Projects/ContextKeeper Pro/ContextKeeper v3 Upgrade/contextkeeper/mcp-server/enhanced_mcp_server.js"
-  ],
-  "env": {
-    "RAG_AGENT_URL": "http://localhost:5556"
-  }
+{
+  "projects": [{ "id": "proj_1", "name": "Authentication Service" }],
+  "plans": [{ "plan_id": "plan_2", "title": "OAuth2 Authentication Plan" }],
+  "decisions": []
 }
 ```
 
-### MCP Tool Usage Examples
-
-#### Get Sacred Context
-```json
-{
-  "tool": "get_sacred_context",
-  "arguments": {
-    "project_id": "proj_123",
-    "query": "authentication architecture"
-  }
-}
+### Get Sacred Analytics
+```bash
+curl http://localhost:5556/analytics/sacred
 ```
-
-#### Check Sacred Drift
+**Response**:
 ```json
 {
-  "tool": "check_sacred_drift", 
-  "arguments": {
-    "project_id": "proj_123"
-  }
-}
-```
-
-#### Create Sacred Plan
-```json
-{
-  "tool": "create_sacred_plan",
-  "arguments": {
-    "project_id": "proj_123",
-    "title": "Database Schema",
-    "content": "# Database Architecture\n\nApproved schema design..."
-  }
+  "overall_metrics": {
+    "total_plans": 10,
+    "compliance_rate": 80.0
+  },
+  "project_metrics": [
+    {
+      "project_name": "WebApp",
+      "adherence_score": 95.5
+    }
+  ]
 }
 ```

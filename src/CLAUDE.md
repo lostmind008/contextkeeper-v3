@@ -8,7 +8,7 @@ Contains all Python source code organized by functional domain following governa
 ## Directory Structure
 ```
 src/
-├── core/           # Core system components (rag_agent, project_manager)
+├── core/           # Core system components (project_manager)
 ├── sacred/         # Sacred layer implementation and drift detection
 ├── analytics/      # Analytics integration and dashboards
 ├── tracking/       # Event and git activity tracking

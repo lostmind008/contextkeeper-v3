@@ -21,6 +21,7 @@ import path from 'path';
 
 const execAsync = promisify(exec);
 
+const CACHE_TTL_SECONDS = parseInt(process.env.MCP_CACHE_TTL_SECONDS, 10) || 300;
 const RAG_AGENT_BASE_URL = process.env.RAG_AGENT_URL || 'http://localhost:5556';
 
 class EnhancedContextKeeperMCP {
@@ -308,7 +309,7 @@ class EnhancedContextKeeperMCP {
         const cacheKey = `${name}-${JSON.stringify(args)}`;
         if (this.shouldCache(name) && this.cache.has(cacheKey)) {
           const cached = this.cache.get(cacheKey);
-          if (Date.now() - cached.timestamp < this.cacheTimeout) {
+          if (Date.now() - cached.timestamp < CACHE_TTL_SECONDS * 1000) {
             return cached.result;
           }
         }
