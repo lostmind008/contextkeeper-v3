@@ -394,7 +394,9 @@ class SacredLayerManager:
         # - Custom business logic
         
         # For demo, check against environment variable
-        expected = os.environ.get('SACRED_APPROVAL_KEY', 'default-key')
+        expected = os.environ.get('SACRED_APPROVAL_KEY')
+        if not expected:
+            raise RuntimeError("SACRED_APPROVAL_KEY environment variable is required")
         return verification == expected
     def get_plan_status(self, plan_id: str) -> Optional[Dict[str, Any]]:
         """Get status and metadata for a plan"""

@@ -6,8 +6,9 @@ Calculates comprehensive metrics for sacred plan analytics dashboard
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
-from sacred_layer_implementation import SacredLayerManager, PlanStatus
-from enhanced_drift_sacred import SacredDriftDetector
+
+from src.sacred.sacred_layer_implementation import SacredLayerManager, PlanStatus
+from src.sacred.enhanced_drift_sacred import SacredDriftDetector
 
 logger = logging.getLogger(__name__)
 

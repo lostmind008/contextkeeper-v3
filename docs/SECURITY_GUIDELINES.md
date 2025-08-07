@@ -25,7 +25,6 @@ Comprehensive security best practices for deploying and managing ContextKeeper v
 # Visit: https://aistudio.google.com/app/apikey
 
 # Store keys securely - never in code
-GOOGLE_API_KEY=your-secure-api-key-here
 GEMINI_API_KEY=your-secure-api-key-here
 ```
 
@@ -50,12 +49,12 @@ git add .env  # DANGEROUS - ensure .env is in .gitignore
 NEW_KEY="your-new-api-key"
 
 # 2. Test new key before deployment
-export GOOGLE_API_KEY_NEW=$NEW_KEY
+export GEMINI_API_KEY_NEW=$NEW_KEY
 python3 -c "import genai; genai.configure(api_key='$NEW_KEY'); print('New key works')"
 
 # 3. Update production environment (with rollback plan)
 cp .env .env.backup.$(date +%Y%m%d)
-sed -i "s/GOOGLE_API_KEY=.*/GOOGLE_API_KEY=$NEW_KEY/" .env
+sed -i "s/GEMINI_API_KEY=.*/GEMINI_API_KEY=$NEW_KEY/" .env
 
 # 4. Restart services
 systemctl restart contextkeeper
@@ -159,22 +158,22 @@ services:
     image: contextkeeper:v3
     secrets:
       - sacred_key
-      - google_api_key
+      - gemini_api_key
     environment:
       - SACRED_APPROVAL_KEY_FILE=/run/secrets/sacred_key
-      - GOOGLE_API_KEY_FILE=/run/secrets/google_api_key
+      - GEMINI_API_KEY_FILE=/run/secrets/gemini_api_key
 
 secrets:
   sacred_key:
     external: true
-  google_api_key:
+  gemini_api_key:
     external: true
 ```
 
 ```bash
 # Create Docker secrets
 echo "your-sacred-key" | docker secret create sacred_key -
-echo "your-api-key" | docker secret create google_api_key -
+echo "your-api-key" | docker secret create gemini_api_key -
 ```
 
 ### 3. Sacred Layer Validation
@@ -246,7 +245,7 @@ import os
 
 class Config:
     """Base configuration class."""
-    GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY')
+    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
     SACRED_APPROVAL_KEY = os.environ.get('SACRED_APPROVAL_KEY')
     
 class DevelopmentConfig(Config):
@@ -304,15 +303,15 @@ class EnvironmentValidator:
     """Validate environment configuration for security compliance."""
     
     REQUIRED_VARS = [
-        'GOOGLE_API_KEY',
+        'GEMINI_API_KEY',
         'SACRED_APPROVAL_KEY'
     ]
     
     SECURITY_CHECKS = {
-        'GOOGLE_API_KEY': {
+        'GEMINI_API_KEY': {
             'min_length': 30,
             'pattern': r'^AIza[0-9A-Za-z_-]{35}$',  # Google API key format
-            'description': 'Google AI API key format'
+            'description': 'Gemini API key format'
         },
         'SACRED_APPROVAL_KEY': {
             'min_length': 32,
@@ -753,11 +752,11 @@ services:
     
     # Secrets management
     secrets:
-      - google_api_key
+      - gemini_api_key
       - sacred_approval_key
-    
+
     environment:
-      - GOOGLE_API_KEY_FILE=/run/secrets/google_api_key
+      - GEMINI_API_KEY_FILE=/run/secrets/gemini_api_key
       - SACRED_APPROVAL_KEY_FILE=/run/secrets/sacred_approval_key
     
     # Volume security
@@ -785,7 +784,7 @@ volumes:
     driver: local
 
 secrets:
-  google_api_key:
+  gemini_api_key:
     external: true
   sacred_approval_key:
     external: true
@@ -842,11 +841,11 @@ spec:
         
         # Environment from secrets
         env:
-        - name: GOOGLE_API_KEY
+        - name: GEMINI_API_KEY
           valueFrom:
             secretKeyRef:
               name: contextkeeper-secrets
-              key: google-api-key
+              key: gemini-api-key
         - name: SACRED_APPROVAL_KEY
           valueFrom:
             secretKeyRef:

@@ -50,7 +50,7 @@ const ChatInterface = () => {
 
     setMessages(prev => [...prev, newMessage]);
     setInputValue('');
-    
+
     // Simulate assistant typing
     setIsTyping(true);
     setTimeout(() => {
@@ -105,7 +105,7 @@ const ChatInterface = () => {
   return (
     <>
       {/* Chat Panel */}
-      <div 
+      <div
         className={`fixed top-0 right-0 h-full bg-slate-900/50 backdrop-blur-md border-l border-slate-800 transition-all duration-300 ease-in-out z-50 ${
           isExpanded ? 'w-[400px]' : 'w-0'
         } overflow-hidden`}
@@ -150,7 +150,7 @@ const ChatInterface = () => {
                 }`}
               >
                 <p className="text-sm leading-relaxed">{message.content}</p>
-                <p 
+                <p
                   className={`text-xs mt-1 ${
                     message.type === 'user' ? 'text-violet-200' : 'text-slate-400'
                   }`}
@@ -160,7 +160,7 @@ const ChatInterface = () => {
               </div>
             </div>
           ))}
-          
+
           {isTyping && (
             <div className="flex justify-start">
               <div className="bg-slate-800 border border-slate-700 rounded-lg mr-8">
@@ -168,7 +168,7 @@ const ChatInterface = () => {
               </div>
             </div>
           )}
-          
+
           <div ref={messagesEndRef} />
         </div>
 
@@ -231,7 +231,7 @@ const ChatInterface = () => {
 
       {/* Mobile Backdrop */}
       {isExpanded && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
           onClick={() => setIsExpanded(false)}
           aria-hidden="true"
@@ -247,27 +247,27 @@ const ChatInterface = () => {
         .animate-pulse {
           animation: pulse 1.5s ease-in-out infinite;
         }
-        
+
         /* Mobile responsiveness */
         @media (max-width: 768px) {
           .fixed.right-0.w-\\[400px\\] {
             width: 100vw !important;
           }
         }
-        
+
         /* Smooth transitions */
         .transition-all {
           transition-property: all;
           transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
+
         /* Focus indicators for accessibility */
         button:focus,
         textarea:focus {
           outline: 2px solid rgba(139, 92, 246, 0.5);
           outline-offset: 2px;
         }
-        
+
         /* Scrollbar styling for messages area */
         .overflow-y-auto::-webkit-scrollbar {
           width: 6px;
@@ -286,37 +286,4 @@ const ChatInterface = () => {
     </>
   );
 };
-
-// Demo Component showing the chat interface in action
-const ChatInterfaceDemo = () => {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden font-inter">
-      {/* Demo Dashboard Background */}
-      <div className="absolute inset-0">
-        <div className="absolute top-20 left-20 w-96 h-64 bg-violet-500/10 rounded-3xl backdrop-blur-3xl border border-violet-500/20"></div>
-        <div className="absolute bottom-20 right-40 w-80 h-48 bg-purple-500/10 rounded-3xl backdrop-blur-3xl border border-purple-500/20"></div>
-      </div>
-      
-      {/* Demo Content */}
-      <div className="relative z-10 p-8">
-        <h1 className="text-3xl font-bold text-white mb-4">ContextKeeper Dashboard</h1>
-        <p className="text-slate-300 mb-8">Click the chat button in the bottom-right corner to open the assistant.</p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Demo cards */}
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="bg-slate-900/50 backdrop-blur-md border border-slate-800 rounded-xl p-6 hover:shadow-2xl hover:shadow-violet-500/10 transition-all">
-              <h3 className="text-white font-medium mb-2">Project {i}</h3>
-              <p className="text-slate-400 text-sm">Sample project card content to demonstrate the dashboard layout with the chat interface.</p>
-            </div>
-          ))}
-        </div>
-      </div>
-      
-      {/* Chat Interface Component */}
-      <ChatInterface />
-    </div>
-  );
-};
-
-export default ChatInterfaceDemo;
+export default ChatInterface;

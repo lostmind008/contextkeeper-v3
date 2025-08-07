@@ -35,9 +35,12 @@ Adds sacred metrics endpoints to the Flask application
 """
 
 import logging
+import asyncio
 from flask import request, jsonify
-from analytics import SacredMetricsCalculator, AnalyticsService
-from enhanced_drift_sacred import SacredDriftDetector
+
+from src.analytics.sacred_metrics import SacredMetricsCalculator
+from src.analytics.analytics_service import AnalyticsService
+from src.sacred.enhanced_drift_sacred import SacredDriftDetector
 
 logger = logging.getLogger(__name__)
 
@@ -73,19 +76,13 @@ def add_analytics_endpoints(app, agent):
             analytics_service = AnalyticsService(metrics_calculator)
             
             # Run async analytics calculation
-            import asyncio
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                result = loop.run_until_complete(
-                    analytics_service.get_sacred_analytics(
-                        timeframe=timeframe,
-                        project_filter=project_filter,
-                        include_history=include_history
-                    )
+            result = asyncio.run(
+                analytics_service.get_sacred_analytics(
+                    timeframe=timeframe,
+                    project_filter=project_filter,
+                    include_history=include_history,
                 )
-            finally:
-                loop.close()
+            )
             
             return jsonify(result)
         except Exception as e:
@@ -110,15 +107,9 @@ def add_analytics_endpoints(app, agent):
             analytics_service = AnalyticsService(metrics_calculator)
             
             # Run async health check
-            import asyncio
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                result = loop.run_until_complete(
-                    analytics_service.get_sacred_health_check()
-                )
-            finally:
-                loop.close()
+            result = asyncio.run(
+                analytics_service.get_sacred_health_check()
+            )
                 
             return jsonify(result)
         except Exception as e:
@@ -145,18 +136,12 @@ def add_analytics_endpoints(app, agent):
             analytics_service = AnalyticsService(metrics_calculator)
             
             # Run async project analytics
-            import asyncio
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                result = loop.run_until_complete(
-                    analytics_service.get_project_detailed_analytics(
-                        project_id=project_id,
-                        timeframe=timeframe
-                    )
+            result = asyncio.run(
+                analytics_service.get_project_detailed_analytics(
+                    project_id=project_id,
+                    timeframe=timeframe,
                 )
-            finally:
-                loop.close()
+            )
             
             return jsonify(result)
         except Exception as e:
@@ -190,25 +175,24 @@ def add_analytics_endpoints(app, agent):
             return jsonify({'error': f'Failed to clear cache: {str(e)}'}), 500
 
     logger.info("Sacred analytics endpoints added successfully")
-    
+
+
 def integrate_analytics_with_rag_agent():
-    """
-    Helper function to automatically integrate analytics with rag_agent.py
-    This can be called from rag_agent.py to add the endpoints
-    """
+    """Helper to attach analytics endpoints to rag_agent.py"""
+
     def decorator(rag_agent_class):
         original_setup_routes = rag_agent_class._setup_routes
-        
+
         def enhanced_setup_routes(self):
             # Call original setup_routes
             original_setup_routes(self)
-            
+
             # Add analytics endpoints
             add_analytics_endpoints(self.app, self.agent)
-            
+
             logger.info("Analytics endpoints integrated with RAG agent")
-        
+
         rag_agent_class._setup_routes = enhanced_setup_routes
         return rag_agent_class
-    
+
     return decorator

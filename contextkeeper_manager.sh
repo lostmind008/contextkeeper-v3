@@ -233,7 +233,13 @@ main() {
         exit 1
     fi
     print_success "Dependencies OK"
-    
+
+    # Ensure sacred approval key is set
+    if [ -z "$SACRED_APPROVAL_KEY" ]; then
+        print_error "SACRED_APPROVAL_KEY environment variable is required"
+        exit 1
+    fi
+
     # Check/start server
     if check_server; then
         print_success "Server is already running"
