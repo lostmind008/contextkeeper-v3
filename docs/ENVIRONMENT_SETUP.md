@@ -40,6 +40,8 @@ You need to set these **required** variables:
 1. `GEMINI_API_KEY`
 2. `SACRED_APPROVAL_KEY`
 
+> **Note:** There is no default value for `SACRED_APPROVAL_KEY`. ContextKeeper will raise an error if this key is not set.
+
 ## Google AI API Key Setup
 
 ### Option 1: Google AI Studio (Recommended)
@@ -131,6 +133,8 @@ Add to your `.env` file:
 SACRED_APPROVAL_KEY=your-64-character-hex-string-here
 ```
 
+This key is mandatory for plan approval; operations will fail if it is absent.
+
 **Example:**
 ```env
 SACRED_APPROVAL_KEY=a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456
@@ -146,7 +150,7 @@ Most users can skip this section. These settings have sensible defaults.
 # RAG Agent Service URL (default: http://localhost:5556)
 RAG_AGENT_URL=http://localhost:5556
 
-# Server Configuration (defaults usually work)  
+# Server Configuration (defaults usually work)
 CONTEXTKEEPER_HOST=127.0.0.1
 CONTEXTKEEPER_PORT=5556
 ```
@@ -177,7 +181,7 @@ source .env
 # Verify Google API key is set
 echo $GEMINI_API_KEY
 
-# Verify Sacred key is set  
+# Verify Sacred key is set
 echo $SACRED_APPROVAL_KEY
 ```
 
