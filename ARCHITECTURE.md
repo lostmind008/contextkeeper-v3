@@ -6,9 +6,9 @@ Design for comprehensive sacred plan analytics endpoint to support the analytics
 ## Database Schema Enhancement
 
 The system utilises existing data structures from:
-- `sacred_layer_implementation.py`: Plans registry and ChromaDB collections
-- `enhanced_drift_sacred.py`: Drift analysis data
-- `git_activity_tracker.py`: Git activity metrics
+- `src/sacred/sacred_layer_implementation.py`: Plans registry and ChromaDB collections
+- `src/sacred/enhanced_drift_sacred.py`: Drift analysis data
+- `src/tracking/git_activity_tracker.py`: Git activity metrics
 
 ### Sacred Plans Registry Structure (Existing)
 ```python
@@ -146,8 +146,8 @@ The system utilises existing data structures from:
 ```
 /Users/sumitm1/contextkeeper-pro-v3/contextkeeper/
 ├── rag_agent.py                     # Add new /analytics/sacred endpoint
-├── sacred_layer_implementation.py   # Add metrics calculation methods
-├── enhanced_drift_sacred.py         # Add aggregated drift metrics
+├── src/sacred/sacred_layer_implementation.py   # Add metrics calculation methods
+├── src/sacred/enhanced_drift_sacred.py         # Add aggregated drift metrics
 ├── analytics/                       # New directory
 │   ├── __init__.py
 │   ├── sacred_metrics.py           # Core metrics calculation logic

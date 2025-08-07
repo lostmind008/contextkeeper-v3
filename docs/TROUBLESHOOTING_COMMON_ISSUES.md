@@ -9,10 +9,10 @@
 **Solution**:
 ```bash
 # Follow this exact sequence:
-1. Create project: ./scripts/rag_cli_v2.sh projects create "name" /path
-2. Focus project: ./scripts/rag_cli_v2.sh projects focus <project_id>
+1. Create project: python contextkeeper_cli.py projects create "name" /path
+2. Focus project: python contextkeeper_cli.py projects focus <project_id>
 3. Index files: python rag_agent.py ingest --path /path
-4. Query: ./scripts/rag_cli_v2.sh ask "your question"
+4. Query: python contextkeeper_cli.py ask "your question"
 ```
 
 ### 2. No Results from Queries
@@ -35,7 +35,7 @@ python rag_agent.py ingest --path /path/to/project
 **Problem**: Commands don't work or show outdated help.
 
 **Solution**:
-- Use `rag_cli_v2.sh` NOT `rag_cli.sh`
+- Use `contextkeeper_cli.py` NOT `rag_cli.sh`
 - The v2 CLI has project management commands
 - Update scripts: `chmod +x scripts/*.sh`
 
@@ -88,7 +88,7 @@ Run these commands to diagnose issues:
 curl http://localhost:5556/health
 
 # 2. List projects
-./scripts/rag_cli_v2.sh projects list
+python contextkeeper_cli.py projects list
 
 # 3. Check focused project
 curl http://localhost:5556/projects | jq '.focused_project'

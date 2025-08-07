@@ -25,7 +25,7 @@ import sys
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from sacred_layer_implementation import (
+from src.sacred.sacred_layer_implementation import (
     SacredLayerManager, SacredPlan, PlanStatus,
     SacredIntegratedRAGAgent
 )

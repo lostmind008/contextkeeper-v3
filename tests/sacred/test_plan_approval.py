@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 import hashlib
 
 # Add imports when implementation is ready
-# from sacred_layer_implementation import ...
+# from src.sacred.sacred_layer_implementation import ...
 
 
 class TestTwoLayerVerification:

@@ -5,6 +5,8 @@ Last Updated: 2025-08-05 (GOVERNANCE COMPLIANCE IN PROGRESS)
 ## 🎯 Project Overview
 ContextKeeper v3.0 is an AI-powered development context management system with multi-project support, sacred architectural principles, and real-time analytics. Built as a hybrid Python/Node.js system with Flask backend and MCP integration.
 
+**✨ NEW: Unified CLI** - All functionality now accessible through `python contextkeeper_cli.py` (or `./contextkeeper`), replacing multiple shell scripts with a single, comprehensive command-line interface.
+
 ## ✅ Governance Compliance Status
 - ✅ PROJECT_MAP.md present and updated
 - ✅ Directory-level CLAUDE.md files created (9/9 all directories)
@@ -52,12 +54,24 @@ contextkeeper/
 │   │   └── MANIFEST.md        # Archive manifest
 │   └── GOVERNANCE_CLEANUP_SUMMARY.md
 │
-├── scripts/                    # Automation scripts
+├── contextkeeper_cli.py        # ✨ NEW: Unified Python CLI (replaces shell scripts)
+├── contextkeeper               # ✨ NEW: Executable wrapper for CLI
+├── cli/                        # ✨ NEW: CLI implementation modules
+│   ├── __init__.py
+│   └── commands/              # CLI command implementations
+│       ├── __init__.py
+│       ├── server.py          # Server management
+│       ├── project.py         # Project operations
+│       ├── query.py           # Knowledge queries
+│       ├── sacred.py          # Sacred layer commands
+│       └── utils.py           # System utilities
+│
+├── scripts/                    # Legacy automation scripts (DEPRECATED)
 │   ├── CLAUDE.md              ✅ Directory context
-│   ├── rag_cli_v2.sh          # Primary CLI
-│   ├── contextkeeper.sh       # Management script
-│   ├── contextkeeper_simple.sh # Simplified interface
-│   └── [other scripts]
+│   ├── rag_cli_v2.sh          # (Deprecated - use contextkeeper_cli.py)
+│   ├── contextkeeper.sh       # (Deprecated - use contextkeeper_cli.py)
+│   ├── contextkeeper_simple.sh # (Deprecated - use contextkeeper_cli.py)
+│   └── [other legacy scripts]
 │
 ├── tests/                      # Test suites ✅ REORGANIZED
 │   ├── CLAUDE.md              ✅ Directory context

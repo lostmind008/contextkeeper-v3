@@ -1,0 +1,17 @@
+#!/usr/bin/env python3
+"""
+ContextKeeper CLI Wrapper
+This file allows running 'contextkeeper' directly from the command line
+"""
+
+import sys
+import os
+
+# Add the current directory to Python path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# Import and run the CLI
+import contextkeeper_cli
+
+if __name__ == "__main__":
+    contextkeeper_cli.main()

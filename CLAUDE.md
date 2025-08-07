@@ -5,87 +5,64 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 **ContextKeeper v3.0** - AI-powered development context management system with multi-project support, sacred architectural principles, and real-time analytics. Built as a hybrid Python/Node.js system with Flask backend and MCP integration.
 
-## 🤖 SUBAGENT DELEGATION PROTOCOL (MANDATORY)
-
-**CRITICAL**: Never attempt heavy lifting directly. Always delegate to specialized subagents first.
-
-### Governance First (ALWAYS START HERE)
-```bash
-> use architecture-enforcer to assess project governance
-> use project-scanner to analyze unknown codebases
-> use chaos-manager for extremely messy projects
-```
-
-### Development Workflow Delegation
-```bash
-# Planning & Architecture
-> use planner to break down complex features
-> use solution-architect for system design
-> use product-strategist for feature prioritization
-
-# Implementation & Quality
-> use code-implementer to build within skeleton structure
-> use debugger to diagnose complex issues
-> use maintainer to refactor legacy code
-> use performance-optimiser to analyze bottlenecks
-
-# Security & Compliance
-> use security-guardian for comprehensive audits
-> use code-reviewer for quality assurance
-> use qa-engineer for testing strategies
-
-# Documentation & Recovery
-> use documentation-writer for technical docs
-> use project-scanner for unknown projects
-> use examples to create usage patterns
-```
-
-### Task-Specific Delegation Rules
-- **Unknown codebase**: project-scanner → architecture-enforcer → solution-architect
-- **Feature development**: planner → solution-architect → code-implementer → qa-engineer
-- **Bug fixing**: debugger → maintainer → security-guardian
-- **Documentation**: documentation-writer → examples → ui-ux-designer
-- **Performance issues**: performance-optimiser → code-reviewer → maintainer
-
-### Integration Priority
-1. **ALWAYS** start with governance agents (architecture-enforcer/project-scanner)
-2. **DELEGATE** complex tasks to specialized agents
-3. **ORCHESTRATE** multi-agent workflows for complex problems
-4. **DOCUMENT** all decisions via contextkeeper integration
-
 ## Essential Commands
 
-### Daily Development
+### CLI Usage (NEW - ✅ COMPLETE)
 ```bash
-# Start development environment
-source venv/bin/activate
-python rag_agent.py server  # MUST use 'server', not 'start'
+# Main CLI entry point (interactive menu if no args)
+python contextkeeper_cli.py
+./contextkeeper  # After running setup_cli.py
 
-# Quick project management
-./contextkeeper_simple.sh   # Interactive menu for chat/create/index
-./quick_start.sh /path/to/project  # One-command setup
+# Quick commands
+python contextkeeper_cli.py --help
+python contextkeeper_cli.py server start
+python contextkeeper_cli.py project list
+python contextkeeper_cli.py query ask "How does authentication work?"
+python contextkeeper_cli.py sacred status
+
+# Setup and test CLI
+python setup_cli.py  # Installs Click/requests, creates wrapper
+python test_cli.py   # Test all CLI components
+```
+
+### Server and Testing
+```bash
+# Start server (NEW UNIFIED CLI - RECOMMENDED)
+python contextkeeper_cli.py server start
+# Or: ./contextkeeper server start (after setup)
+
+# Legacy method (still works):
+source venv/bin/activate
+python rag_agent.py server  # Direct Flask server
 
 # Run tests
 pytest tests/ -v --tb=short
-pytest tests/sacred/ -v      # Sacred layer tests only
-pytest tests/api/ -v -k "test_query"  # Specific API tests
+pytest tests/sacred/ -v -k "test_plan"  # Specific sacred tests
+pytest tests/api/ -v -k "test_query"    # API endpoint tests
 
-# Check code style (Australian English)
-python -m flake8 --extend-ignore=E501 *.py
+# Quick project setup (NEW CLI - RECOMMENDED)
+python contextkeeper_cli.py  # Interactive menu
+# Or with auto-setup:
+python contextkeeper_cli.py project create "Name" /path/to/project --auto-index
 ```
 
-### Project Indexing Workflow
+### Project Management Workflow
 ```bash
-# CRITICAL: Must follow this exact sequence
-./scripts/rag_cli_v2.sh projects create "Name" /absolute/path
-./scripts/rag_cli_v2.sh projects focus <project_id>
-python rag_agent.py ingest --path /absolute/path  # OFTEN FORGOTTEN!
+# NEW UNIFIED CLI: All-in-one command
+python contextkeeper_cli.py project create "Name" /absolute/path --auto-index
+
+# Or step-by-step:
+python contextkeeper_cli.py project create "Name" /absolute/path
+python contextkeeper_cli.py project focus <project_id>
+python contextkeeper_cli.py project index <project_id>
 
 # Verify indexing worked
+python contextkeeper_cli.py project list
+# Or via API:
 curl http://localhost:5556/projects | jq '.projects[] | select(.id=="<project_id>")'
 ```
 
-### MCP Server Development
+### MCP Server Setup
 ```bash
 cd mcp-server
 npm install
@@ -94,56 +71,71 @@ npm start  # Runs enhanced_mcp_server.js
 
 ## Architecture Overview
 
-### System Flow
+### System Components
 ```
 User Request → Claude Code → MCP Server → RAG Agent → ChromaDB/LLM
                     ↓             ↓             ↓
                 Dashboard   Sacred Layer   Project Manager
 ```
 
-### Core Components
-1. **RAG Agent** (`rag_agent.py`): Flask API server, handles all operations
+1. **RAG Agent** (`rag_agent.py`): Flask API server, port 5556
    - Async endpoints for performance
    - Project isolation via ChromaDB collections
-   - Security filtering for sensitive data
+   - Automatic security filtering
 
-2. **Project Manager** (`project_manager.py`): Multi-project state management
-   - Each project gets isolated ChromaDB collection
-   - Tracks decisions, objectives, and events
+2. **Project Manager** (`project_manager.py`): Multi-project state
+   - Collection naming: `project_{project_id}`
    - Persists to `projects/` directory
+   - Tracks decisions, objectives, events
 
 3. **Sacred Layer** (`sacred_layer_implementation.py`): Architectural governance
-   - Immutable architectural decisions
-   - 2-layer approval system
+   - Immutable plans with 2-layer approval
    - Drift detection between plans and implementation
+   - Plan states: DRAFT, APPROVED, LOCKED, SUPERSEDED
 
 4. **MCP Integration** (`mcp-server/enhanced_mcp_server.js`): Claude Code bridge
-   - Provides tools for context retrieval
+   - 8 tools for context retrieval and management
    - Handles sacred drift checking
    - Manages LLM queries
 
 5. **Dashboard** (`analytics_dashboard_live.html`): Three.js visualization
+   - 4000 animated particles (performance consideration)
    - Real-time project metrics
    - Interactive chat interface
-   - 4000 animated particles (performance consideration)
+
+6. **CLI System** (`contextkeeper_cli.py` + `cli/commands/`): ✅ COMPLETE
+   - Click-based command structure with 5 command groups
+   - Interactive menu system when run without arguments
+   - Server management: start, stop, restart, status, logs
+   - Project management: create, list, focus, ingest, archive
+   - Query system: ask, search, history, stats, interactive mode
+   - Sacred layer: status, decisions, approve, drift detection
+   - System utilities: health, version, config, backup, cleanup
+   - API integration with Flask server on port 5556
 
 ## Critical Implementation Details
 
-### ChromaDB Collections
-- Collection naming: `project_{project_id}`
-- Metadata constraints: Only str, int, float, bool, None
-- Arrays must be comma-separated strings: `'tags': ', '.join(tags)`
-- Embedding model: Google's text-embedding-004 (768 dimensions)
-
-### API Authentication
-All endpoints require project_id for isolation:
+### ChromaDB Requirements
 ```python
-# WRONG - security risk
-@app.route('/query', methods=['POST'])
-def query():
-    return self.agent.query(request.json['question'])
+# Collection naming MUST follow this pattern
+collection_name = f"project_{project_id}"
 
-# CORRECT - enforces isolation
+# Metadata constraints - only primitives allowed
+metadata = {
+    'tags': ', '.join(tags),  # Arrays must be comma-separated strings
+    'status': 'active',       # Only str, int, float, bool, None
+}
+
+# Embedding model (768 dimensions)
+embedding_function = GoogleGenerativeAiEmbeddingFunction(
+    api_key=os.getenv("GOOGLE_API_KEY"),
+    model_name="text-embedding-004"
+)
+```
+
+### API Authentication Pattern
+```python
+# CORRECT - enforces project isolation
 @app.route('/query', methods=['POST'])
 def query():
     project_id = request.json.get('project_id')
@@ -152,13 +144,12 @@ def query():
     return self.agent.query(request.json['question'], project_id=project_id)
 ```
 
-### Error Handling Patterns
+### Error Handling Pattern
 ```python
-# Always use this pattern for ChromaDB operations
+# Always use for ChromaDB operations
 try:
     collection = self.db.get_collection(f"project_{project_id}")
 except:
-    # Collection doesn't exist - create it
     collection = self.db.create_collection(
         name=f"project_{project_id}",
         embedding_function=self.embedding_function,
@@ -168,49 +159,56 @@ except:
 
 ## Common Issues & Solutions
 
-### Issue: "Project not found" after creation
-**Cause**: Server's `self.collections` dict not updated
+### "Project not found" after creation
 **Fix**: Restart server or call `self.agent._init_project_collections()`
 
-### Issue: Poor query results
-**Cause**: Project not indexed or focused
-**Fix**: 
+### Poor query results
+**Fix**: Ensure project is indexed:
 ```bash
 ./scripts/rag_cli_v2.sh projects focus <project_id>
 python rag_agent.py ingest --path /project/path
 ```
 
-### Issue: Embedding dimension mismatch
-**Cause**: Using wrong Google API model
-**Fix**: Ensure using `text-embedding-004` not `gemini-embedding-001`
+### Embedding dimension mismatch
+**Fix**: Use `text-embedding-004` not `gemini-embedding-001`
 
-### Issue: Server segmentation fault
-**Cause**: Using `python rag_agent.py start`
-**Fix**: Always use `python rag_agent.py server`
-
-## Testing Guidelines
-- Run tests with `pytest -v --tb=short` for cleaner output
-- Sacred layer tests require `SACRED_APPROVAL_KEY` in .env
-- API tests use real ChromaDB - ensure clean state
-- Use `./cleanup_all.sh` for fresh test environment
-
-## Code Style Requirements
-- Australian English spelling (colour, behaviour, realise)
-- Conversational comments ("alright, so here's the thing...")
-- Update LOGBOOK.md after significant changes
-- Format: `[YYYY-MM-DD HH:MM AEST] - [Component] - [Action] - [Details]`
+### Server segmentation fault
+**Fix**: Always use `python rag_agent.py server` (not 'start')
 
 ## Environment Variables
 ```bash
-GOOGLE_API_KEY=        # Required: Gemini API access
-SACRED_APPROVAL_KEY=   # Required: Sacred layer approvals
-FLASK_ASYNC_MODE=True  # Performance: Async endpoints
-DEBUG=0               # Production: Disable debug mode
+# Required
+GOOGLE_API_KEY=        # Gemini API access
+SACRED_APPROVAL_KEY=   # Sacred layer approvals
+
+# Optional
+FLASK_ASYNC_MODE=True  # Async endpoints (recommended)
+DEBUG=0               # Production mode
 ```
+
+## Code Style
+- Australian English spelling (colour, behaviour, realise)
+- Conversational comments preferred
+- Update LOGBOOK.md after significant changes
+- Format: `[YYYY-MM-DD HH:MM AEST] - [Component] - [Action]`
 
 ## Performance Considerations
 - Each project uses ~100MB for ChromaDB collection
-- Dashboard animation may lag on older devices
+- Dashboard animation may lag on older devices (4000 particles)
 - Indexing speed: ~1000 files/minute
-- Query latency: <500ms for most operations
+- Query latency: <500ms typical
 - Use path filtering to exclude system files
+
+## Directory Structure
+```
+contextkeeper/
+├── src/                    # Core implementation modules
+│   ├── sacred/            # Sacred layer components
+│   ├── tracking/          # Git and event tracking
+│   └── analytics/         # Analytics services
+├── mcp-server/            # Claude Code MCP integration
+├── scripts/               # CLI tools (use rag_cli_v2.sh)
+├── tests/                 # Test suites (pytest)
+├── projects/              # Project data persistence
+└── rag_knowledge_db/      # ChromaDB storage
+```

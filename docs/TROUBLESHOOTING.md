@@ -20,7 +20,7 @@ curl -X POST http://localhost:5556/sacred/query \
   -d '{"query": "test"}'
 
 # 4. Test CLI functionality
-./scripts/rag_cli_v2.sh projects list
+python contextkeeper_cli.py projects list
 ```
 
 ## ✅ Resolved Issues (July 2025)
@@ -35,19 +35,19 @@ curl -X POST http://localhost:5556/sacred/query \
 # >>>>>>> branch-name
 ```
 
-**Root Cause**: Unresolved merge conflicts in rag_cli_v2.sh script
+**Root Cause**: Unresolved merge conflicts in contextkeeper_cli.py script
 
 **Solution Applied**: ✅ FIXED
-- All merge conflicts in `scripts/rag_cli_v2.sh` resolved
+- All merge conflicts in `scripts/contextkeeper_cli.py` resolved
 - Script now executes cleanly without conflict markers
 - Port configuration standardised to 5556
 
 **How to Use**:
 ```bash
 # Always use the v2 script (not the old rag_cli.sh)
-./scripts/rag_cli_v2.sh projects list
-./scripts/rag_cli_v2.sh projects create "My Project" /path/to/project
-./scripts/rag_cli_v2.sh ask "What is this project about?"
+python contextkeeper_cli.py projects list
+python contextkeeper_cli.py projects create "My Project" /path/to/project
+python contextkeeper_cli.py ask "What is this project about?"
 ```
 
 ### Sacred Layer 500 Internal Server Errors Fixed
@@ -105,7 +105,7 @@ curl -X POST http://localhost:5556/sacred/query \
 **Verification**:
 ```bash
 # Check that embeddings are working:
-./scripts/rag_cli_v2.sh projects create "test" /tmp
+python contextkeeper_cli.py projects create "test" /tmp
 # Should complete without API errors
 ```
 
@@ -166,7 +166,7 @@ curl http://localhost:5556/health
 **Verification**:
 ```bash
 # Create a test project and verify filtering
-./scripts/rag_cli_v2.sh projects create "filter_test" /path/with/venv
+python contextkeeper_cli.py projects create "filter_test" /path/with/venv
 # Check logs show excluded paths being filtered out
 ```
 
@@ -314,7 +314,7 @@ cp -r backup_20250729/rag_knowledge_db/ ./
 python rag_agent.py start
 
 # 4. Verify data integrity
-./scripts/rag_cli_v2.sh projects list
+python contextkeeper_cli.py projects list
 ```
 
 ## 🆔 Getting Support

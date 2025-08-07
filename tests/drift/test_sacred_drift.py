@@ -14,7 +14,7 @@ import numpy as np
 from datetime import datetime, timedelta
 
 # Add imports when implementation is ready
-# from enhanced_drift_sacred import (
+# from src.sacred.enhanced_drift_sacred import (
 #     SacredDriftDetector, DriftAnalysis, DriftStatus,
 #     ContinuousDriftMonitor
 # )

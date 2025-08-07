@@ -27,9 +27,9 @@ import time
 
 # Import the main application components
 try:
-    from rag_agent import create_flask_app, RAGAgent
-    from sacred_layer_implementation import SacredLayerManager, SacredIntegratedRAGAgent
-    from project_manager import ProjectManager
+    from src.core.rag_agent import create_flask_app, RAGAgent
+    from src.sacred.sacred_layer_implementation import SacredLayerManager, SacredIntegratedRAGAgent
+    from src.core.project_manager import ProjectManager
 except ImportError as e:
     # Handle case where imports might not be available during testing
     pytest.skip(f"Cannot import required modules: {e}", allow_module_level=True)

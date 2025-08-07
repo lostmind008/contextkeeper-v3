@@ -1,8 +1,26 @@
 # ContextKeeper v3.0 User Guide
 
-Welcome to ContextKeeper! This guide will help you get up and running in minutes.
+**Complete guide to using ContextKeeper v3.0 with multi-project support, sacred architectural governance, and real-time analytics.**
+
+## Table of Contents
+
+- [🚀 Quick Start](#-quick-start)
+- [📋 Core Workflows](#-core-workflows)
+- [📝 CLI Command Reference](#-cli-command-reference)
+- [🎯 Sacred Layer (Architectural Governance)](#-sacred-layer-architectural-governance)
+- [📊 Analytics Dashboard](#-analytics-dashboard)
+- [🔌 API Quick Reference](#-api-quick-reference)
+- [🔧 Troubleshooting](#-troubleshooting)
+- [💡 Best Practices](#-best-practices)
+- [🆘 Getting Help](#-getting-help)
 
 ## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.8+
+- Google Cloud API key (for embeddings and AI features)
+- 4GB+ RAM recommended
+- 2GB+ disk space
 
 ### Install & First Run (5 minutes)
 
@@ -20,36 +38,56 @@ pip install -r requirements.txt
 
 # 4. Set up environment variables
 cp .env.template .env
-# Edit .env and add your Google API key:
+# Edit .env and add your keys:
 # GOOGLE_API_KEY=your-api-key-here
 # SACRED_APPROVAL_KEY=your-secret-key
 
 # 5. Start ContextKeeper
-python rag_agent.py start
+python rag_agent.py server  # Use 'server', not 'start'
+
+# 6. Verify installation
+curl http://localhost:5556/health
+# Should return: {"status":"healthy"}
 ```
 
 ### Your First Project
 
 ```bash
 # Create a project
-./scripts/rag_cli_v2.sh projects create myproject /path/to/your/code
+python contextkeeper_cli.py projects create "My Project" /path/to/your/code
+
+# Or use the shorthand:
+./contextkeeper projects create "My Project" /path/to/your/code
 
 # List all projects
-./scripts/rag_cli_v2.sh projects list
+python contextkeeper_cli.py projects list
 
 # Focus on your project (makes it the default)
-./scripts/rag_cli_v2.sh projects focus myproject
+python contextkeeper_cli.py projects focus <project_id>
 ```
 
 ### Your First Query
 
 ```bash
 # Ask a question about your code
-./scripts/rag_cli_v2.sh ask "How does the authentication work?"
+python contextkeeper_cli.py ask "How does the authentication work?"
 
 # Get an AI-enhanced response
-./scripts/rag_cli_v2.sh ask --llm "Explain the database schema"
+python contextkeeper_cli.py ask "Explain the database schema" --llm
+
+# Interactive mode
+python contextkeeper_cli.py chat
 ```
+
+### Access the Dashboard
+
+Open your browser and go to: `http://localhost:5556/dashboard`
+
+The dashboard provides:
+- Real-time project metrics with 3D visualisation
+- Interactive chat interface
+- Sacred plan monitoring
+- Project health analytics
 
 ## 📋 Core Workflows
 
@@ -57,173 +95,257 @@ python rag_agent.py start
 
 **Create a New Project**
 ```bash
-./scripts/rag_cli_v2.sh projects create <name> <path>
-# Example: ./scripts/rag_cli_v2.sh projects create webapp /home/user/webapp
+# Basic creation
+python contextkeeper_cli.py projects create "E-commerce API" /path/to/project
+
+# With description
+python contextkeeper_cli.py projects create "Mobile App" /path/to/app "React Native customer app"
 ```
 
-**Focus on a Project** (set as default)
+**List and Focus Projects**
 ```bash
-./scripts/rag_cli_v2.sh projects focus <project_id>
-# Example: ./scripts/rag_cli_v2.sh projects focus proj_123abc
+# List all projects
+python contextkeeper_cli.py projects list
+
+# Focus on a project (sets it as default)
+python contextkeeper_cli.py projects focus <project_id>
+
+# Show project details
+python contextkeeper_cli.py projects show <project_id>
 ```
 
-**List All Projects**
+**Project Status and Updates**
 ```bash
-./scripts/rag_cli_v2.sh projects list
+# Get project status
+python contextkeeper_cli.py projects status <project_id>
+
+# Update project index
+python contextkeeper_cli.py projects update <project_id>
+
+# Archive project
+python contextkeeper_cli.py projects archive <project_id>
 ```
 
 ### Ingesting Code & Documents
 
-**Ingest a Single File**
+ContextKeeper automatically indexes your code when you create a project, but you can also:
+
 ```bash
-./scripts/rag_cli_v2.sh ingest /path/to/file.py
+# Index a specific file
+python contextkeeper_cli.py ingest /path/to/file.py
+
+# Index a directory
+python contextkeeper_cli.py ingest /path/to/directory
+
+# Re-index current project
+python contextkeeper_cli.py projects update
 ```
 
-**Ingest a Directory**
-```bash
-./scripts/rag_cli_v2.sh ingest /path/to/directory
-```
-
-**Note**: ContextKeeper automatically filters out `node_modules`, `venv`, `.git`, and other common directories.
+**Supported Files:**
+- Source code: `.py`, `.js`, `.ts`, `.java`, `.cpp`, `.go`, `.rs`, etc.
+- Documentation: `.md`, `.txt`, `.rst`
+- Configuration: `.json`, `.yaml`, `.toml`
+- Web: `.html`, `.css`
 
 ### Running Queries
 
-**CLI Query**
+**Basic Queries**
 ```bash
-# Basic query
-./scripts/rag_cli_v2.sh ask "What does the UserService class do?"
+# Simple question
+python contextkeeper_cli.py ask "What does the UserService class do?"
 
-# With more results
-./scripts/rag_cli_v2.sh ask "Find all API endpoints" -k 10
+# Find specific patterns
+python contextkeeper_cli.py ask "Find all API endpoints"
 
-# With AI enhancement
-./scripts/rag_cli_v2.sh ask --llm "How can I add user authentication?"
+# Get more results
+python contextkeeper_cli.py ask "Show database models" --top-k 10
 ```
 
-**API Query**
+**AI-Enhanced Queries**
 ```bash
-# Basic query
-curl -X POST http://localhost:5556/query \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What is the database schema?", "project_id": "proj_123"}'
+# Get AI explanations and suggestions
+python contextkeeper_cli.py ask "How can I add user authentication?" --llm
 
-# AI-enhanced query
-curl -X POST http://localhost:5556/query_llm \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Explain the authentication flow", "project_id": "proj_123"}'
+# Complex analysis
+python contextkeeper_cli.py ask "Analyse the security vulnerabilities" --llm
+
+# Code generation help
+python contextkeeper_cli.py ask "Generate unit tests for AuthService" --llm
 ```
 
-### Sacred Plans (Architectural Governance)
-
-**Create a Sacred Plan**
+**Interactive Chat Mode**
 ```bash
-# Create a plan file (example: auth_plan.md)
-cat > auth_plan.md << EOF
-# Authentication Architecture
+# Start interactive session
+python contextkeeper_cli.py chat
 
-## Overview
-We will use OAuth2 with JWT tokens for authentication.
-
-## Components
-- AuthService: Handles login/logout
-- TokenManager: JWT creation/validation
-- UserStore: User data persistence
-
-## Constraints
-- Tokens expire after 1 hour
-- Refresh tokens valid for 7 days
-- No plaintext password storage
-EOF
-
-# Submit the plan
-./scripts/rag_cli_v2.sh sacred create proj_123 "OAuth2 Authentication" auth_plan.md
+# Commands within chat:
+# /help - Show chat commands
+# /focus <project_id> - Switch project
+# /sacred - Sacred layer commands
+# /export - Export conversation
+# /quit - Exit chat
 ```
-
-**Approve a Sacred Plan** (requires 2-layer verification)
-```bash
-# Get the plan ID from creation output, then:
-./scripts/rag_cli_v2.sh sacred approve plan_abc123
-# Enter verification code when prompted
-# Enter SACRED_APPROVAL_KEY from your .env
-```
-
-**Check for Drift**
-```bash
-./scripts/rag_cli_v2.sh sacred drift proj_123
-```
-
-### Using the Analytics Dashboard
-
-Open your browser to: `http://localhost:5556/analytics_dashboard_live.html`
-
-**Dashboard Features:**
-- **Real-time Metrics**: Project stats, query volume, sacred compliance
-- **Dark Mode**: Click the theme toggle (🌙/☀️)
-- **Export Reports**: Click Export → Choose PDF, PNG, or JSON
-- **Filter Projects**: Use the search bar or status dropdown
-- **Keyboard Shortcuts**:
-  - `Ctrl/Cmd + R`: Refresh data
-  - `Ctrl/Cmd + D`: Toggle dark mode
-  - `Ctrl/Cmd + E`: Open export menu
 
 ## 📝 CLI Command Reference
 
 ### Project Commands
+
 ```bash
-# Create project
-./scripts/rag_cli_v2.sh projects create <name> <path>
-
-# List projects
-./scripts/rag_cli_v2.sh projects list
-
-# Focus project
-./scripts/rag_cli_v2.sh projects focus <project_id>
-
-# Show project details
-./scripts/rag_cli_v2.sh projects show <project_id>
+# Project Management
+python contextkeeper_cli.py projects create <name> <path> [description]
+python contextkeeper_cli.py projects list
+python contextkeeper_cli.py projects focus <project_id>
+python contextkeeper_cli.py projects show <project_id>
+python contextkeeper_cli.py projects status <project_id>
+python contextkeeper_cli.py projects update <project_id>
+python contextkeeper_cli.py projects archive <project_id>
+python contextkeeper_cli.py projects remove <project_id>
 ```
 
 ### Query Commands
+
 ```bash
-# Basic query
-./scripts/rag_cli_v2.sh ask "your question here"
+# Basic Queries
+python contextkeeper_cli.py ask "your question"
+python contextkeeper_cli.py ask "question" --top-k 10
+python contextkeeper_cli.py ask "question" --project <project_id>
 
-# Query with options
-./scripts/rag_cli_v2.sh ask "question" -k 10 --project proj_123
-
-# AI-enhanced query
-./scripts/rag_cli_v2.sh ask --llm "explain this concept"
+# AI-Enhanced Queries
+python contextkeeper_cli.py ask "question" --llm
+python contextkeeper_cli.py ask "question" --llm --model gemini-pro
 ```
 
 ### Sacred Layer Commands
+
 ```bash
-# Create sacred plan
-./scripts/rag_cli_v2.sh sacred create <project_id> "Plan Title" plan.md
-
-# List sacred plans
-./scripts/rag_cli_v2.sh sacred list [project_id]
-
-# Approve plan
-./scripts/rag_cli_v2.sh sacred approve <plan_id>
-
-# Check drift
-./scripts/rag_cli_v2.sh sacred drift <project_id>
-
-# Query sacred plans
-./scripts/rag_cli_v2.sh sacred query "architecture question"
+# Sacred Plan Management
+python contextkeeper_cli.py sacred create <project_id> "Plan Title" plan.md
+python contextkeeper_cli.py sacred list [project_id]
+python contextkeeper_cli.py sacred approve <plan_id>
+python contextkeeper_cli.py sacred drift <project_id>
+python contextkeeper_cli.py sacred query <project_id> "architecture question"
 ```
 
 ### Decision & Objective Commands
+
 ```bash
-# Track decision
-./scripts/rag_cli_v2.sh decision "We chose PostgreSQL" "Better JSON support"
+# Track Decisions
+python contextkeeper_cli.py decision add "Decision title" "Reasoning" "tag1,tag2"
+python contextkeeper_cli.py decision list
 
-# Add objective
-./scripts/rag_cli_v2.sh objective add "Implement user authentication"
-
-# List objectives
-./scripts/rag_cli_v2.sh objective list
+# Manage Objectives
+python contextkeeper_cli.py objective add <project_id> "Objective" "Description" high
+python contextkeeper_cli.py objective complete <project_id> <objective_id>
+python contextkeeper_cli.py objective list [project_id]
 ```
+
+### Utility Commands
+
+```bash
+# Health and Status
+python contextkeeper_cli.py health
+python contextkeeper_cli.py version
+
+# Export and Backup
+python contextkeeper_cli.py export [project_id]
+python contextkeeper_cli.py backup
+```
+
+## 🎯 Sacred Layer (Architectural Governance)
+
+The Sacred Layer provides architectural governance through immutable plans and drift detection.
+
+### Core Concepts
+
+**Sacred Plans** are architectural decisions that:
+- Cannot be changed once approved (immutable)
+- Require two-factor approval
+- Are automatically monitored for drift
+- Guide development decisions
+
+### Creating Sacred Plans
+
+1. **Write a plan file** (example: `auth_plan.md`):
+```markdown
+# Authentication Architecture
+
+## Overview
+OAuth2 + JWT implementation with Redis session storage.
+
+## Components
+- AuthService: Handles authentication logic
+- TokenService: JWT token management
+- UserRepository: User data persistence
+
+## Constraints
+- All passwords must be hashed with bcrypt
+- JWT tokens expire after 1 hour
+- Redis used for session management only
+```
+
+2. **Submit the plan**:
+```bash
+python contextkeeper_cli.py sacred create proj_123 "OAuth2 Authentication" auth_plan.md
+```
+
+3. **Approve the plan**:
+```bash
+# Get the plan ID from creation output, then:
+python contextkeeper_cli.py sacred approve <plan_id>
+# Enter verification code when prompted
+# Enter SACRED_APPROVAL_KEY from your .env
+```
+
+### Monitoring and Drift Detection
+
+```bash
+# Check for architectural drift
+python contextkeeper_cli.py sacred drift <project_id>
+
+# Query sacred plans
+python contextkeeper_cli.py sacred query <project_id> "How should authentication work?"
+
+# List all sacred plans
+python contextkeeper_cli.py sacred list <project_id>
+```
+
+### Sacred Plan Workflow
+
+1. **Create** → Write plan file and submit
+2. **Review** → Team reviews the architectural decision
+3. **Approve** → Two-factor approval makes it immutable
+4. **Monitor** → Automatic drift detection during development
+5. **Query** → Reference during development decisions
+
+## 📊 Analytics Dashboard
+
+Access the dashboard at: `http://localhost:5556/dashboard`
+
+### Features
+
+**Real-time Metrics**
+- Active projects count
+- Query volume and response times
+- Sacred plan compliance
+- Code coverage analysis
+
+**3D Visualisation**
+- Interactive particle system (4000+ particles)
+- Project relationships mapping
+- Code complexity visualisation
+- Architecture drift indicators
+
+**Interactive Chat**
+- Built-in chat interface
+- Context-aware responses
+- Sacred layer integration
+- Export conversations
+
+### Performance Considerations
+
+- Dashboard may lag on older devices due to 3D animations
+- Disable animations in settings if needed
+- Use mobile-optimised view on smaller screens
 
 ## 🔌 API Quick Reference
 
@@ -241,7 +363,7 @@ curl http://localhost:5556/projects
 # Create project
 curl -X POST http://localhost:5556/projects \
   -H "Content-Type: application/json" \
-  -d '{"name": "MyApp", "root_path": "/path/to/app"}'
+  -d '{"name":"My Project","path":"/path/to/code"}'
 ```
 
 ### Queries
@@ -249,12 +371,12 @@ curl -X POST http://localhost:5556/projects \
 # Basic query
 curl -X POST http://localhost:5556/query \
   -H "Content-Type: application/json" \
-  -d '{"question": "Find the main function", "project_id": "proj_123"}'
+  -d '{"question":"How does auth work?","project_id":"proj_123"}'
 
 # AI-enhanced query
-curl -X POST http://localhost:5556/query_llm \
+curl -X POST http://localhost:5556/query \
   -H "Content-Type: application/json" \
-  -d '{"question": "Explain the API structure", "project_id": "proj_123"}'
+  -d '{"question":"Explain auth","use_llm":true,"project_id":"proj_123"}'
 ```
 
 ### Sacred Plans
@@ -262,15 +384,15 @@ curl -X POST http://localhost:5556/query_llm \
 # Query sacred plans
 curl -X POST http://localhost:5556/sacred/query \
   -H "Content-Type: application/json" \
-  -d '{"query": "authentication plans", "project_id": "proj_123"}'
+  -d '{"query":"authentication approach","project_id":"proj_123"}'
 
 # Get sacred metrics
-curl http://localhost:5556/analytics/sacred
+curl http://localhost:5556/sacred/metrics?project_id=proj_123
 ```
 
 ## 🔧 Troubleshooting
 
-### Common Issues & Fixes
+### Common Issues
 
 **Server won't start**
 ```bash
@@ -278,74 +400,122 @@ curl http://localhost:5556/analytics/sacred
 lsof -i :5556
 # Kill the process if needed
 kill -9 <PID>
-```
 
-**"No module named 'google.genai'"**
-```bash
 # Ensure you're in the virtual environment
 source venv/bin/activate
 # Reinstall requirements
 pip install -r requirements.txt
 ```
 
-**Sacred plan approval fails**
-- Check your `SACRED_APPROVAL_KEY` in `.env`
-- Ensure you're entering the correct verification code
-- Verification codes are case-sensitive
+**No query results**
+- Ensure you've indexed files: `python contextkeeper_cli.py ingest /your/project`
+- Check project is focused: `python contextkeeper_cli.py projects list`
+- Verify project path is correct in project creation
 
-**No results from queries**
-- Ensure you've ingested files: `./scripts/rag_cli_v2.sh ingest /your/project`
-- Check project is focused: `./scripts/rag_cli_v2.sh projects list`
-- Verify service is healthy: `curl http://localhost:5556/health`
+**Sacred plan approval fails**
+- Check SACRED_APPROVAL_KEY in .env
+- Ensure verification code is correct
+- Verify plan file exists and is readable
+
+**Dashboard not loading**
+- Clear browser cache
+- Check browser console for errors
+- Verify server is running on port 5556
+- Try incognito/private browsing mode
+
+### Getting Logs
+
+```bash
+# Check server logs
+python rag_agent.py server --debug
+
+# Check CLI logs
+python contextkeeper_cli.py --verbose <command>
+```
+
+### Quick Health Check
+
+```bash
+# Verify everything is working
+python contextkeeper_cli.py health
+python contextkeeper_cli.py projects list
+python contextkeeper_cli.py ask "test query"
+```
 
 ## 💡 Best Practices
 
 ### Project Organisation
-- Use descriptive project names: `webapp-frontend`, not `proj1`
-- One project per repository/component
-- Focus the project you're actively working on
+
+- **Use descriptive project names**: "E-commerce API" not "proj1"
+- **Focus on one project at a time** for better results
+- **Update project indexes** after major code changes
+- **Archive completed projects** to keep workspace clean
 
 ### Sacred Plans
-- Keep plans concise and specific
-- Include clear constraints and boundaries
-- Update plans when architecture evolves (supersede, don't edit)
-- Review drift warnings promptly
+
+- **Start with core architectural decisions** (auth, database, API design)
+- **Keep plans focused and specific** (one concern per plan)
+- **Review plans as a team** before approval
+- **Monitor drift regularly** during development
+
+### Query Optimization
+
+- **Be specific in your questions**: "How does JWT validation work?" vs "How does auth work?"
+- **Use tags and filters** when searching large codebases
+- **Try both basic and AI-enhanced queries** for different insights
+- **Use the chat interface** for iterative exploration
 
 ### Performance Tips
-- Ingest only necessary directories (exclude `build/`, `dist/`)
-- Use specific queries rather than broad ones
-- Clear old projects you're not using
-- Restart the service weekly for optimal performance
 
-### Query Tips
-- Be specific: "UserService authentication" > "auth"
-- Use code terminology: "class UserService" finds class definitions
-- Try AI queries for explanations: `--llm` flag
-- Increase results with `-k 20` for comprehensive searches
+- **Exclude large files** (logs, builds, node_modules) during project creation
+- **Update project indexes** instead of re-creating projects
+- **Use project focus** to limit search scope
+- **Monitor dashboard performance** on older devices
 
-## 📚 Next Steps & Getting Help
+## 🆘 Getting Help
 
-### Explore Advanced Features
-- **MCP Integration**: Connect to Claude Code (see README.md)
-- **Git Integration**: Track commits and branches automatically
-- **Custom Embeddings**: Configure alternative embedding models
+### Documentation
+- [Installation Guide](INSTALLATION.md) - Detailed setup instructions
+- [API Documentation](API_REFERENCE.md) - Complete API reference
+- [Sacred Layer Guide](SACRED_LAYER.md) - Architectural governance details
+- [Troubleshooting Guide](TROUBLESHOOTING.md) - Common issues and solutions
 
-### Getting Help
-- **Documentation**: Check `/docs` folder for detailed guides
-- **Troubleshooting**: See [TROUBLESHOOTING.md](../TROUBLESHOOTING.md)
-- **Issues**: Report bugs at [GitHub Issues](https://github.com/lostmind008/contextkeeper-v3/issues)
-- **Community**: Join discussions at [GitHub Discussions](https://github.com/lostmind008/contextkeeper-v3/discussions)
+### Community & Support
+- **GitHub Issues**: Report bugs and request features
+- **Discussions**: Ask questions and share experiences
+- **Wiki**: Community-contributed guides and examples
 
-### Quick Health Check
+### Quick Support Commands
+
 ```bash
-# Verify everything is working
-curl http://localhost:5556/health
-./scripts/rag_cli_v2.sh projects list
-./scripts/rag_cli_v2.sh ask "test query"
+# System information
+python contextkeeper_cli.py health --verbose
+
+# Export project state for bug reports
+python contextkeeper_cli.py export <project_id> --debug
+
+# Check logs
+tail -f logs/contextkeeper.log
+```
+
+### Emergency Recovery
+
+If your installation is completely broken:
+
+```bash
+# Reset virtual environment
+rm -rf venv/
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Reset project database
+rm -rf chromadb/
+python rag_agent.py server
 ```
 
 ---
 
-**Happy coding with ContextKeeper! 🚀**
+**Last Updated**: August 2025 | **Version**: 3.0 | **Status**: Production Ready
 
-*Remember: ContextKeeper helps you maintain architectural context and prevent knowledge drift. Use sacred plans to protect your core architecture and let AI assistants work within your constraints.*
+For the latest updates and advanced features, visit our [GitHub repository](https://github.com/lostmind008/contextkeeper-v3).

@@ -16,7 +16,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 
 # Add imports when implementation is ready
-# from git_activity_tracker import GitActivityTracker, GitIntegratedRAGAgent
+# from src.tracking.git_activity_tracker import GitActivityTracker, GitIntegratedRAGAgent
 
 
 class TestGitActivityTracker:

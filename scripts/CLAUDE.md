@@ -1,29 +1,32 @@
-# CLAUDE.md - Scripts
+# CLAUDE.md - Scripts (DEPRECATED)
 
 This file provides context for Claude Code when working in this directory.
 
-## Directory Purpose
-Contains automation scripts and CLI tools for ContextKeeper v3 operations, including project management, sacred layer operations, and system administration tasks.
+## ⚠️ IMPORTANT: These scripts are DEPRECATED
+**All functionality has been migrated to the unified Python CLI:**
+- **NEW**: `python ../contextkeeper_cli.py` (or `../contextkeeper`)
+- **Interactive menu**: Run without arguments
+- **Help**: `python ../contextkeeper_cli.py --help`
 
-## Key Files
-- **rag_cli_v2.sh** - Primary CLI interface for project management and queries
-- **rag_cli.sh** - Legacy CLI (deprecated, use v2)
-- **start_system.sh** - System startup automation
-- **backup_sacred.sh** - Sacred layer backup operations
-- **maintenance.sh** - System maintenance tasks
+## Directory Purpose (Historical)
+Contains legacy automation scripts that have been replaced by the unified CLI.
 
-## Dependencies
-- **From parent**: RAG Agent accessible, ChromaDB running, Sacred Layer operational
-- **External**: bash shell, curl for API calls, jq for JSON processing
-- **Permissions**: Execute permissions on shell scripts
+## Migration Guide
+### Old Script → New CLI Command
+- `./rag_cli_v2.sh projects create` → `python ../contextkeeper_cli.py project create`
+- `./rag_cli_v2.sh projects focus` → `python ../contextkeeper_cli.py project focus`
+- `./rag_cli_v2.sh ask` → `python ../contextkeeper_cli.py query ask`
+- `./rag_cli_v2.sh sacred` → `python ../contextkeeper_cli.py sacred`
+- `./contextkeeper_simple.sh` → `python ../contextkeeper_cli.py` (interactive)
+- `./contextkeeper_manager.sh` → `python ../contextkeeper_cli.py` (interactive)
 
-## Common Tasks
-- Create project: `./rag_cli_v2.sh projects create "Name" /path/to/project`
-- Focus project: `./rag_cli_v2.sh projects focus <project_id>`
-- Query knowledge: `./rag_cli_v2.sh ask "question" --project <project_id>`
-- Sacred operations: `./rag_cli_v2.sh sacred create|approve|drift`
-- System startup: `./start_system.sh`
+## Key Files (Legacy)
+- **rag_cli_v2.sh** - DEPRECATED: Use `contextkeeper_cli.py`
+- **contextkeeper.sh** - DEPRECATED: Use `contextkeeper_cli.py`
+- **contextkeeper_simple.sh** - DEPRECATED: Use `contextkeeper_cli.py`
+- **sacred_cli_integration.sh** - DEPRECATED: Use `contextkeeper_cli.py sacred`
 
 ## Navigation
 - Parent: /Users/sumitm1/contextkeeper-pro-v3/contextkeeper/
-- Related: Main RAG agent (../rag_agent.py), Sacred Layer (../sacred_layer_implementation.py), Tests (../tests/)
+- New CLI: ../contextkeeper_cli.py
+- Related: Main RAG agent (../src/core/rag_agent.py), Sacred Layer (../src/sacred/)
