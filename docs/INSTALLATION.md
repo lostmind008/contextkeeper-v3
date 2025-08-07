@@ -35,8 +35,7 @@ nano .env
 Required environment variables:
 ```bash
 # Google Cloud (for embeddings and LLM)
-GOOGLE_API_KEY=your-google-api-key
-GEMINI_API_KEY=your-gemini-api-key  # Same as GOOGLE_API_KEY
+GEMINI_API_KEY=your-gemini-api-key
 
 # Sacred Layer (v3.0)
 SACRED_APPROVAL_KEY=your-secret-approval-key
@@ -147,11 +146,11 @@ http://localhost:5556/analytics_dashboard_live.html
 **Google Cloud Authentication:**
 ```bash
 # Check API key is set
-echo $GOOGLE_API_KEY
+echo $GEMINI_API_KEY
 
 # Test API access
 curl -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $GOOGLE_API_KEY" \
+  -H "Authorization: Bearer $GEMINI_API_KEY" \
   https://generativelanguage.googleapis.com/v1beta/models
 ```
 

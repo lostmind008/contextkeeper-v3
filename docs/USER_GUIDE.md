@@ -22,7 +22,7 @@ pip install -r requirements.txt
 # 4. Set up environment variables
 cp .env.template .env
 # Edit .env and add your keys:
-# GOOGLE_API_KEY=your-google-api-key
+# GEMINI_API_KEY=your-gemini-api-key
 # SACRED_APPROVAL_KEY=a-long-secret-key-you-create
 ```
 
