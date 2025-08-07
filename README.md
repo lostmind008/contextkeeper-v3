@@ -39,11 +39,11 @@ pip install -r requirements.txt
 ```bash
 # Copy the template and edit the new .env file
 cp .env.template .env
-# Add your Google API key and define a SACRED_APPROVAL_KEY (required)
+# Add your Google API key and define a SACRED_APPROVAL_KEY (required; no default)
 ```
 
-The `SACRED_APPROVAL_KEY` environment variable must be set in your shell or `.env` file.
-Plan approval will fail if this key is missing.
+The `SACRED_APPROVAL_KEY` environment variable must be set in your shell or `.env` file. There is no default value and
+ContextKeeper will raise an error if this key is missing.
 
 ### 3. Start ContextKeeper
 ```bash
@@ -74,9 +74,9 @@ The v3 architecture is designed for scalability and real-time interaction.
 └─────────────────┘      └──────┬───────┘      └─────────┬────────┘
                                 │                       │
                                 ▼                       ▼
-┌─────────────────────────────┐  ┌──────────────────┐  ┌───────────────────┐
-│ src/core/project_manager.py ├──┤  src/sacred/...  ├──┤ src/analytics/... │
-└─────────────────────────────┘  └──────────────────┘  └───────────────────┘
+┌─────────────────────────────┐  ┌──────────────────┐  ┌──────────────────────┐
+│ src/core/project_manager.py ├──┤  src/sacred/...  ├──┤ src/ck_analytics/... │
+└─────────────────────────────┘  └──────────────────┘  └──────────────────────┘
               │                       │                       │
               └───────────────┐       │       ┌───────────────┘
                               ▼       ▼       ▼
@@ -85,7 +85,7 @@ The v3 architecture is designed for scalability and real-time interaction.
                        └───────────────────────────┘
 ```
 - **Real-Time Layer**: The dashboard communicates with the backend via WebSockets, allowing for instant UI updates.
-- **Analytics Service**: A new, dedicated service (`src/analytics/`) calculates and serves governance and project metrics.
+- **Analytics Service**: A new, dedicated service (`src/ck_analytics/`) calculates and serves governance and project metrics.
 - **Modular `src` Layout**: The codebase is now organized into a `src` directory for better maintainability.
 
 ## 📂 Project Structure
@@ -94,7 +94,7 @@ The project structure has been refactored for clarity.
 ```
 contextkeeper-v3/
 ├── src/
-│   ├── analytics/
+│   ├── ck_analytics/
 │   ├── core/
 │   ├── sacred/
 │   └── tracking/

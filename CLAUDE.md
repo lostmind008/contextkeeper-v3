@@ -18,13 +18,13 @@ User Request → Claude Code → MCP Server → RAG Agent → ChromaDB/LLM
 ```
 - **`src/` layout**: The core Python logic is now cleanly organized in the `src/` directory.
 - **WebSocket Layer**: The dashboard maintains a real-time connection to the backend via Socket.IO for instant UI updates.
-- **Analytics Service**: A new `src/analytics` module provides on-demand governance metrics.
+- **Analytics Service**: A new `src/ck_analytics` module provides on-demand governance metrics.
 
 ### Core Components
 1. **RAG Agent** (`rag_agent.py`): Flask API server, handles all operations and WebSocket communication.
 2. **Project Manager** (`src/core/project_manager.py`): Manages project state, decisions, and objectives.
 3. **Sacred Layer** (`src/sacred/sacred_layer_implementation.py`): Enforces architectural governance.
-4. **Analytics Service** (`src/analytics/analytics_service.py`): Calculates and serves project metrics.
+4. **Analytics Service** (`src/ck_analytics/analytics_service.py`): Calculates and serves project metrics.
 5. **MCP Integration** (`mcp-server/enhanced_mcp_server.js`): Bridge for external AI tools.
 6. **Dashboard** (`analytics_dashboard_live.html`): Real-time UI for all user interactions.
 

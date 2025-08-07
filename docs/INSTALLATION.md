@@ -37,7 +37,7 @@ Required environment variables:
 # Google Cloud (for embeddings and LLM)
 GEMINI_API_KEY=your-gemini-api-key
 
-# Sacred Layer (v3.0)
+# Sacred Layer (v3.0) - required, no default
 SACRED_APPROVAL_KEY=your-secret-approval-key
 
 # Optional: Analytics and Performance
@@ -45,6 +45,8 @@ ANALYTICS_CACHE_DURATION=300  # Cache duration in seconds (default: 300)
 FLASK_ASYNC_MODE=True         # Enable async endpoints (default: True)
 DEBUG=0                       # Set to 1 for debug logging
 ```
+
+ContextKeeper will raise an error during plan approval if `SACRED_APPROVAL_KEY` is not set.
 
 ### 3. Verify Installation
 ```bash
