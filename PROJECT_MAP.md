@@ -14,7 +14,7 @@ ContextKeeper v3.0 is an AI-powered development context management system with m
 ```
 contextkeeper/
 ├── src/
-│   ├── analytics/
+│   ├── ck_analytics/
 │   ├── core/
 │   ├── sacred/
 │   └── tracking/
@@ -51,9 +51,9 @@ contextkeeper/
   - Advanced drift detection engine.
 
 ### Analytics
-- **`src/analytics/analytics_service.py`**
+- **`src/ck_analytics/analytics_service.py`**
   - Service layer for the `/analytics/sacred` endpoint.
-- **`src/analytics/sacred_metrics.py`**
+- **`src/ck_analytics/sacred_metrics.py`**
   - Core logic for calculating governance metrics.
 
 ### Frontend

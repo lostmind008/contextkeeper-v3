@@ -10,7 +10,7 @@ Contains the foundational components of ContextKeeper that orchestrate all syste
   - Manages ChromaDB collections and embeddings
   - Provides all API endpoints for system operations
   - Handles LLM queries and response generation
-  
+
 - **`project_manager.py`** (503 lines) - Multi-project state management
   - Manages project lifecycle (create, focus, archive)
   - Tracks decisions, objectives, and events
@@ -36,4 +36,4 @@ These components implement the core architectural decisions:
 ## Navigation
 - Parent: /Users/sumitm1/contextkeeper-pro-v3/contextkeeper/src/
 - Sacred Layer: ../sacred/sacred_layer_implementation.py
-- Analytics: ../analytics/analytics_integration.py
+  - Analytics: ../ck_analytics/analytics_integration.py

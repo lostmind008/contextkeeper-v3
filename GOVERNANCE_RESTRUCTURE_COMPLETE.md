@@ -1,6 +1,6 @@
 # Governance Restructure Complete
 
-**Date**: 2025-08-05 23:58 AEST  
+**Date**: 2025-08-05 23:58 AEST
 **Status**: ✅ FULLY COMPLIANT
 
 ## Summary of Changes
@@ -14,8 +14,8 @@ After:  Organized into proper src/ structure
 
 src/
 ├── core/         (2 files)  - Core system components
-├── sacred/       (2 files)  - Sacred layer implementation  
-├── analytics/    (1 file)   - Analytics integration
+├── sacred/       (2 files)  - Sacred layer implementation
+├── ck_analytics/    (1 file)   - Analytics integration
 ├── tracking/     (1 file)   - Git activity tracking
 ├── scripts/      (38 files) - Utility scripts and fixes
 └── utils/        (0 files)  - Ready for future utilities
@@ -29,10 +29,10 @@ src/
 ### 3. Governance Headers Added
 Added comprehensive governance headers with embedded planning context to:
 - `rag_agent.py` (already had header)
-- `src/core/project_manager.py` 
+- `src/core/project_manager.py`
 - `src/sacred/sacred_layer_implementation.py`
 - `src/sacred/enhanced_drift_sacred.py`
-- `src/analytics/analytics_integration.py`
+- `src/ck_analytics/analytics_integration.py`
 - `src/tracking/git_activity_tracker.py`
 
 ### 4. CLAUDE.md Files Created
@@ -40,7 +40,7 @@ Created context files for all new directories:
 - `src/CLAUDE.md` - Overview of source structure
 - `src/core/CLAUDE.md` - Core components context
 - `src/sacred/CLAUDE.md` - Sacred layer context (updated existing)
-- `src/analytics/CLAUDE.md` - Analytics context
+- `src/ck_analytics/CLAUDE.md` - Analytics context
 - `src/tracking/CLAUDE.md` - Tracking context
 - `src/scripts/CLAUDE.md` - Scripts context
 

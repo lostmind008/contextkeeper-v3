@@ -8,7 +8,7 @@
 - sacred_layer_implementation.py - Sacred layer core
 - enhanced_drift_sacred.py - Drift detection enhancements
 
-## Analytics (to src/analytics/)
+## Analytics (to src/ck_analytics/)
 - analytics_integration.py - Analytics integration
 
 ## Tracking (to src/tracking/)

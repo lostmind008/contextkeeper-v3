@@ -14,7 +14,7 @@ mkdir -p docs/{planning,archive,guides}
 # Archive documentation sprawl
 echo "Archiving documentation sprawl..."
 mv *_REPORT.md docs/archive/ 2>/dev/null || true
-mv *_SUMMARY.md docs/archive/ 2>/dev/null || true  
+mv *_SUMMARY.md docs/archive/ 2>/dev/null || true
 mv *_ANALYSIS.md docs/archive/ 2>/dev/null || true
 mv *_DEBUG*.md docs/archive/ 2>/dev/null || true
 mv *_FIX*.md docs/archive/ 2>/dev/null || true
@@ -26,7 +26,7 @@ echo "Organizing essential documentation..."
 
 # Move components to proper structure
 echo "Moving components to proper directories..."
-mv analytics_integration.py src/analytics/ 2>/dev/null || true
+mv analytics_integration.py src/ck_analytics/ 2>/dev/null || true
 mv analytics_dashboard_live.html src/dashboard/ 2>/dev/null || true
 mv sacred_layer_implementation.py src/sacred/ 2>/dev/null || true
 mv enhanced_drift_sacred.py src/sacred/ 2>/dev/null || true

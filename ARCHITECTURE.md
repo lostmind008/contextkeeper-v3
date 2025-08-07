@@ -37,7 +37,7 @@ The architecture is designed around a central, stateful **RAG (Retrieval-Augment
                  +-------------------------+-------------------------+
                  |                         |                         |
         +--------v--------+       +--------v--------+       +--------v--------+
-        |  `src/core`     |       |  `src/sacred`   |       |  `src/analytics`|
+        |  `src/core`     |       |  `src/sacred`   |       |  `src/ck_analytics`|
         | Project Mgmt    |       | Governance      |       | Metrics Service |
         +--------+--------+       +--------+--------+       +--------+--------+
                  |                         |                         |
@@ -66,7 +66,7 @@ The architecture is designed around a central, stateful **RAG (Retrieval-Augment
 The Python codebase is organized into a modular `src/` directory:
 *   **`src/core`**: Manages fundamental entities like projects and decisions.
 *   **`src/sacred`**: Implements the architectural governance features (Sacred Plans, drift detection).
-*   **`src/analytics`**: Contains the new analytics service for calculating governance and project metrics.
+*   **`src/ck_analytics`**: Contains the new analytics service for calculating governance and project metrics.
 *   **`src/tracking`**: Handles Git activity tracking and other event monitoring.
 
 ### Data Storage
@@ -91,7 +91,7 @@ The Python codebase is organized into a modular `src/` directory:
 
 ### Analytics Calculation
 1.  A request is made to the `GET /analytics/sacred` endpoint.
-2.  The RAG Agent routes this to the `AnalyticsService` in `src/analytics/analytics_service.py`.
+2.  The RAG Agent routes this to the `AnalyticsService` in `src/ck_analytics/analytics_service.py`.
 3.  The `AnalyticsService` uses the `SacredMetricsCalculator` to gather data from the `SacredLayerManager` and `ProjectManager`.
 4.  It calculates metrics like plan counts, approval rates, and adherence scores.
 5.  The results are cached for 5 minutes to ensure subsequent requests are fast.
