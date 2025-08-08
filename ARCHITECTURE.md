@@ -75,14 +75,30 @@ The Python codebase is organized into a modular `src/` directory:
 
 ## 4. Data Flows
 
-### Project Onboarding (Unified Workflow)
-1.  A user runs `./scripts/contextkeeper.sh project add ...` or uses the dashboard modal.
-2.  A `POST` request is sent to the `/projects/create-and-index` endpoint on the RAG Agent.
-3.  The agent immediately creates the project configuration and returns a `202 Accepted` response with a unique `task_id`.
-4.  A background task is spawned to start indexing the project files.
-5.  During indexing, the `ingest_directory` function emits `indexing_progress` events via WebSocket.
-6.  The dashboard listens for these events and updates the UI in real-time. The CLI polls the `/tasks/{task_id}` endpoint to show its progress bar.
-7.  Upon completion, an `indexing_complete` event is emitted.
+### Project Onboarding (Async Task System)
+1.  **Initiation**: A user runs `./scripts/contextkeeper.sh project add ...` or uses the dashboard modal.
+2.  **Immediate Response**: A `POST` request is sent to the `/projects/create-and-index` endpoint on the RAG Agent.
+3.  **Task Creation**: The agent immediately creates the project configuration and returns a `202 Accepted` response with:
+    - `task_id`: Unique identifier for tracking async operation
+    - `project_id`: Unique project identifier (e.g., `proj_abc123`)
+4.  **Project Metadata**: The project JSON file is created in the `projects/` directory with initial state.
+5.  **Background Processing**: A background task is spawned using Python threading to handle indexing asynchronously.
+6.  **Indexing Pipeline**:
+    - **Security Filtering**: Files are scanned with PathFilter to exclude sensitive directories (.git, node_modules)
+    - **Content Processing**: SecurityFilter redacts API keys and sensitive patterns
+    - **Chunking**: Content is split into semantic chunks for embedding
+    - **Embedding Generation**: Chunks are embedded using the Gemini API
+    - **Storage**: A new ChromaDB collection is created specifically for this project (e.g., `proj_abc123`)
+    - **Isolation**: Embeddings are stored in the isolated collection to prevent cross-contamination
+7.  **Real-Time Progress**: Throughout the process, `indexing_progress` events are emitted via WebSocket with:
+    - `project_id`: The project being indexed
+    - `progress`: Percentage completion (0-100)
+    - `current_file`: Currently processing file (optional)
+8.  **Client Handling**:
+    - **Dashboard**: Listens for WebSocket events and updates UI in real-time with progress bars
+    - **CLI**: Polls the `/tasks/{task_id}` endpoint to display progress bar in terminal
+9.  **Completion**: Upon successful indexing, an `indexing_complete` event is emitted with the final project state.
+10. **Error Handling**: If indexing fails, an `indexing_error` event is emitted with error details.
 
 ### Real-Time Dashboard Updates
 1.  The dashboard opens a persistent WebSocket connection to the RAG Agent.
@@ -97,8 +113,79 @@ The Python codebase is organized into a modular `src/` directory:
 5.  The results are cached for 5 minutes to ensure subsequent requests are fast.
 6.  The calculated metrics are returned as a JSON response.
 
-## 5. Security Considerations
+### Query Processing (RAG Workflow)
+1.  User submits a query through CLI (`./scripts/contextkeeper.sh query`) or dashboard.
+2.  The query is sent to `/projects/{id}/query` endpoint.
+3.  The system verifies a project is focused, otherwise returns an error.
+4.  The query is embedded using the Gemini API.
+5.  ChromaDB performs semantic search in the project's isolated collection.
+6.  Top-k relevant code chunks are retrieved based on cosine similarity.
+7.  Retrieved context is combined with the query and sent to Gemini LLM.
+8.  The LLM generates a response grounded in the codebase context.
+9.  The response is returned to the user and logged as an event.
+
+### Sacred Layer Governance
+1.  A Sacred Plan is proposed through the dashboard or API.
+2.  The plan requires approval with the `SACRED_APPROVAL_KEY` environment variable.
+3.  Once approved, the plan becomes immutable and stored in the project's sacred directory.
+4.  The drift detection engine (`enhanced_drift_sacred.py`) monitors development activity.
+5.  If code changes deviate from approved architectural patterns, drift alerts are generated.
+6.  Drift metrics are calculated and exposed through the analytics endpoint.
+
+## 5. WebSocket Events
+
+The system emits comprehensive real-time events via Socket.IO to keep all clients synchronised:
+
+### Project Management Events
+- **`indexing_progress`**: 
+  - **Payload**: `{ "project_id": string, "progress": int, "current_file": string? }`
+  - **Purpose**: Real-time progress updates during async project indexing
+  - **Frequency**: Emitted periodically during file processing
+
+- **`indexing_complete`**: 
+  - **Payload**: `{ "project_id": string, "total_files": int, "total_chunks": int }`
+  - **Purpose**: Notification when project indexing finishes successfully
+  - **Trigger**: After all files are processed and embeddings stored
+
+- **`indexing_error`**: 
+  - **Payload**: `{ "project_id": string, "error": string, "failed_file": string? }`
+  - **Purpose**: Error notification during indexing process
+  - **Trigger**: When file processing or embedding generation fails
+
+- **`focus_changed`**: 
+  - **Payload**: `{ "project_id": string, "project_name": string }`
+  - **Purpose**: Notification when active project changes
+  - **Trigger**: CLI focus command or dashboard project selection
+
+- **`project_updated`**: 
+  - **Payload**: `{ "project_id": string, "changes": object }`
+  - **Purpose**: Notification when project metadata changes
+  - **Trigger**: Project configuration updates
+
+### Governance Events
+- **`decision_added`**: 
+  - **Payload**: `{ "project_id": string, "decision": object, "timestamp": string }`
+  - **Purpose**: Notification when architectural decisions are tracked
+  - **Trigger**: New decision added via API or dashboard
+
+- **`objective_updated`**: 
+  - **Payload**: `{ "project_id": string, "objective": object, "action": string }`
+  - **Purpose**: Notification when project objectives change
+  - **Trigger**: Objective creation, completion, or modification
+
+- **`sacred_plan_created`**: 
+  - **Payload**: `{ "project_id": string, "plan_id": string, "title": string }`
+  - **Purpose**: Notification when new Sacred Plans are proposed
+  - **Trigger**: Sacred plan creation via CLI or dashboard
+
+- **`sacred_plan_approved`**: 
+  - **Payload**: `{ "project_id": string, "plan_id": string, "approver": string, "timestamp": string }`
+  - **Purpose**: Notification when plans receive governance approval
+  - **Trigger**: Successful 2-layer plan approval process
+
+## 6. Security Considerations
 *   **Authentication & Authorization**: Currently, the system relies on the security of the local machine it runs on. There is no user-based authentication layer.
-*   **Secret Management**: API keys and the `SACRED_APPROVAL_KEY` are managed via an `.env` file.
+*   **Secret Management**: API keys and the `SACRED_APPROVAL_KEY` are managed via an `.env` file. The SACRED_APPROVAL_KEY has no default and must be explicitly set.
 *   **Data Redaction**: The `SecurityFilter` class automatically redacts sensitive patterns (like API keys) from file content before it is indexed.
 *   **Path Filtering**: A robust `PathFilter` prevents the ingestion of sensitive directories (`.git`, `node_modules`) and files.
+*   **Project Isolation**: Each project has its own ChromaDB collection, preventing cross-contamination of embeddings.

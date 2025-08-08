@@ -213,6 +213,9 @@ htmlcov/
 # yarn.lock
 # Pipfile.lock
 
+# Test fixtures
+test_sample_project/
+
 # Misc
 *.orig
 *.rej

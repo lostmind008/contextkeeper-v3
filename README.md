@@ -24,8 +24,8 @@
 ### 1. Installation
 ```bash
 # Clone the repository
-git clone https://github.com/lostmind008/contextkeeper-v3.git
-cd contextkeeper-v3
+git clone https://github.com/lostmind008/contextkeeper-pro-v3.git
+cd contextkeeper-pro-v3/contextkeeper
 
 # Set up Python environment
 python3 -m venv venv

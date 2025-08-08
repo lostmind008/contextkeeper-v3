@@ -505,14 +505,14 @@ class ProjectKnowledgeAgent:
             raise
         
         # Initialize ChromaDB
-        # self.db = chromadb.PersistentClient(
-        #     path=config['db_path'],
-        #     settings=Settings(
-        #         anonymized_telemetry=False,
-        #         allow_reset=True
-        #     )
-        # )
-        self.db = chromadb.HttpClient(host='localhost', port=8000)
+        self.db = chromadb.PersistentClient(
+            path=config['db_path'],
+            settings=Settings(
+                anonymized_telemetry=False,
+                allow_reset=True
+            )
+        )
+        # self.db = chromadb.HttpClient(host='localhost', port=8000)
         
         # Collections will be created per project
         self.collections = {}
@@ -2002,7 +2002,7 @@ class RAGServer:
     
     def run(self):
         logger.info(f"Starting RAG server on port {self.port}")
-        self.socketio.run(self.app, host='0.0.0.0', port=self.port, debug=False)
+        self.socketio.run(self.app, host='0.0.0.0', port=self.port, debug=False, allow_unsafe_werkzeug=True)
 
 class RAGCLI:
     """Command-line interface for RAG agent"""

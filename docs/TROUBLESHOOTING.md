@@ -387,4 +387,4 @@ Any other relevant information
 
 **Last Updated**: July 2025  
 **Status**: All major issues resolved, system operational  
-**Next Review**: August 2025 or when new issues are discovered
+**Next Review**: February 2025 or when new issues are discovered

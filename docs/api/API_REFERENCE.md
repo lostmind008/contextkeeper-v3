@@ -2,7 +2,7 @@
 
 **Base URL**: `http://localhost:5556`  
 **Status**: ✅ All endpoints operational (August 2025)
-**Version**: 3.1.0
+**Version**: 3.0.0
 
 ## 1. Core Endpoints
 
@@ -11,17 +11,28 @@
 # Unified project creation and indexing (asynchronous)
 POST   /projects/create-and-index
 # Body: { "name": "...", "root_path": "..." }
-# Returns 202 Accepted: { "task_id": "...", "project_id": "..." }
+# Returns 202 Accepted: { "task_id": "task_abc123", "project_id": "proj_xyz789" }
+# Note: Indexing runs in background, use task_id to track progress
 
 # Check status of a background task (like indexing)
 GET    /tasks/<task_id>
-# Returns: { "status": "indexing", "progress": 25 }
+# Returns: 
+#   In Progress: { "status": "indexing", "progress": 45 }
+#   Completed: { "status": "completed", "result": {...} }
+#   Failed: { "status": "failed", "error": "..." }
 
-# List all projects
+# List all projects with status
 GET    /projects
+# Returns: [{ "id": "proj_123", "name": "...", "status": "active", "indexed": true }]
 
 # Set active project (emits 'focus_changed' WebSocket event)
 POST   /projects/<project_id>/focus
+# Body: {} (empty)
+# Returns: { "focused_project": { "id": "...", "name": "..." } }
+
+# Get project details
+GET    /projects/<project_id>
+# Returns: { "id": "...", "name": "...", "root_path": "...", "indexed": true }
 ```
 
 ### Knowledge & Context
@@ -69,27 +80,65 @@ GET    /analytics/sacred
 
 ## 3. Real-Time Events (WebSockets)
 
-Connect to the Socket.IO server at the base URL. The server emits the following events:
+Connect to the Socket.IO server at the base URL (`http://localhost:5556`). The server emits comprehensive real-time events:
 
-### `indexing_progress`
-Fired periodically during project indexing.
-- **Payload**: `{ "project_id": string, "progress": int }`
-- **Example**: `{ "project_id": "proj_123", "progress": 45 }`
+### Project Management Events
 
-### `indexing_complete`
-Fired when a project has been successfully indexed.
-- **Payload**: `{ "project_id": string }`
-- **Example**: `{ "project_id": "proj_123" }`
+#### `indexing_progress`
+Fired periodically during project indexing to show real-time progress.
+- **Payload**: `{ "project_id": string, "progress": int, "current_file": string? }`
+- **Example**: `{ "project_id": "proj_123", "progress": 45, "current_file": "src/main.py" }`
+- **Usage**: Update progress bars in UI
 
-### `indexing_failed`
-Fired if an error occurs during indexing.
-- **Payload**: `{ "project_id": string, "error": string }`
-- **Example**: `{ "project_id": "proj_123", "error": "Permission denied" }`
+#### `indexing_complete`
+Fired when a project has been successfully indexed and is ready for queries.
+- **Payload**: `{ "project_id": string, "total_files": int, "total_chunks": int }`
+- **Example**: `{ "project_id": "proj_123", "total_files": 247, "total_chunks": 1583 }`
+- **Usage**: Enable project interaction, update status to "Active"
 
-### `focus_changed`
-Fired when a project's focus is changed via the API.
-- **Payload**: `{ "project_id": string }`
-- **Example**: `{ "project_id": "proj_456" }`
+#### `indexing_error`
+Fired if an error occurs during the indexing process.
+- **Payload**: `{ "project_id": string, "error": string, "failed_file": string? }`
+- **Example**: `{ "project_id": "proj_123", "error": "Permission denied", "failed_file": "/restricted/file.py" }`
+- **Usage**: Show error messages, allow retry
+
+#### `focus_changed`
+Fired when a project's focus is changed via CLI or dashboard.
+- **Payload**: `{ "project_id": string, "project_name": string }`
+- **Example**: `{ "project_id": "proj_456", "project_name": "WebApp Backend" }`
+- **Usage**: Update UI to highlight focused project
+
+#### `project_updated`
+Fired when project metadata or configuration changes.
+- **Payload**: `{ "project_id": string, "changes": object }`
+- **Example**: `{ "project_id": "proj_123", "changes": { "name": "Updated Name" } }`
+- **Usage**: Refresh project display information
+
+### Governance Events
+
+#### `decision_added`
+Fired when architectural decisions are tracked for a project.
+- **Payload**: `{ "project_id": string, "decision": object, "timestamp": string }`
+- **Example**: `{ "project_id": "proj_123", "decision": { "title": "Use GraphQL", "reasoning": "..." }, "timestamp": "2025-08-08T12:00:00Z" }`
+- **Usage**: Update decision logs in dashboard
+
+#### `objective_updated`
+Fired when project objectives are created, completed, or modified.
+- **Payload**: `{ "project_id": string, "objective": object, "action": string }`
+- **Example**: `{ "project_id": "proj_123", "objective": { "title": "Implement Auth" }, "action": "completed" }`
+- **Usage**: Update objective lists and progress tracking
+
+#### `sacred_plan_created`
+Fired when new Sacred Plans are proposed for architectural governance.
+- **Payload**: `{ "project_id": string, "plan_id": string, "title": string }`
+- **Example**: `{ "project_id": "proj_123", "plan_id": "plan_456", "title": "API Design Guidelines" }`
+- **Usage**: Show new plans requiring approval
+
+#### `sacred_plan_approved`
+Fired when plans receive governance approval through the 2-layer system.
+- **Payload**: `{ "project_id": string, "plan_id": string, "approver": string, "timestamp": string }`
+- **Example**: `{ "project_id": "proj_123", "plan_id": "plan_456", "approver": "John Doe", "timestamp": "2025-08-08T12:00:00Z" }`
+- **Usage**: Update plan status to "Approved", enable enforcement
 
 
 ## 4. Health & Status
