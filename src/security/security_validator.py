@@ -12,7 +12,7 @@ import string
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from werkzeug.security import safe_join
-from flask import escape
+from markupsafe import escape  # Flask 3.0+ uses markupsafe directly
 import logging
 
 logger = logging.getLogger(__name__)
@@ -103,8 +103,20 @@ class SecurityValidator:
         if not text:
             return ""
         
-        # Use Flask's escape for HTML entities
-        return escape(text)
+        # Remove dangerous patterns first
+        dangerous_patterns = [
+            (r'javascript:', ''),
+            (r'on\w+\s*=', ''),  # Remove event handlers like onerror=, onload=
+            (r'<script[^>]*>.*?</script>', ''),  # Remove script tags
+            (r'<iframe[^>]*>.*?</iframe>', ''),  # Remove iframes
+        ]
+        
+        cleaned = text
+        for pattern, replacement in dangerous_patterns:
+            cleaned = re.sub(pattern, replacement, cleaned, flags=re.IGNORECASE | re.DOTALL)
+        
+        # Then escape HTML entities
+        return escape(cleaned)
     
     @classmethod
     def validate_api_key(cls, api_key: str, min_length: int = 32) -> bool:
@@ -161,6 +173,8 @@ class SecurityValidator:
                 # Remove null bytes and control characters
                 value = value.replace('\x00', '')
                 value = ''.join(char for char in value if char.isprintable() or char.isspace())
+                # Also sanitise HTML to prevent XSS
+                value = cls.sanitise_html_input(value)
                 sanitised[key] = value[:10000]  # Limit string length
             elif isinstance(value, (int, float, bool)):
                 sanitised[key] = value
@@ -181,7 +195,10 @@ class SecurityValidator:
         """Helper method to sanitise individual values"""
         if isinstance(value, str):
             value = value.replace('\x00', '')
-            return ''.join(char for char in value if char.isprintable() or char.isspace())[:10000]
+            value = ''.join(char for char in value if char.isprintable() or char.isspace())
+            # Also sanitise HTML 
+            value = cls.sanitise_html_input(value)
+            return value[:10000]
         elif isinstance(value, (int, float, bool)):
             return value
         elif isinstance(value, list):

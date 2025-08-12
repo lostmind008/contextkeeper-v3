@@ -4,6 +4,8 @@ tiktoken>=0.5.0
 watchdog>=3.0.0
 flask[async]>=3.0.0
 flask-cors>=4.0.0
+flask-limiter>=3.5.0
+flask-talisman>=1.1.0
 requests>=2.28.0
 python-dotenv>=1.0.0
 # v3.0 Sacred Layer dependencies

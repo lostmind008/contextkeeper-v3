@@ -83,6 +83,13 @@ from watchdog.events import FileSystemEventHandler
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_socketio import SocketIO
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_talisman import Talisman
+
+# Import security modules
+from src.security.security_config import SecurityConfig
+from src.security.security_validator import SecurityValidator, security_logger
 
 # Import ProjectManager for multi-project support
 from src.core.project_manager import ProjectManager, ProjectStatus
@@ -1006,10 +1013,50 @@ class RAGServer:
     def __init__(self, agent: ProjectKnowledgeAgent, port: int = 5556):
         self.agent = agent
         self.app = Flask(__name__)
-        CORS(self.app)
+        
+        # Apply Flask security configuration
+        self.app.config.update(SecurityConfig.get_flask_config())
+        
+        # Configure CORS with proper origins - Reference: https://owasp.org/www-community/attacks/CORS_OriginHeaderScrutiny
+        CORS(self.app, origins=SecurityConfig.CORS_ORIGINS, supports_credentials=True)
+        
+        # Initialise rate limiter - Reference: https://owasp.org/www-community/controls/Rate_Limiting
+        self.limiter = Limiter(
+            app=self.app,
+            key_func=get_remote_address,
+            default_limits=["200 per day", "50 per hour"],
+            storage_uri=os.environ.get('REDIS_URL', 'memory://')
+        )
+        
+        # Apply security headers - Reference: https://owasp.org/www-project-secure-headers/
+        if SecurityConfig.ENVIRONMENT == 'production':
+            Talisman(
+                self.app,
+                force_https=True,
+                strict_transport_security=True,
+                content_security_policy={
+                    'default-src': "'self'",
+                    'script-src': "'self' 'unsafe-inline' cdnjs.cloudflare.com cdn.socket.io",
+                    'style-src': "'self' 'unsafe-inline'",
+                    'img-src': "'self' data:",
+                    'connect-src': "'self' ws: wss:"
+                }
+            )
+        else:
+            # Development mode - less strict
+            @self.app.after_request
+            def set_security_headers(response):
+                for header, value in SecurityConfig.SECURITY_HEADERS.items():
+                    response.headers[header] = value
+                return response
+        
         self.port = port
         self.tasks = {}
-        self.socketio = SocketIO(self.app, cors_allowed_origins="*")
+        # Fix CORS for Socket.IO - no wildcard origins
+        self.socketio = SocketIO(
+            self.app, 
+            cors_allowed_origins=SecurityConfig.CORS_ORIGINS
+        )
         self.executor = concurrent.futures.ThreadPoolExecutor()
         self._setup_routes()
         add_sacred_drift_endpoint(
@@ -1029,52 +1076,96 @@ class RAGServer:
             return jsonify({'status': 'healthy', 'timestamp': datetime.now().isoformat()})
         
         @self.app.route('/query', methods=['POST'])
+        @self.limiter.limit("10 per minute")  # Rate limiting - OWASP A04:2021
         def query():
-            data = request.json
-            question = data.get('question', '')
-            k = data.get('k', 5)
-            project_id = data.get('project_id')  # Extract project_id from request
-            
-            if not question:
-                return jsonify({'error': 'Question required'}), 400
-            
-            # Pass project_id to query method (will use focused project if None)
-            results = self._run_async(self.agent.query(question, k, project_id))
-            
-            # Security audit logging
-            logger.info(f"Query executed - Project: {project_id or 'FOCUSED'}, Question: {question[:50]}...")
-            
-            return jsonify(results)
+            try:
+                # Get client IP for logging
+                client_ip = request.remote_addr
+                
+                # Validate and sanitise input - OWASP A03:2021 - Injection prevention
+                data = SecurityValidator.validate_json_input(
+                    request.json,
+                    required_fields=['question']
+                )
+                
+                question = SecurityValidator.sanitise_html_input(data.get('question', ''))
+                k = min(int(data.get('k', 5)), 20)  # Limit max results
+                
+                # Validate project_id if provided
+                project_id = data.get('project_id')
+                if project_id:
+                    project_id = SecurityValidator.validate_project_id(project_id)
+                
+                # Log the query
+                security_logger.log_access(
+                    user='anonymous',  # Add user when auth implemented
+                    resource='query',
+                    action='search',
+                    ip_address=client_ip
+                )
+                
+                # Execute query
+                results = self._run_async(self.agent.query(question, k, project_id))
+                
+                return jsonify(results)
+                
+            except ValueError as e:
+                security_logger.log_validation_failure('query', str(e), request.remote_addr)
+                return jsonify({'error': 'Invalid input'}), 400
+            except Exception as e:
+                logger.error(f"Query error: {e}", exc_info=True)
+                return jsonify({'error': 'Internal server error'}), 500
         
         @self.app.route('/ingest', methods=['POST'])
+        @self.limiter.limit("5 per minute")  # Rate limiting for resource-intensive operation
         def ingest():
-            data = request.json
-            path = data.get('path', '')
-            project_id = data.get('project_id')  # CRITICAL: Extract project_id
-            
-            if not path or not os.path.exists(path):
-                return jsonify({'error': 'Valid path required'}), 400
-            
-            # CRITICAL: Enforce project isolation - require project_id for security
-            if not project_id:
-                return jsonify({'error': 'project_id required for secure ingestion'}), 400
-            
-            # Validate project exists
-            if project_id not in self.agent.collections:
-                # Try to initialize collections in case project was just created
-                self.agent._init_project_collections()
+            try:
+                # Validate and sanitise input - OWASP A03:2021
+                data = SecurityValidator.validate_json_input(
+                    request.json,
+                    required_fields=['path', 'project_id']
+                )
+                
+                # Validate file path to prevent path traversal
+                path = SecurityValidator.validate_file_path(data.get('path', ''))
+                
+                if not os.path.exists(path):
+                    return jsonify({'error': 'Path does not exist'}), 404
+                
+                # Validate project_id
+                project_id = SecurityValidator.validate_project_id(data.get('project_id'))
+                
+                # Log the ingestion attempt
+                security_logger.log_access(
+                    user='anonymous',
+                    resource='ingest',
+                    action='add_documents',
+                    ip_address=request.remote_addr
+                )
+                
+                # Validate project exists
                 if project_id not in self.agent.collections:
-                    return jsonify({'error': f'Project {project_id} not found or not accessible'}), 404
-            
-            if os.path.isfile(path):
-                # Check if single file should be ignored
-                if self.agent.path_filter.should_ignore_path(path):
-                    return jsonify({'error': 'File path is ignored by configuration', 'chunks_ingested': 0})
-                chunks = self._run_async(self.agent.ingest_file(path, project_id))
-            else:
-                chunks = self._run_async(self.agent.ingest_directory(path, project_id))
-            
-            return jsonify({'chunks_ingested': chunks})
+                    # Try to initialize collections in case project was just created
+                    self.agent._init_project_collections()
+                    if project_id not in self.agent.collections:
+                        return jsonify({'error': f'Project {project_id} not found or not accessible'}), 404
+                
+                if os.path.isfile(path):
+                    # Check if single file should be ignored
+                    if self.agent.path_filter.should_ignore_path(path):
+                        return jsonify({'error': 'File path is ignored by configuration', 'chunks_ingested': 0})
+                    chunks = self._run_async(self.agent.ingest_file(path, project_id))
+                else:
+                    chunks = self._run_async(self.agent.ingest_directory(path, project_id))
+                
+                return jsonify({'chunks_ingested': chunks})
+                
+            except ValueError as e:
+                security_logger.log_validation_failure('ingest', str(e), request.remote_addr)
+                return jsonify({'error': 'Invalid input'}), 400
+            except Exception as e:
+                logger.error(f"Ingest error: {e}", exc_info=True)
+                return jsonify({'error': 'Internal server error'}), 500
         
         @self.app.route('/decision', methods=['POST'])
         def add_decision():
@@ -1627,12 +1718,22 @@ class RAGServer:
         
         @self.app.route('/analytics_dashboard_live.html', methods=['GET'])
         def get_analytics_dashboard():
-            """Serve the analytics dashboard HTML file"""
-            # Serve the HTML file from the current directory
-            dashboard_path = os.path.join(os.getcwd(), 'analytics_dashboard_live.html')
-            if os.path.exists(dashboard_path):
-                return send_from_directory(os.getcwd(), 'analytics_dashboard_live.html')
-            else:
+            """Serve the analytics dashboard HTML file with path traversal protection"""
+            try:
+                # Validate file path to prevent path traversal - OWASP A01:2021
+                # Reference: https://owasp.org/www-community/attacks/Path_Traversal
+                dashboard_path = SecurityValidator.validate_file_path(
+                    'analytics_dashboard_live.html',
+                    base_dir=os.getcwd()
+                )
+                return send_from_directory(
+                    os.path.dirname(dashboard_path),
+                    os.path.basename(dashboard_path)
+                )
+            except ValueError as e:
+                logger.error(f"Path validation failed: {e}")
+                return jsonify({'error': 'Dashboard not accessible'}), 403
+            except FileNotFoundError:
                 return jsonify({'error': 'Analytics dashboard not found'}), 404
         
         # Additional endpoints to match MCP server expectations
