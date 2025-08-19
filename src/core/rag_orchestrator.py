@@ -27,8 +27,9 @@ TODO FROM PLANNING:
 # Child: ../sacred/sacred_manager.py - manages architectural decisions
 
 import os
+import asyncio
 from dataclasses import dataclass
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Callable
 import logging
 
 import chromadb
@@ -37,6 +38,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 from .project_manager import ProjectManager
+from src.sacred.sacred_layer_implementation import SacredIntegratedRAGAgent
+from src.tracking.git_activity_tracker import GitIntegratedRAGAgent
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +85,16 @@ class RAGOrchestrator:
             "max_results": 10,
             "embedding_model": "text-embedding-004",
             "api_port": 5556,
+            "default_file_extensions": [
+                ".py",
+                ".js",
+                ".jsx",
+                ".ts",
+                ".tsx",
+                ".md",
+                ".json",
+                ".yaml",
+            ],
         }
 
         # Project management
@@ -90,10 +103,30 @@ class RAGOrchestrator:
         # Vector store and embedding setup
         api_key = os.getenv("GEMINI_API_KEY", "")
         self.embedding_function = GoogleGenAIEmbeddingFunction(api_key, self.config["embedding_model"])
-        self.db = chromadb.HttpClient(host="localhost", port=8000, settings=Settings(anonymized_telemetry=False))
+        self.db = chromadb.HttpClient(
+            host="localhost",
+            port=8000,
+            settings=Settings(anonymized_telemetry=False),
+        )
 
         self.collections: Dict[str, Any] = {}
         self._init_project_collections()
+
+        # Analytics and sacred layer integrations
+        self.git_integration = GitIntegratedRAGAgent(self, self.project_manager)
+        for project in self.project_manager.get_active_projects():
+            try:
+                self.git_integration.init_git_tracking(project.project_id)
+            except Exception as exc:  # pragma: no cover - git may be absent in tests
+                logger.warning("Git tracking init failed for %s: %s", project.name, exc)
+
+        self.sacred_integration = SacredIntegratedRAGAgent(self)
+
+        # Query processors map
+        self.query_processors: Dict[str, Callable[[str, str], Any]] = {
+            "vector": self._query_vector_store,
+            "sacred": self._query_sacred_layer,
+        }
 
         # Flask application
         self.app = Flask(__name__)
@@ -134,31 +167,11 @@ class RAGOrchestrator:
 
     # ------------------------------------------------------------------
     # Public API
-    def coordinate_query(self, query: str, project_id: Optional[str] = None) -> Dict[str, Any]:
-        """Execute a vector search scoped to a specific project"""
-
-        if project_id is None:
-            return {
-                "query": query,
-                "error": "No project context specified",
-                "results": [],
-            }
-
-        if project_id not in self.collections:
-            return {
-                "query": query,
-                "error": f"Project {project_id} not found",
-                "results": [],
-            }
-
-        try:
-            res = self.collections[project_id].query(
-                query_texts=[query],
-                n_results=self.config.get("max_results", 10),
-            )
-        except Exception as exc:
-            logger.error("Vector store query failed: %s", exc)
-            return {"query": query, "error": str(exc), "results": []}
+    def _query_vector_store(self, query: str, project_id: str) -> List[Dict[str, Any]]:
+        """Execute a vector store search"""
+        res = self.collections[project_id].query(
+            query_texts=[query], n_results=self.config.get("max_results", 10)
+        )
 
         formatted: List[Dict[str, Any]] = []
         if res and res.get("ids") and res["ids"][0]:
@@ -171,17 +184,54 @@ class RAGOrchestrator:
                         "project_id": project_id,
                     }
                 )
+        return formatted
 
-        return {"query": query, "project_id": project_id, "results": formatted}
+    def _query_sacred_layer(self, query: str, project_id: str) -> Dict[str, Any]:
+        """Query sacred plans for additional context"""
+        return asyncio.run(
+            self.sacred_integration.query_sacred_context(project_id, query)
+        )
 
-    def health_check(self) -> Dict[str, str]:
+    def coordinate_query(self, query: str, project_id: Optional[str] = None) -> Dict[str, Any]:
+        """Route a query through all registered processors"""
+
+        if project_id is None or project_id not in self.collections:
+            return {
+                "query": query,
+                "error": "Project context missing or unknown",
+                "results": {},
+            }
+
+        results: Dict[str, Any] = {}
+        for name, processor in self.query_processors.items():
+            try:
+                results[name] = processor(query, project_id)
+            except Exception as exc:
+                logger.error("Processor %s failed: %s", name, exc)
+                results[name] = {"error": str(exc)}
+
+        return {"query": query, "project_id": project_id, "results": results}
+
+    def health_check(self) -> Dict[str, Any]:
         """Aggregate basic health information for system components"""
 
-        status = {"projects": str(len(self.project_manager.projects))}
+        status: Dict[str, Any] = {"projects": len(self.project_manager.projects)}
+
         try:
             self.db.heartbeat()
             status["vector_store"] = "ok"
         except Exception as exc:  # pragma: no cover - network failure in tests
             status["vector_store"] = f"error: {exc}"
+
+        try:
+            status["sacred_layer"] = len(
+                getattr(self.sacred_integration.sacred_manager, "plans_registry", {})
+            )
+        except Exception as exc:  # pragma: no cover - optional component
+            status["sacred_layer"] = f"error: {exc}"
+
+        status["analytics"] = {
+            "git_tracked_projects": len(getattr(self.git_integration, "git_trackers", {}))
+        }
 
         return status
