@@ -39,6 +39,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from flask import request, jsonify
 import logging
 from datetime import datetime, timedelta
 
