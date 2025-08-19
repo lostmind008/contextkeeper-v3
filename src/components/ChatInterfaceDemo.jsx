@@ -1,5 +1,5 @@
 import React from 'react';
-import ChatInterface from './ChatInterface';
+import { ChatInterface } from './ChatInterface';
 
 // Demo Component showing the chat interface in action
 export const ChatInterfaceDemo = () => {
@@ -33,4 +33,3 @@ export const ChatInterfaceDemo = () => {
   );
 };
 
-export default ChatInterfaceDemo;

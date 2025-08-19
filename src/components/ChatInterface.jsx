@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 // Matches glass morphism design with dark theme
 // WCAG AA compliant with keyboard navigation and screen reader support
 
-const ChatInterface = () => {
+export const ChatInterface = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [messages, setMessages] = useState([
     {
@@ -286,4 +286,3 @@ const ChatInterface = () => {
     </>
   );
 };
-export default ChatInterface;
