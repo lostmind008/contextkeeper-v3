@@ -38,11 +38,22 @@ import logging
 import asyncio
 from flask import request, jsonify
 
-from src.ck_analytics.sacred_metrics import SacredMetricsCalculator
-from src.ck_analytics.analytics_service import AnalyticsService
+# Import local analytics modules using package-relative paths
+from .sacred_metrics import SacredMetricsCalculator
+from .analytics_service import AnalyticsService
 from src.sacred.enhanced_drift_sacred import SacredDriftDetector
 
 logger = logging.getLogger(__name__)
+
+
+def _run_async(coro):
+    """Run an async coroutine in a synchronous context."""
+    try:
+        return asyncio.run(coro)
+    except RuntimeError:
+        # Fallback to existing event loop if one is already running
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(coro)
 
 
 def add_analytics_endpoints(app, agent):
@@ -78,7 +89,7 @@ def add_analytics_endpoints(app, agent):
             analytics_service = AnalyticsService(metrics_calculator)
 
             # Run async analytics calculation
-            result = asyncio.run(
+            result = _run_async(
                 analytics_service.get_sacred_analytics(
                     timeframe=timeframe,
                     project_filter=project_filter,
@@ -111,7 +122,7 @@ def add_analytics_endpoints(app, agent):
             analytics_service = AnalyticsService(metrics_calculator)
 
             # Run async health check
-            result = asyncio.run(analytics_service.get_sacred_health_check())
+            result = _run_async(analytics_service.get_sacred_health_check())
 
             return jsonify(result)
         except Exception as e:
@@ -142,7 +153,7 @@ def add_analytics_endpoints(app, agent):
             analytics_service = AnalyticsService(metrics_calculator)
 
             # Run async project analytics
-            result = asyncio.run(
+            result = _run_async(
                 analytics_service.get_project_detailed_analytics(
                     project_id=project_id,
                     timeframe=timeframe,
