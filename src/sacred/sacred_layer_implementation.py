@@ -44,6 +44,7 @@ from dataclasses import dataclass
 from enum import Enum
 import logging
 from pathlib import Path
+import asyncio
 # For chunking large plans
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import chromadb
@@ -139,15 +140,14 @@ class SacredLayerManager:
                     "created_at": datetime.now().isoformat()
                 }
             )
-    async def create_plan(self, project_id: str, title: str,
-                         content: str, file_path: Optional[str] = None) -> SacredPlan:
+    async def async_create_plan(self, project_id: str, title: str,
+                                content: str, file_path: Optional[str] = None) -> SacredPlan:
         """Create a new plan in draft status"""
-        # Read from file if provided
         if file_path and os.path.exists(file_path):
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
 
-        plan_id = f"plan_{hashlib.sha256(content.encode()).hexdigest()[:12]}"
+        plan_id = hashlib.sha256(content.encode()).hexdigest()[:12]
 
         plan = SacredPlan(
             plan_id=plan_id,
@@ -161,44 +161,53 @@ class SacredLayerManager:
             verification_code=None
         )
 
-        # Save to registry
         self.plans_registry[plan_id] = plan
         self._save_registry()
-        # Save full content to file
         plan_file = self.plans_dir / f"{plan_id}.txt"
         with open(plan_file, 'w', encoding='utf-8') as f:
             f.write(content)
         logger.info(f"Created draft plan: {plan_id} for project {project_id}")
         return plan
-    async def approve_plan(self, plan_id: str, approver: str,
-                          verification_code: str, secondary_verification: str) -> Tuple[bool, str]:
+
+    def create_plan(self, project_id: str, title: str,
+                    content: str, file_path: Optional[str] = None) -> SacredPlan:
+        """Synchronous wrapper around async_create_plan"""
+        return asyncio.run(self.async_create_plan(project_id, title, content, file_path))
+    async def async_approve_plan(self, plan_id: str, approver: str,
+                                 verification_code: str, secondary_verification: str) -> Tuple[bool, str]:
         """Approve a plan with 2-layer verification"""
         if plan_id not in self.plans_registry:
             return False, "Plan not found"
+
         plan = self.plans_registry[plan_id]
         if plan.status != PlanStatus.DRAFT:
             return False, f"Plan is not in draft status (current: {plan.status.value})"
-        # Layer 1: Verification code check
+
         expected_code = self._generate_verification_code(plan)
         if verification_code != expected_code:
             logger.warning(f"Failed verification for plan {plan_id}: invalid code")
             return False, "Invalid verification code"
-        # Layer 2: Secondary verification (could be password, 2FA, etc.)
+
         if not self._verify_secondary(approver, secondary_verification):
             logger.warning(f"Failed secondary verification for plan {plan_id}")
             return False, "Secondary verification failed"
-        # Update plan status
+
         plan.status = PlanStatus.APPROVED
         plan.approved_at = datetime.now().isoformat()
         plan.approved_by = approver
         plan.verification_code = verification_code
-        # Embed and store in sacred collection
-        await self._embed_and_store_plan(plan)
-        # Save registry
+
+        await self._embed_and_store_plan_async(plan)
+
         self._save_registry()
         logger.info(f"Plan {plan_id} approved by {approver}")
         return True, "Plan approved and locked"
-    async def _embed_and_store_plan(self, plan: SacredPlan):
+
+    def approve_plan(self, plan_id: str, approver: str,
+                     verification_code: str, secondary_verification: str) -> Tuple[bool, str]:
+        """Synchronous wrapper around async_approve_plan"""
+        return asyncio.run(self.async_approve_plan(plan_id, approver, verification_code, secondary_verification))
+    async def _embed_and_store_plan_async(self, plan: SacredPlan):
         """Embed and store plan in isolated sacred collection"""
         collection = self._get_sacred_collection(plan.project_id)
         # Load full content
@@ -251,17 +260,14 @@ class SacredLayerManager:
                 }]
             )
 
-    async def query_sacred_plans(self, project_id: str, query: str,
-                               reconstruct: bool = True) -> Dict[str, Any]:
+    async def async_query_sacred_plans(self, project_id: str, query: str,
+                                       reconstruct: bool = True) -> Dict[str, Any]:
         """Query sacred plans with optional reconstruction"""
         collection = self._get_sacred_collection(project_id)
 
-        # Embed query
         query_embedding = await self.embedder.embed_text(query)
 
-        # Search only in sacred plans
         try:
-            # Try the newer ChromaDB filter syntax first
             results = collection.query(
                 query_embeddings=[query_embedding],
                 n_results=10,
@@ -271,7 +277,6 @@ class SacredLayerManager:
                 }
             )
         except Exception as e:
-            # Fall back to older syntax if needed
             logger.warning(f"ChromaDB filter error with new syntax: {e}, trying older syntax")
             try:
                 results = collection.query(
@@ -281,16 +286,15 @@ class SacredLayerManager:
                 )
             except Exception as e2:
                 logger.error(f"ChromaDB filter error with both syntaxes: {e2}")
-                # Last resort - no filter
                 results = collection.query(
                     query_embeddings=[query_embedding],
                     n_results=10
                 )
+
         if not results['ids'][0]:
             return {"plans": [], "query": query}
 
         if reconstruct:
-            # Group chunks by plan_id and reconstruct
             reconstructed_plans = {}
 
             for i, metadata in enumerate(results['metadatas'][0]):
@@ -307,10 +311,8 @@ class SacredLayerManager:
                 chunk_index = metadata['chunk_index']
                 reconstructed_plans[plan_id]['chunks'][chunk_index] = results['documents'][0][i]
 
-            # Reconstruct full content for each plan
             for plan_id, plan_data in reconstructed_plans.items():
                 if len(plan_data['chunks']) == plan_data['total_chunks']:
-                    # All chunks found - reconstruct
                     sorted_chunks = [
                         plan_data['chunks'][i]
                         for i in sorted(plan_data['chunks'].keys())
@@ -318,7 +320,6 @@ class SacredLayerManager:
                     plan_data['content'] = '\n'.join(sorted_chunks)
                     plan_data['reconstruction_complete'] = True
                 else:
-                    # Partial reconstruction
                     plan_data['content'] = '\n'.join([
                         plan_data['chunks'][i]
                         for i in sorted(plan_data['chunks'].keys())
@@ -328,7 +329,6 @@ class SacredLayerManager:
                         i for i in range(plan_data['total_chunks'])
                         if i not in plan_data['chunks']
                     ]
-                # Remove chunks from response
                 del plan_data['chunks']
 
             return {
@@ -336,13 +336,17 @@ class SacredLayerManager:
                 "query": query,
                 "reconstructed": True
             }
-        else:
-            # Return raw results
-            return {
-                "results": results,
-                "query": query,
-                "reconstructed": False
-            }
+
+        return {
+            "results": results,
+            "query": query,
+            "reconstructed": False
+        }
+
+    def query_sacred_plans(self, project_id: str, query: str,
+                           reconstruct: bool = True) -> Dict[str, Any]:
+        """Synchronous wrapper around async_query_sacred_plans"""
+        return asyncio.run(self.async_query_sacred_plans(project_id, query, reconstruct))
 
     def lock_plan(self, plan_id: str) -> Tuple[bool, str]:
         """Lock an approved plan to prevent modifications"""
@@ -494,11 +498,11 @@ class SacredIntegratedRAGAgent:
                                content_or_file: str) -> Dict[str, Any]:
         """Create a new sacred plan"""
         if os.path.isfile(content_or_file):
-            plan = await self.sacred_manager.create_plan(
+            plan = await self.sacred_manager.async_create_plan(
                 project_id, title, "", file_path=content_or_file
             )
         else:
-            plan = await self.sacred_manager.create_plan(
+            plan = await self.sacred_manager.async_create_plan(
                 project_id, title, content_or_file
             )
 
@@ -511,7 +515,7 @@ class SacredIntegratedRAGAgent:
     async def approve_sacred_plan(self, plan_id: str, approver: str,
                                 verification_code: str, secondary: str) -> Dict[str, Any]:
         """Approve a sacred plan with verification"""
-        success, message = await self.sacred_manager.approve_plan(
+        success, message = await self.sacred_manager.async_approve_plan(
             plan_id, approver, verification_code, secondary
         )
 
@@ -523,7 +527,7 @@ class SacredIntegratedRAGAgent:
 
     async def query_sacred_context(self, project_id: str, query: str) -> Dict[str, Any]:
         """Query sacred plans for context"""
-        results = await self.sacred_manager.query_sacred_plans(
+        results = await self.sacred_manager.async_query_sacred_plans(
             project_id, query, reconstruct=True
         )
 
